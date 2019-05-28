@@ -13,7 +13,7 @@ else:
 
 uri = "bolt://" + host + ":" + str(port)
 
-if "ALLIANCE_DB_VERSION" in os.environ:
+if "ALLIANCE_DATABASE_VERSION" in os.environ:
     alliance_db_version = int(os.environ['ALLIANCE_DATABASE_VERSION'])
 else:
     alliance_db_version = "test"
