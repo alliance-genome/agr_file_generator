@@ -12,7 +12,7 @@ This tool creates files from Alliance resources. The tool is build and testsed w
 ## Running Tool Example command
 
 ```bash
-export ALLIANCE_DATABASEB_VERSION='2.0.0'
+export ALLIANCE_DATABASE_VERSION='2.0.0'
 export NEO4J_HOST=build.alliancegenome.org
 python src/app.py 
 ```
