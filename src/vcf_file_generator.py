@@ -146,7 +146,7 @@ RETURN c.primaryKey AS chromosome,
             return False
 
     def __get_sequence_url(apollo_sequence_endpoint, assembly, chromosome, left_position, right_position):
-        return apollo_sequence_endpoint + assembly + "/" + chromosome + ":" + str(left_position) + ".." + str(right_position) + "?ignoreCache=true"
+        return apollo_sequence_endpoint + assembly + "/" + chromosome + ":" + str(left_position) + ".." + str(right_position) 
     
     def __write_vcf_header(vcf_file, assembly, species, database_version):
         datetime = strftime("%Y%m%d", gmtime())
