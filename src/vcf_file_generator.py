@@ -25,7 +25,6 @@ RETURN c.primaryKey AS chromosome,
        s.name AS species
     """
 
-
     def generateFiles(self):
         with self.driver.session() as session:
             with session.begin_transaction() as tx:
