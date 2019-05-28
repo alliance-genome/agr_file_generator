@@ -40,8 +40,6 @@ RETURN c.primaryKey AS chromosome,
                     assembly_species_map[assembly] = variant["species"]
         
                 for assembly in assembly_variant_map:
-                    if assembly not in ["GRCm38", "GRCm38","WBcel235"]:
-                        continue
                     filename = assembly + "-" + self.database_version  + ".vcf"
                     filepath = self.generated_files_folder + "/" + filename
                     vcf_file = open(filepath,'w')
