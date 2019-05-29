@@ -101,7 +101,7 @@ RETURN c.primaryKey AS chromosome,
         datetime = strftime("%Y%m%d", gmtime())
         header = """##fileformat=VCFv4.2
 ##fileDate={datetime}
-##source=agr_file_generator/bin/generate_vcf_files.py
+##source=agr_file_generator/src/app.py
 ##reference=
 ##contig=<ID=,length=,assembly={assembly},md5=,species="{species}",taxonomy=x>
 ##phasing=partial
