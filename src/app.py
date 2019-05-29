@@ -19,7 +19,6 @@ else:
     alliance_db_version = "test"
 
 if __name__ == '__main__':
-    apollo_sequence_endpoint = "https://agr-apollo.berkeleybop.io/apollo/sequence/"
     generated_files_folder = "generated_files"
-    gvf = VcfFileGenerator(uri, generated_files_folder, apollo_sequence_endpoint, alliance_db_version)
+    gvf = VcfFileGenerator(uri, generated_files_folder, alliance_db_version)
     gvf.generateFiles()

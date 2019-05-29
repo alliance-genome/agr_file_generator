@@ -5,15 +5,16 @@ from datetime import datetime
 from time import gmtime, strftime
 import requests
 from neo4j import GraphDatabase
+from assemblySequence import AssemblySequence
 
 class VcfFileGenerator(object):
-    def __init__(self, uri, generated_files_folder, apollo_sequence_endpoint, database_version):
+    def __init__(self, uri, generated_files_folder, database_version):
         self.driver = GraphDatabase.driver(uri)
         self.database_version = database_version
         self.generated_files_folder = generated_files_folder
-        self.apollo_sequence_endpoint = apollo_sequence_endpoint
         self.get_variants_query = """
 MATCH (s:Species)-[:FROM_SPECIES]-(:Allele)-[:VARIATION]-(v:Variant)-[l:LOCATED_ON]-(c:Chromosome)
+MATCH (v:Variant)-[:VARIATION_TYPE]-(st:SOTerm)
 RETURN c.primaryKey AS chromosome,
        v.globalId AS globalId,
        v.genomicReferenceSequence AS genomicReferenceSequence,
@@ -22,132 +23,80 @@ RETURN c.primaryKey AS chromosome,
        l.start AS start,
        l.end AS end,
        l.assembly AS assembly,
-       s.name AS species
-    """
+       s.name AS species,
+       st.nameKey AS soTerm"""
 
     def generateFiles(self):
         with self.driver.session() as session:
             with session.begin_transaction() as tx:
-                assembly_variant_map = {}
-                assembly_species_map = {}
+                assembly_chr_variant_dict = {}
+                assembly_species_dict = {}
                 for record in tx.run(self.get_variants_query):
                     variant = record.data()
                     assembly = variant["assembly"]
-                    if assembly not in assembly_variant_map:
-                        assembly_variant_map[assembly] = [variant]
+                    chromosome = variant["chromosome"]
+                    if assembly not in assembly_chr_variant_dict:
+                        assembly_chr_variant_dict[assembly] = {chromosome: [variant]}
+                    elif chromosome not in assembly_chr_variant_dict[assembly]:
+                        assembly_chr_variant_dict[assembly][chromosome] = [variant]
                     else:
-                        assembly_variant_map[assembly].append(variant)
-                    assembly_species_map[assembly] = variant["species"]
-        
-                for assembly in assembly_variant_map:
+                        assembly_chr_variant_dict[assembly][chromosome].append(variant)
+                    assembly_species_dict[assembly] = variant["species"]
+
+                for assembly in assembly_chr_variant_dict:
                     filename = assembly + "-" + self.database_version  + ".vcf"
                     filepath = self.generated_files_folder + "/" + filename
                     vcf_file = open(filepath,'w')
-                    VcfFileGenerator.__write_vcf_header(vcf_file, assembly, assembly_species_map[assembly], self.database_version)
+                    VcfFileGenerator.__write_vcf_header(vcf_file, assembly, assembly_species_dict[assembly], self.database_version)
         
-                    for variant in assembly_variant_map[assembly]:
-                         if variant["genomicVariantSequence"] == "N/A": # this is an deletion
-                             variant["genomicVariantSequence"] = ""
-                             if variant["genomicReferenceSequence"] == "":
-                                  VcfFileGenerator.__add_genomic_reference_sequence_from_apollo(self.apollo_sequence_endpoint, variant)
-                             VcfFileGenerator.__add_padded_base_to_variant(self.apollo_sequence_endpoint, variant)
-                             VcfFileGenerator.__add_variant_to_vcf_file(vcf_file, variant)
-                         elif variant["genomicReferenceSequence"] in ["N/A", ""]:
-                             VcfFileGenerator.__add_genomic_reference_sequence_from_apollo(self.apollo_sequence_endpoint, variant)
-                             VcfFileGenerator.__add_padded_base_to_variant(self.apollo_sequence_endpoint, variant)
-                             VcfFileGenerator.__add_variant_to_vcf_file(vcf_file, variant)
-                         else:
-                             variant["POS"] = variant["start"]
-                             VcfFileGenerator.__add_variant_to_vcf_file(vcf_file, variant)
+                    for chromosome in assembly_chr_variant_dict[assembly]:
+                         if chromosome == "Unmapped_Scaffold_8_D1580_D1567":
+                             continue
+                         assembly_sequence = AssemblySequence(assembly, chromosome)
+                         for variant in assembly_chr_variant_dict[assembly][chromosome]:
+                             if variant["soTerm"] == "deletion":
+                                 if variant["genomicReferenceSequence"] == "":
+                                      VcfFileGenerator.__add_genomic_reference_sequence(assembly_sequence, variant)
+                                 if variant["genomicVariantSequence"] == "":
+                                      VcfFileGenerator.__add_padded_base_to_variant(assembly_sequence, variant, "deletion")
+                                 VcfFileGenerator.__add_variant_to_vcf_file(vcf_file, variant)
+                             elif variant["soTerm"] == "insertion":
+                                 if variant["genomicReferenceSequence"] != "":
+                                     print("ERROR: Insertion Variant reference sequence is populated when it should not be")
+                                     exit()
+                                 if variant["genomicVariantSequence"] == "":
+                                     print("INFO: Not adding variant to VCf as variant sequence provided: " + variant["globalId"])
+                                 else:
+                                     variant["POS"] = variant["start"]
+                                     VcfFileGenerator.__add_padded_base_to_variant(assembly_sequence, variant, "insertion")
+                                     VcfFileGenerator.__add_variant_to_vcf_file(vcf_file, variant)
+                             elif variant["soTerm"] == "point_mutation":
+                                 variant["POS"] = variant["start"]
+                                 VcfFileGenerator.__add_variant_to_vcf_file(vcf_file, variant)
+                             elif variant["soTerm"] == "MNV":
+                                 variant["POS"] = variant["end"]
+                                 VcfFileGenerator.__add_variant_to_vcf_file(vcf_file, variant)
+                             else:
+                                 print("New SoTerm that We need to add logic for")
+                                 print(variant["soTerm"])
+                                 exit()
+                                 variant["POS"] = variant["start"]
+                                 VcfFileGenerator.__add_variant_to_vcf_file(vcf_file, variant)
                     vcf_file.close()
 
-    def __add_genomic_reference_sequence_from_apollo(apollo_sequence_endpoint, variant):
-        end = variant["end"] + 1
-        url = VcfFileGenerator.__get_sequence_url(apollo_sequence_endpoint,
-                                                  variant["species"],
-                                                  variant["chromosome"],
-                                                  variant["start"],
-                                                  end)
-        response = requests.get(url)
-        if response.status_code != 200:
-            print(variant)
-            print("ERROR3: " + url)
-            exit()
-            return 4
-    
-        sequence = response.text
-        if not VcfFileGenerator.__valid_ref_sequence(sequence):
-            print("ERROR: Did not return valid sequence (" + url + ")")
-            variant["genomicReferenceSequence"] = sequence
+    def __add_genomic_reference_sequence(assembly_sequence, variant):
+        variant["genomicReferenceSequence"] = assembly_sequence.get(variant["start"], variant["end"])
 
-    def __add_padded_base_to_variant(apollo_sequence_endpoint, variant):
-        if variant["genomicVariantSequence"] not in ["", "N/A"]:
-            #insertion
-            position_left = variant["start"]
-            position_right = position_left + 1
-            url = VcfFileGenerator.__get_sequence_url(apollo_sequence_endpoint, variant["species"], variant["chromosome"], position_left, position_right)
-            response = requests.get(url)
-            if response.status_code != 200:
-                print(variant)
-                print("ERROR: " + url)
-                return 1
-            else:
-                paddedBase = response.text
-                if paddedBase not in ["C","T","G","A", "N"]:
-                    print("ERROR: Padded base contains non valid character(s)")
-                    print(paddedBase)
-                    return 2
-                else:
-                    variant["POS"] = position_left - 1
-                    variant["genomicReferenceSequence"] = paddedBase + variant["genomicReferenceSequence"]
-                    variant["genomicVariantSequence"] = paddedBase + variant["genomicVariantSequence"]
-                    return 0
+    def __add_padded_base_to_variant(assembly_sequence, variant, soTerm):
+        if soTerm == "insertion":
+            variant["POS"] = variant["start"]
         else:
-            # Deletion
-            position_left = variant["start"] - 2
-            position_right = position_left + 1
-            url = VcfFileGenerator.__get_sequence_url(apollo_sequence_endpoint, variant["species"], variant["chromosome"], position_left, position_right)
-            response = requests.get(url)
-            if response.status_code != 200:
-                print(variant)
-                print("ERROR3: " + url)
-                exit()
-                return 1
-            else:
-                paddedBase = response.text
-                if paddedBase not in ["C","T","G","A", "N"]:
-                    print("ERROR: Padded base contains non valid character(s)")
-                    print(paddedBase)
-                    return 2
-                else:
-                    variant["POS"] = position_left
-                    variant["genomicReferenceSequence"] = paddedBase + variant["genomicReferenceSequence"]
-                    variant["genomicVariantSequence"] = paddedBase + variant["genomicVariantSequence"]
-                    return 0
+            variant["POS"] = variant["start"] - 1
+        
+        padded_base = assembly_sequence.get(variant["POS"], variant["POS"])
+        variant["genomicReferenceSequence"] = padded_base + variant["genomicReferenceSequence"] 
+        variant["genomicVariantSequence"] = padded_base + variant["genomicVariantSequence"]
 
-    def __clean_sequence(sequence):
-        if sequence in ["N/A"]:
-            return ""
-        else:
-            return sequence
-    
-    def __valid_ref_sequence(sequence):
-        '''Returns true if sequence is valid'''
-        if all(c in "CTGAN" for c in sequence):
-            return True
-        else:
-            return False
-    
-    def __valid_alt_sequence(sequence):
-        '''Returns true if sequence is valid'''
-        if all(c in "CTGARYMKSWHBVDN" for c in sequence):
-            return True
-        else:
-            return False
-
-    def __get_sequence_url(apollo_sequence_endpoint, assembly, chromosome, left_position, right_position):
-        return apollo_sequence_endpoint + assembly + "/" + chromosome + ":" + str(left_position) + ".." + str(right_position) 
-    
     def __write_vcf_header(vcf_file, assembly, species, database_version):
         datetime = strftime("%Y%m%d", gmtime())
         header = """##fileformat=VCFv4.2
