@@ -79,7 +79,7 @@ RETURN c.primaryKey AS chromosome,
                              else:
                                  print("New SoTerm that We need to add logic for")
                                  print(variant["soTerm"])
-                                 exit()
+                                 exit(1)
                                  variant["POS"] = variant["start"]
                                  VcfFileGenerator.__add_variant_to_vcf_file(vcf_file, variant)
                     vcf_file.close()
