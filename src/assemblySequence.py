@@ -54,4 +54,8 @@ class AssemblySequence(object):
 
     def get(self, start, end):
         start = start - 1 
-        return self.fa[self.chromosome][start:end].seq
+        if self.chromosome.startswith("chr"):
+            chromosome_str = self.chromosome[3:]
+        else:
+            chromosome_str = self.chromosome
+        return self.fa[chromosome_str][start:end].seq
