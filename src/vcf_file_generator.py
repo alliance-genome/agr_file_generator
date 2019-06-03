@@ -46,13 +46,12 @@ RETURN c.primaryKey AS chromosome,
                 for assembly in assembly_chr_variant_dict:
                     filename = assembly + "-" + self.database_version  + ".vcf"
                     filepath = self.generated_files_folder + "/" + filename
+                    assembly_sequence = AssemblySequence(assembly)
                     vcf_file = open(filepath,'w')
                     VcfFileGenerator.__write_vcf_header(vcf_file, assembly, assembly_species_dict[assembly], self.database_version)
-        
                     for chromosome in assembly_chr_variant_dict[assembly]:
                          if chromosome == "Unmapped_Scaffold_8_D1580_D1567":
                              continue
-                         assembly_sequence = AssemblySequence(assembly, chromosome)
                          for variant in assembly_chr_variant_dict[assembly][chromosome]:
                              if variant["soTerm"] == "deletion":
                                  if variant["genomicReferenceSequence"] == "":
@@ -65,7 +64,7 @@ RETURN c.primaryKey AS chromosome,
                                      print("ERROR: Insertion Variant reference sequence is populated when it should not be")
                                      exit()
                                  if variant["genomicVariantSequence"] == "":
-                                     print("INFO: Not adding variant to VCf as variant sequence provided: " + variant["globalId"])
+                                     continue
                                  else:
                                      variant["POS"] = variant["start"]
                                      VcfFileGenerator.__add_padded_base_to_variant(assembly_sequence, variant, "insertion")
@@ -85,7 +84,7 @@ RETURN c.primaryKey AS chromosome,
                     vcf_file.close()
 
     def __add_genomic_reference_sequence(assembly_sequence, variant):
-        variant["genomicReferenceSequence"] = assembly_sequence.get(variant["start"], variant["end"])
+        variant["genomicReferenceSequence"] = assembly_sequence.get(variant["chromosome"], variant["start"], variant["end"])
 
     def __add_padded_base_to_variant(assembly_sequence, variant, soTerm):
         if soTerm == "insertion":
@@ -93,7 +92,7 @@ RETURN c.primaryKey AS chromosome,
         else:
             variant["POS"] = variant["start"] - 1
         
-        padded_base = assembly_sequence.get(variant["POS"], variant["POS"])
+        padded_base = assembly_sequence.get(variant["chromosome"], variant["POS"], variant["POS"])
         variant["genomicReferenceSequence"] = padded_base + variant["genomicReferenceSequence"] 
         variant["genomicVariantSequence"] = padded_base + variant["genomicVariantSequence"]
 
@@ -117,7 +116,7 @@ RETURN c.primaryKey AS chromosome,
 ##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">
 ##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">
 ##FORMAT=<ID=HQ,Number=2,Type=Integer,Description="Haplotype Quality">
-    """.format(datetime = datetime,
+""".format(datetime = datetime,
                database_version=database_version,
                species=species,
                assembly=assembly)
