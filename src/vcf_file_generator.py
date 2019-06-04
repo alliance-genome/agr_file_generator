@@ -5,7 +5,7 @@ from datetime import datetime
 from time import gmtime, strftime
 import requests
 from neo4j import GraphDatabase
-from assemblySequence import AssemblySequence
+from assembly_sequence import AssemblySequence
 
 class VcfFileGenerator(object):
     def __init__(self, uri, generated_files_folder, database_version):
