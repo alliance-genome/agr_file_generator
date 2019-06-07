@@ -12,19 +12,21 @@ class VcfFileGenerator(object):
         self.driver = GraphDatabase.driver(uri)
         self.database_version = database_version
         self.generated_files_folder = generated_files_folder
-        self.get_variants_query = """
-MATCH (s:Species)-[:FROM_SPECIES]-(:Allele)-[:VARIATION]-(v:Variant)-[l:LOCATED_ON]-(c:Chromosome)
+        self.get_variants_query = """MATCH (s:Species)-[:FROM_SPECIES]-(a:Allele)-[:VARIATION]-(v:Variant)-[l:LOCATED_ON]-(c:Chromosome)
 MATCH (v:Variant)-[:VARIATION_TYPE]-(st:SOTerm)
 RETURN c.primaryKey AS chromosome,
        v.globalId AS globalId,
        v.genomicReferenceSequence AS genomicReferenceSequence,
        v.genomicVariantSequence AS genomicVariantSequence,
+       v.hgvs_nomenclature AS hgvsNomenclature,
        v.dataProvider AS dataProvider,
+       a.symbol AS symbol,
        l.start AS start,
        l.end AS end,
        l.assembly AS assembly,
        s.name AS species,
-       st.nameKey AS soTerm"""
+       st.nameKey AS soTerm
+       """
 
     def generateFiles(self):
         with self.driver.session() as session:
@@ -104,12 +106,8 @@ RETURN c.primaryKey AS chromosome,
 ##reference=
 ##contig=<ID=,length=,assembly={assembly},md5=,species="{species}",taxonomy=x>
 ##phasing=partial
-##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples With Data">
-##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Depth">
-##INFO=<ID=AF,Number=A,Type=Float,Description="Allele Frequency">
-##INFO=<ID=AA,Number=1,Type=String,Description="Ancestral Allele">
-##INFO=<ID=DB,Number=0,Type=Flag,Description="dbSNP membership, build 129">
-##INFO=<ID=H2,Number=0,Type=Flag,Description="HapMap2 membership">
+##INFO=<ID=hgvs_nomenclature, Number=0,Type=Integer,Description="the HGVS name of the allele">
+##INFO=<ID=DP,Number=0,Type=Integer,Description="The label to be used for visual purposes">
 ##FILTER=<ID=q10,Description="Quality below 10">
 ##FILTER=<ID=s50,Description="Less than 50% of samples have data">
 ##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
@@ -124,6 +122,20 @@ RETURN c.primaryKey AS chromosome,
         vcf_file.write("\t".join(["#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO"]))
 
     def __add_variant_to_vcf_file(vcf_file, variant):
+        if variant["hgvsNomenclature"]:
+            if variant["hgvsNomenclature"]:
+                hgvs = variant["hgvsNomenclature"]
+            else:
+                hgvs = "."
+
+            if variant["symbol"]:
+                symbol = variant["symbol"]
+            else:
+                symbol = "."
+
+            info = "hgvs_nomenclature=\"" + hgvs + "\";" + "Symbol=\"" + symbol + "\""
+        else:
+            info = "."
         vcf_file.write("\n" + "\t".join([variant["chromosome"],
                                          str(variant["POS"]),
                                          variant["globalId"],
@@ -131,4 +143,4 @@ RETURN c.primaryKey AS chromosome,
                                          variant["genomicVariantSequence"],
                                          ".",
                                          ".",
-                                         "."]))
+                                         info]))

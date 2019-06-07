@@ -1,7 +1,6 @@
 import sys, os
 import wget
-import gzip
-import shutil
+#import shutil
 from pyfaidx import Fasta
 
 class AssemblySequence(object):
