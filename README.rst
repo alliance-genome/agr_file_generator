@@ -40,11 +40,20 @@ Install the source code in "editable" mode.
    pip install --editable ".[dev]"
 
 
-Running tests:
+Running tests
+-------------
 
 .. code-block:: bash
 
    pytest
+
+
+Running the file generator
+==========================
+
+.. code-block:: bash
+
+   agr_file_generator
 
 
 .. _virtualenv: http://docs.python-guide.org/en/latest/dev/virtualenvs/
