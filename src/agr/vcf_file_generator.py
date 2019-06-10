@@ -1,11 +1,12 @@
-from time import gmtime, strftime
+import time
 
 from neo4j import GraphDatabase
 
-from assembly_sequence import AssemblySequence
+from agr.assembly_sequence import AssemblySequence
 
 
-class VcfFileGenerator(object):
+class VcfFileGenerator:
+
     def __init__(self, uri, generated_files_folder, database_version):
         self.driver = GraphDatabase.driver(uri)
         self.database_version = database_version
@@ -95,7 +96,7 @@ RETURN c.primaryKey AS chromosome,
         variant["genomicVariantSequence"] = padded_base + variant["genomicVariantSequence"]
 
     def __write_vcf_header(vcf_file, assembly, species, database_version):
-        datetime = strftime("%Y%m%d", gmtime())
+        dt = time.strftime("%Y%m%d", time.gmtime())
         header = """##fileformat=VCFv4.2
 ##fileDate={datetime}
 ##source=agr_file_generator/src/app.py
@@ -114,10 +115,10 @@ RETURN c.primaryKey AS chromosome,
 ##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">
 ##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">
 ##FORMAT=<ID=HQ,Number=2,Type=Integer,Description="Haplotype Quality">
-""".format(datetime = datetime,
-               database_version=database_version,
-               species=species,
-               assembly=assembly)
+""".format(datetime=dt,
+           database_version=database_version,
+           species=species,
+           assembly=assembly)
         vcf_file.write(header)
         vcf_file.write("\t".join(["#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO"]))
 
