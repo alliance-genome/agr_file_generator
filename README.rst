@@ -1,6 +1,6 @@
-=====================
-🐛 agr_file_generator
-=====================
+====================
+ agr_file_generator
+====================
 
 A package for generating VCF files for the Alliance of Genome Resources.
 
