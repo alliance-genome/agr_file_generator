@@ -14,6 +14,7 @@ class VcfFileGenerator(object):
         self.generated_files_folder = generated_files_folder
         self.get_variants_query = """MATCH (s:Species)-[:FROM_SPECIES]-(a:Allele)-[:VARIATION]-(v:Variant)-[l:LOCATED_ON]-(c:Chromosome)
 MATCH (v:Variant)-[:VARIATION_TYPE]-(st:SOTerm)
+OPTIONAL MATCH (a:Allele)-[:IS_ALLELE_OF]-(g:Gene)
 RETURN c.primaryKey AS chromosome,
        v.globalId AS globalId,
        v.genomicReferenceSequence AS genomicReferenceSequence,
@@ -21,6 +22,7 @@ RETURN c.primaryKey AS chromosome,
        v.hgvs_nomenclature AS hgvsNomenclature,
        v.dataProvider AS dataProvider,
        a.symbol AS symbol,
+       collect(g.primaryKey) as alleleOfGenes,
        l.start AS start,
        l.end AS end,
        l.assembly AS assembly,
@@ -108,7 +110,8 @@ RETURN c.primaryKey AS chromosome,
 ##contig=<ID=,length=,assembly={assembly},md5=,species="{species}",taxonomy=x>
 ##phasing=partial
 ##INFO=<ID=hgvs_nomenclature,Type=String,Number=0,,Description="the HGVS name of the allele">
-##INFO=<ID=Symbol,Type=String,Number=0,Description="The human readable name of the allele">
+##INFO=<ID=symbol,Type=String,Number=0,Description="The human readable name of the allele">
+##INFO=<ID=allele_of_genes,Type=String,Number=0,Description="The genes that the Allele is located on">
 ##INFO=<ID=DP,Number=0,Type=Integer,Description="The label to be used for visual purposes">
 ##FILTER=<ID=q10,Description="Quality below 10">
 ##FILTER=<ID=s50,Description="Less than 50% of samples have data">
@@ -125,19 +128,19 @@ RETURN c.primaryKey AS chromosome,
 
     def __add_variant_to_vcf_file(vcf_file, variant):
         if variant["hgvsNomenclature"]:
-            if variant["hgvsNomenclature"]:
-                hgvs = variant["hgvsNomenclature"]
-            else:
-                hgvs = "."
-
-            if variant["symbol"]:
-                symbol = variant["symbol"]
-            else:
-                symbol = "."
-
-            info = "hgvs_nomenclature=\"" + hgvs + "\";" + "Symbol=\"" + symbol + "\""
+             hgvs = variant["hgvsNomenclature"]
         else:
-            info = "."
+            hgvs = "."
+        if variant["symbol"]:
+            symbol = variant["symbol"]
+        else:
+            symbol = "."
+        if variant["alleleOfGenes"]:
+            allele_of_genes = ', '.join(variant["alleleOfGenes"])
+        else:
+            allele_of_genes = "."
+        info = "hgvs_nomenclature=\"" + hgvs + "\";symbol=\"" + symbol + "\";allele_of_genes=" + allele_of_genes
+
         vcf_file.write("\n" + "\t".join([variant["chromosome"],
                                          str(variant["POS"]),
                                          variant["globalId"],
