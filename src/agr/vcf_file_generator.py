@@ -12,20 +12,22 @@ class VcfFileGenerator:
         self.database_version = database_version
         self.generated_files_folder = generated_files_folder
         self.get_variants_query = """
-MATCH (s:Species)-[:FROM_SPECIES]-(:Allele)-[:VARIATION]-(v:Variant)-[l:LOCATED_ON]-(c:Chromosome)
+MATCH (s:Species)-[:FROM_SPECIES]-(a:Allele)-[:VARIATION]-(v:Variant)-[l:LOCATED_ON]-(c:Chromosome)
 MATCH (v:Variant)-[:VARIATION_TYPE]-(st:SOTerm)
 RETURN c.primaryKey AS chromosome,
        v.globalId AS globalId,
        v.genomicReferenceSequence AS genomicReferenceSequence,
        v.genomicVariantSequence AS genomicVariantSequence,
+       v.hgvs_nomenclature AS hgvsNomenclature,
        v.dataProvider AS dataProvider,
+       a.symbol AS symbol,
        l.start AS start,
        l.end AS end,
        l.assembly AS assembly,
        s.name AS species,
        st.nameKey AS soTerm"""
 
-    def generateFiles(self):
+    def generate_files(self):
         with self.driver.session() as session:
             with session.begin_transaction() as tx:
                 assembly_chr_variant_dict = {}
@@ -46,7 +48,7 @@ RETURN c.primaryKey AS chromosome,
                     filename = assembly + "-" + self.database_version  + ".vcf"
                     filepath = self.generated_files_folder + "/" + filename
                     assembly_sequence = AssemblySequence(assembly)
-                    vcf_file = open(filepath,'w')
+                    vcf_file = open(filepath, 'w')
                     VcfFileGenerator.__write_vcf_header(vcf_file, assembly, assembly_species_dict[assembly], self.database_version)
                     for chromosome in assembly_chr_variant_dict[assembly]:
                          if chromosome == "Unmapped_Scaffold_8_D1580_D1567":
@@ -123,11 +125,25 @@ RETURN c.primaryKey AS chromosome,
         vcf_file.write("\t".join(["#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO"]))
 
     def __add_variant_to_vcf_file(vcf_file, variant):
-        vcf_file.write("\n" + "\t".join([variant["chromosome"],
-                                         str(variant["POS"]),
-                                         variant["globalId"],
-                                         variant["genomicReferenceSequence"],
-                                         variant["genomicVariantSequence"],
-                                         ".",
-                                         ".",
-                                         "."]))
+        if variant['hgvsNomenclature']:
+            if variant['hgvsNomenclature']:
+                hgvs = variant['hgvsNomenclature']
+            else:
+                hgvs = '.'
+
+            if variant['symbol']:
+                symbol = variant['symbol']
+            else:
+                symbol = '.'
+
+            info = 'hgvs_nomenclature=\'' + hgvs + '\';' + 'Symbol=\'' + symbol + '\''
+        else:
+            info = '.'
+        vcf_file.write('\n' + '\t'.join([variant['chromosome'],
+                                         str(variant['POS']),
+                                         variant['globalId'],
+                                         variant['genomicReferenceSequence'],
+                                         variant['genomicVariantSequence'],
+                                         '.',
+                                         info,
+                                         '.']))
