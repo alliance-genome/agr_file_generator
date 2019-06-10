@@ -46,6 +46,7 @@ RETURN c.primaryKey AS chromosome,
                     assembly_species_dict[assembly] = variant["species"]
 
                 for assembly in assembly_chr_variant_dict:
+                    print(assembly)
                     filename = assembly + "-" + self.database_version  + ".vcf"
                     filepath = self.generated_files_folder + "/" + filename
                     assembly_sequence = AssemblySequence(assembly)
@@ -106,7 +107,8 @@ RETURN c.primaryKey AS chromosome,
 ##reference=
 ##contig=<ID=,length=,assembly={assembly},md5=,species="{species}",taxonomy=x>
 ##phasing=partial
-##INFO=<ID=hgvs_nomenclature, Number=0,Type=Integer,Description="the HGVS name of the allele">
+##INFO=<ID=hgvs_nomenclature,Type=String,Number=0,,Description="the HGVS name of the allele">
+##INFO=<ID=Symbol,Type=String,Number=0,Description="The human readable name of the allele">
 ##INFO=<ID=DP,Number=0,Type=Integer,Description="The label to be used for visual purposes">
 ##FILTER=<ID=q10,Description="Quality below 10">
 ##FILTER=<ID=s50,Description="Less than 50% of samples have data">
