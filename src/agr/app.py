@@ -11,7 +11,8 @@ alliance_db_version = os.environ.get('ALLIANCE_DATABASE_VERSION', 'test')
 
 uri = "bolt://" + host + ":" + str(port)
 
-def main(generated_files_folder="generated_files"):
+def main(generated_files_folder='generated_files'):
+    os.makedirs(generated_files_folder, exist_ok=True)
     gvf = VcfFileGenerator(uri, generated_files_folder, alliance_db_version)
     gvf.generate_files()
 
