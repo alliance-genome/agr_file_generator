@@ -131,4 +131,3 @@ def test_generated_files_sorted_by_chr_and_pos(run_generate_files):
         for chromo, recs in groupby(records, itemgetter("CHROM")):
             positions = list(rec['POS'] for rec in recs)
             assert positions == sorted(positions)
-        

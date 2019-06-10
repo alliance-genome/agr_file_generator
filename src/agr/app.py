@@ -13,10 +13,8 @@ uri = "bolt://" + host + ":" + str(port)
 
 def main(generated_files_folder="generated_files"):
     gvf = VcfFileGenerator(uri, generated_files_folder, alliance_db_version)
-    gvf.generateFiles()
+    gvf.generate_files()
 
 
 if __name__ == '__main__':
     main()
-    
-    
