@@ -120,14 +120,7 @@ RETURN c.primaryKey AS chromosome,
            species=species,
            assembly=assembly)
         vcf_file.write(header)
-        vcf_file.write("\t".join(["#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO"]))
-
-    def __add_variant_to_vcf_file(vcf_file, variant):
-        if variant['hgvsNomenclature']:
-            if variant['hgvsNomenclature']:
-                hgvs = variant['hgvsNomenclature']
-            else:
-                hgvs = '.'
+        vcf_file.write('\t'.join(['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO']))
 
     @classmethod
     def _variant_value_for_file(cls, variant, data_key, default='.'):
