@@ -1,7 +1,7 @@
 import os
 
 from agr.vcf_file_generator import VcfFileGenerator
-from agr.datasource import DataSource
+from agr.data_source import DataSource
 
 
 host = os.environ.get('NEO4J_HOST', 'localhost')
