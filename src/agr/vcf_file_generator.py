@@ -1,8 +1,6 @@
 from collections import defaultdict
 import time
 
-from neo4j import GraphDatabase
-
 from agr.assembly_sequence import AssemblySequence
 
 
