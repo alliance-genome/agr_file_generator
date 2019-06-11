@@ -59,8 +59,8 @@ RETURN c.primaryKey AS chromosome,
                                  if variant['genomicReferenceSequence'] == '':
                                       VcfFileGenerator.__add_genomic_reference_sequence(assembly_sequence, variant)
                                  if variant['genomicVariantSequence'] == '':
-                                      VcfFileGenerator.__add_padded_base_to_variant(assembly_sequence, variant, 'deletion')
-                                 VcfFileGenerator.__add_variant_to_vcf_file(vcf_file, variant)
+                                      self._add_padded_base_to_variant(assembly_sequence, variant, 'deletion')
+                                 self._add_variant_to_vcf_file(vcf_file, variant)
                              elif variant['soTerm'] == 'insertion':
                                  if variant['genomicReferenceSequence'] != '':
                                      print('ERROR: Insertion Variant reference sequence is populated when it should not be')
@@ -69,20 +69,20 @@ RETURN c.primaryKey AS chromosome,
                                      continue
                                  else:
                                      variant['POS'] = variant['start']
-                                     VcfFileGenerator.__add_padded_base_to_variant(assembly_sequence, variant, 'insertion')
-                                     VcfFileGenerator.__add_variant_to_vcf_file(vcf_file, variant)
+                                     self._add_padded_base_to_variant(assembly_sequence, variant, 'insertion')
+                                     self._add_variant_to_vcf_file(vcf_file, variant)
                              elif variant['soTerm'] == 'point_mutation':
                                  variant['POS'] = variant['start']
-                                 VcfFileGenerator.__add_variant_to_vcf_file(vcf_file, variant)
+                                 self._add_variant_to_vcf_file(vcf_file, variant)
                              elif variant['soTerm'] == 'MNV':
                                  variant['POS'] = variant['end']
-                                 VcfFileGenerator.__add_variant_to_vcf_file(vcf_file, variant)
+                                 self._add_variant_to_vcf_file(vcf_file, variant)
                              else:
                                  print('New SoTerm that We need to add logic for')
                                  print(variant['soTerm'])
                                  exit(1)
                                  variant['POS'] = variant['start']
-                                 VcfFileGenerator.__add_variant_to_vcf_file(vcf_file, variant)
+                                 self._add_variant_to_vcf_file(vcf_file, variant)
                     vcf_file.close()
 
     def __add_genomic_reference_sequence(assembly_sequence, variant):
@@ -129,14 +129,20 @@ RETURN c.primaryKey AS chromosome,
             else:
                 hgvs = '.'
 
-            if variant['symbol']:
-                symbol = variant['symbol']
-            else:
-                symbol = '.'
+    @classmethod
+    def _variant_value_for_file(cls, variant, data_key, default='.'):
+        if variant[data_key]:
+            return variant[data_key]
+        return default
 
-            info = 'hgvs_nomenclature=\'' + hgvs + '\';' + 'Symbol=\'' + symbol + '\''
-        else:
+    @classmethod
+    def _add_variant_to_vcf_file(cls, vcf_file, variant):
+        hgvs = cls._variant_value_for_file(variant, 'hgvsNomenclature')
+        if hgvs == '.':
             info = '.'
+        else:
+            symbol = cls._variant_value_for_file(variant, 'symbol')
+            info = 'hgvs_nomenclature=\'' + hgvs + '\';' + 'Symbol=\'' + symbol + '\''
         vcf_file.write('\n' + '\t'.join([variant['chromosome'],
                                          str(variant['POS']),
                                          variant['globalId'],
