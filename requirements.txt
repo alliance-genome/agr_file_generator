@@ -4,5 +4,6 @@ neotime==1.7.4
 python-dateutil==2.7.3
 requests==2.21.0
 Bio==0.1.0
-wget
-biopython
+wget==3.2
+biopython==1.73
+pyfaidx==0.5.5.2
