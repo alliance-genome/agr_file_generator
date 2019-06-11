@@ -1,3 +1,4 @@
+from collections import defaultdict
 import time
 
 from neo4j import GraphDatabase
@@ -7,83 +8,64 @@ from agr.assembly_sequence import AssemblySequence
 
 class VcfFileGenerator:
 
-    def __init__(self, uri, generated_files_folder, database_version):
-        self.driver = GraphDatabase.driver(uri)
+    def __init__(self, variants, generated_files_folder, database_version):
+        self.variants = variants
         self.database_version = database_version
         self.generated_files_folder = generated_files_folder
-        self.get_variants_query = """MATCH (s:Species)-[:FROM_SPECIES]-(a:Allele)-[:VARIATION]-(v:Variant)-[l:LOCATED_ON]-(c:Chromosome)
-MATCH (v:Variant)-[:VARIATION_TYPE]-(st:SOTerm)
-RETURN c.primaryKey AS chromosome,
-       v.globalId AS globalId,
-       v.genomicReferenceSequence AS genomicReferenceSequence,
-       v.genomicVariantSequence AS genomicVariantSequence,
-       v.hgvs_nomenclature AS hgvsNomenclature,
-       v.dataProvider AS dataProvider,
-       a.symbol AS symbol,
-       l.start AS start,
-       l.end AS end,
-       l.assembly AS assembly,
-       s.name AS species,
-       st.nameKey AS soTerm
-       """
+
+    def _consume_data_source(self):
+        assembly_chr_variants = defaultdict(lambda : defaultdict(list))
+        assembly_species = {}
+        for variant in self.variants:
+            assembly = variant['assembly']
+            chromosome = variant['chromosome']
+            assembly_chr_variants[assembly][chromosome].append(variant)
+            assembly_species[assembly] = variant['species']
+        return (assembly_chr_variants, assembly_species)
+
+    def _handle_write_variant(self, assembly_sequence, variant, vcf_file):
+        if variant['soTerm'] == 'deletion':
+            if variant['genomicReferenceSequence'] == '':
+                self._add_genomic_reference_sequence(assembly_sequence, variant)
+            if variant['genomicVariantSequence'] == '':
+                self._add_padded_base_to_variant(assembly_sequence, variant, 'deletion')
+                self._add_variant_to_vcf_file(vcf_file, variant)
+        elif variant['soTerm'] == 'insertion':
+            if variant['genomicReferenceSequence'] != '':
+                print('ERROR: Insertion Variant reference sequence is populated when it should not be')
+                exit()
+            if variant['genomicVariantSequence'] == '':
+                return
+            variant['POS'] = variant['start']
+            self._add_padded_base_to_variant(assembly_sequence, variant, 'insertion')
+            self._add_variant_to_vcf_file(vcf_file, variant)
+        elif variant['soTerm'] == 'point_mutation':
+            variant['POS'] = variant['start']
+            self._add_variant_to_vcf_file(vcf_file, variant)
+        elif variant['soTerm'] == 'MNV':
+            variant['POS'] = variant['end']
+            self._add_variant_to_vcf_file(vcf_file, variant)
+        else:
+            print('New SoTerm that We need to add logic for')
+            print(variant['soTerm'])
+            exit(1)
+        variant['POS'] = variant['start']
+        self._add_variant_to_vcf_file(vcf_file, variant)
 
     def generate_files(self):
-        with self.driver.session() as session:
-            with session.begin_transaction() as tx:
-                assembly_chr_variant_dict = {}
-                assembly_species_dict = {}
-                for record in tx.run(self.get_variants_query):
-                    variant = record.data()
-                    assembly = variant['assembly']
-                    chromosome = variant['chromosome']
-                    if assembly not in assembly_chr_variant_dict:
-                        assembly_chr_variant_dict[assembly] = {chromosome: [variant]}
-                    elif chromosome not in assembly_chr_variant_dict[assembly]:
-                        assembly_chr_variant_dict[assembly][chromosome] = [variant]
-                    else:
-                        assembly_chr_variant_dict[assembly][chromosome].append(variant)
-                    assembly_species_dict[assembly] = variant['species']
-
-                for assembly in assembly_chr_variant_dict:
-                    print(assembly)
-                    filename = assembly + '-' + self.database_version  + '.vcf'
-                    filepath = self.generated_files_folder + '/' + filename
-                    assembly_sequence = AssemblySequence(assembly)
-                    vcf_file = open(filepath, 'w')
-                    self._write_vcf_header(vcf_file, assembly, assembly_species_dict[assembly], self.database_version)
-                    for chromosome in assembly_chr_variant_dict[assembly]:
-                         if chromosome == 'Unmapped_Scaffold_8_D1580_D1567':
-                             continue
-                         for variant in assembly_chr_variant_dict[assembly][chromosome]:
-                             if variant['soTerm'] == 'deletion':
-                                 if variant['genomicReferenceSequence'] == '':
-                                      self._add_genomic_reference_sequence(assembly_sequence, variant)
-                                 if variant['genomicVariantSequence'] == '':
-                                      self._add_padded_base_to_variant(assembly_sequence, variant, 'deletion')
-                                 self._add_variant_to_vcf_file(vcf_file, variant)
-                             elif variant['soTerm'] == 'insertion':
-                                 if variant['genomicReferenceSequence'] != '':
-                                     print('ERROR: Insertion Variant reference sequence is populated when it should not be')
-                                     exit()
-                                 if variant['genomicVariantSequence'] == '':
-                                     continue
-                                 else:
-                                     variant['POS'] = variant['start']
-                                     self._add_padded_base_to_variant(assembly_sequence, variant, 'insertion')
-                                     self._add_variant_to_vcf_file(vcf_file, variant)
-                             elif variant['soTerm'] == 'point_mutation':
-                                 variant['POS'] = variant['start']
-                                 self._add_variant_to_vcf_file(vcf_file, variant)
-                             elif variant['soTerm'] == 'MNV':
-                                 variant['POS'] = variant['end']
-                                 self._add_variant_to_vcf_file(vcf_file, variant)
-                             else:
-                                 print('New SoTerm that We need to add logic for')
-                                 print(variant['soTerm'])
-                                 exit(1)
-                                 variant['POS'] = variant['start']
-                                 self._add_variant_to_vcf_file(vcf_file, variant)
-                    vcf_file.close()
+        (assembly_chr_variants, assembly_species) = self._consume_data_source()
+        for (assembly, chromo_variants) in assembly_chr_variants.items():
+            print(assembly)
+            filename = assembly + '-' + self.database_version  + '.vcf'
+            filepath = self.generated_files_folder + '/' + filename
+            assembly_sequence = AssemblySequence(assembly)
+            with open(filepath, 'w') as vcf_file:
+                self._write_vcf_header(vcf_file, assembly, assembly_species[assembly], self.database_version)
+                for (chromosome, variants) in chromo_variants.items():
+                    if chromosome == 'Unmapped_Scaffold_8_D1580_D1567':
+                        continue
+                    for variant in variants:
+                        self._handle_write_variant(assembly_sequence, variant, vcf_file)
 
     @classmethod
     def _add_genomic_reference_sequence(cls, assembly_sequence, variant):
