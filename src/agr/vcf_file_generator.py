@@ -93,9 +93,9 @@ RETURN c.primaryKey AS chromosome,
             variant['POS'] = variant['start']
         else:
             variant['POS'] = variant['start'] - 1
-        
+
         padded_base = assembly_sequence.get(variant['chromosome'], variant['POS'], variant['POS'])
-        variant['genomicReferenceSequence'] = padded_base + variant['genomicReferenceSequence'] 
+        variant['genomicReferenceSequence'] = padded_base + variant['genomicReferenceSequence']
         variant['genomicVariantSequence'] = padded_base + variant['genomicVariantSequence']
 
     def __write_vcf_header(vcf_file, assembly, species, database_version):
