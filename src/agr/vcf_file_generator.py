@@ -50,14 +50,14 @@ RETURN c.primaryKey AS chromosome,
                     filepath = self.generated_files_folder + '/' + filename
                     assembly_sequence = AssemblySequence(assembly)
                     vcf_file = open(filepath, 'w')
-                    VcfFileGenerator.__write_vcf_header(vcf_file, assembly, assembly_species_dict[assembly], self.database_version)
+                    self._write_vcf_header(vcf_file, assembly, assembly_species_dict[assembly], self.database_version)
                     for chromosome in assembly_chr_variant_dict[assembly]:
                          if chromosome == 'Unmapped_Scaffold_8_D1580_D1567':
                              continue
                          for variant in assembly_chr_variant_dict[assembly][chromosome]:
                              if variant['soTerm'] == 'deletion':
                                  if variant['genomicReferenceSequence'] == '':
-                                      VcfFileGenerator.__add_genomic_reference_sequence(assembly_sequence, variant)
+                                      self._add_genomic_reference_sequence(assembly_sequence, variant)
                                  if variant['genomicVariantSequence'] == '':
                                       self._add_padded_base_to_variant(assembly_sequence, variant, 'deletion')
                                  self._add_variant_to_vcf_file(vcf_file, variant)
@@ -85,10 +85,12 @@ RETURN c.primaryKey AS chromosome,
                                  self._add_variant_to_vcf_file(vcf_file, variant)
                     vcf_file.close()
 
-    def __add_genomic_reference_sequence(assembly_sequence, variant):
+    @classmethod
+    def _add_genomic_reference_sequence(cls, assembly_sequence, variant):
         variant['genomicReferenceSequence'] = assembly_sequence.get(variant['chromosome'], variant['start'], variant['end'])
 
-    def __add_padded_base_to_variant(assembly_sequence, variant, soTerm):
+    @classmethod
+    def _add_padded_base_to_variant(cls, assembly_sequence, variant, soTerm):
         if soTerm == 'insertion':
             variant['POS'] = variant['start']
         else:
@@ -98,7 +100,8 @@ RETURN c.primaryKey AS chromosome,
         variant['genomicReferenceSequence'] = padded_base + variant['genomicReferenceSequence']
         variant['genomicVariantSequence'] = padded_base + variant['genomicVariantSequence']
 
-    def __write_vcf_header(vcf_file, assembly, species, database_version):
+    @classmethod
+    def _write_vcf_header(cls, vcf_file, assembly, species, database_version):
         dt = time.strftime("%Y%m%d", time.gmtime())
         header = """##fileformat=VCFv4.2
 ##fileDate={datetime}
