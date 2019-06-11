@@ -22,13 +22,14 @@ class VcfFileGenerator:
         return (assembly_chr_variants, assembly_species)
 
     def _handle_write_variant(self, assembly_sequence, variant, vcf_file):
-        if variant['soTerm'] == 'deletion':
+        so_term = variant['soTerm']
+        if so_term == 'deletion':
             if variant['genomicReferenceSequence'] == '':
                 self._add_genomic_reference_sequence(assembly_sequence, variant)
             if variant['genomicVariantSequence'] == '':
                 self._add_padded_base_to_variant(assembly_sequence, variant, 'deletion')
                 self._add_variant_to_vcf_file(vcf_file, variant)
-        elif variant['soTerm'] == 'insertion':
+        elif so_term == 'insertion':
             if variant['genomicReferenceSequence'] != '':
                 print('ERROR: Insertion Variant reference sequence is populated when it should not be')
                 exit()
@@ -37,18 +38,17 @@ class VcfFileGenerator:
             variant['POS'] = variant['start']
             self._add_padded_base_to_variant(assembly_sequence, variant, 'insertion')
             self._add_variant_to_vcf_file(vcf_file, variant)
-        elif variant['soTerm'] == 'point_mutation':
+        elif so_term == 'point_mutation':
             variant['POS'] = variant['start']
             self._add_variant_to_vcf_file(vcf_file, variant)
-        elif variant['soTerm'] == 'MNV':
+        elif so_term == 'MNV':
             variant['POS'] = variant['end']
             self._add_variant_to_vcf_file(vcf_file, variant)
         else:
-            print('New SoTerm that We need to add logic for')
-            print(variant['soTerm'])
+            print('New SoTerm that We need to add logic for', so_term)
             exit(1)
-        variant['POS'] = variant['start']
-        self._add_variant_to_vcf_file(vcf_file, variant)
+            variant['POS'] = variant['start']
+            self._add_variant_to_vcf_file(vcf_file, variant)
 
     def generate_files(self):
         (assembly_chr_variants, assembly_species) = self._consume_data_source()
@@ -70,12 +70,11 @@ class VcfFileGenerator:
         variant['genomicReferenceSequence'] = assembly_sequence.get(variant['chromosome'], variant['start'], variant['end'])
 
     @classmethod
-    def _add_padded_base_to_variant(cls, assembly_sequence, variant, soTerm):
-        if soTerm == 'insertion':
-            variant['POS'] = variant['start']
-        else:
-            variant['POS'] = variant['start'] - 1
-
+    def _add_padded_base_to_variant(cls, assembly_sequence, variant, so_term):
+        pos = variant['start']
+        if so_term != 'insertion':
+            pos -= 1
+        variant['POS'] = pos
         padded_base = assembly_sequence.get(variant['chromosome'], variant['POS'], variant['POS'])
         variant['genomicReferenceSequence'] = padded_base + variant['genomicReferenceSequence']
         variant['genomicVariantSequence'] = padded_base + variant['genomicVariantSequence']
