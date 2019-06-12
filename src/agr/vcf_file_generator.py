@@ -89,7 +89,8 @@ class VcfFileGenerator:
 ##contig=<ID=,length=,assembly={assembly},md5=,species="{species}",taxonomy=x>
 ##phasing=partial
 ##INFO=<ID=hgvs_nomenclature,Type=String,Number=0,,Description="the HGVS name of the allele">
-##INFO=<ID=Symbol,Type=String,Number=0,Description="The human readable name of the allele">
+##INFO=<ID=symbol,Type=String,Number=0,Description="The human readable name of the allele">
+##INFO=<ID=allele_of_genes,Type=String,Number=0,Description="The genes that the Allele is located on">
 ##INFO=<ID=DP,Number=0,Type=Integer,Description="The label to be used for visual purposes">
 ##FILTER=<ID=q10,Description="Quality below 10">
 ##FILTER=<ID=s50,Description="Less than 50% of samples have data">
@@ -124,5 +125,5 @@ class VcfFileGenerator:
                                          variant['genomicReferenceSequence'],
                                          variant['genomicVariantSequence'],
                                          '.',
-                                         info,
-                                         '.']))
+                                         '.',
+                                         info]))
