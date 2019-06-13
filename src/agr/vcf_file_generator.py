@@ -1,10 +1,31 @@
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import time
 
 from agr.assembly_sequence import AssemblySequence
 
 
 class VcfFileGenerator:
+
+    empty_value_marker = '.'
+
+    file_header = """##fileformat=VCFv4.2
+##fileDate={datetime}
+##source=agr_file_genrator
+##reference=
+##contig=<ID=,length=,assembly={assembly},md5=,species="{species}",taxonomy=x>
+##phasing=partial
+##INFO=<ID=hgvs_nomenclature,Type=String,Number=0,,Description="the HGVS name of the allele">
+##INFO=<ID=symbol,Type=String,Number=0,Description="The human readable name of the allele">
+##INFO=<ID=allele_of_genes,Type=String,Number=0,Description="The genes that the Allele is located on">
+##INFO=<ID=DP,Number=0,Type=Integer,Description="The label to be used for visual purposes">
+##FILTER=<ID=q10,Description="Quality below 10">
+##FILTER=<ID=s50,Description="Less than 50% of samples have data">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">
+##FORMAT=<ID=HQ,Number=2,Type=Integer,Description="Haplotype Quality">"""
+
+    col_headers = ('#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO')
 
     def __init__(self, variants, generated_files_folder, database_version):
         self.variants = variants
@@ -82,56 +103,44 @@ class VcfFileGenerator:
     @classmethod
     def _write_vcf_header(cls, vcf_file, assembly, species, database_version):
         dt = time.strftime("%Y%m%d", time.gmtime())
-        header = """##fileformat=VCFv4.2
-##fileDate={datetime}
-##source=agr_file_generator/src/app.py
-##reference=
-##contig=<ID=,length=,assembly={assembly},md5=,species="{species}",taxonomy=x>
-##phasing=partial
-##INFO=<ID=hgvs_nomenclature,Type=String,Number=0,,Description="the HGVS name of the allele">
-##INFO=<ID=symbol,Type=String,Number=0,Description="The human readable name of the allele">
-##INFO=<ID=allele_of_genes,Type=String,Number=0,Description="The genes that the Allele is located on">
-##INFO=<ID=DP,Number=0,Type=Integer,Description="The label to be used for visual purposes">
-##FILTER=<ID=q10,Description="Quality below 10">
-##FILTER=<ID=s50,Description="Less than 50% of samples have data">
-##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
-##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">
-##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">
-##FORMAT=<ID=HQ,Number=2,Type=Integer,Description="Haplotype Quality">
-""".format(datetime=dt,
-           database_version=database_version,
-           species=species,
-           assembly=assembly)
+        header = cls.file_header.format(datetime=dt,
+                                        database_version=database_version,
+                                        species=species,
+                                        assembly=assembly)
         vcf_file.write(header)
-        vcf_file.write('\t'.join(['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO']))
+        vcf_file.write('\n')
+        vcf_file.write('\t'.join(cls.col_headers))
+        vcf_file.write('\n')
 
     @classmethod
-    def _variant_value_for_file(cls, variant, data_key, default=None, transform=None):
-        if variant[data_key]:
-            value = variant[data_key]
-            return transform(value)
-            if transform:
-                value = transform(value)
+    def _variant_value_for_file(cls, variant, data_key, transform=None):
+        value = variant.get(data_key)
+        if value is None:
+            return None
+        if transform is None:
             return value
-        return cls.empty_value_marker if default is None else default
+        return transform(value)
 
     @classmethod
     def _add_variant_to_vcf_file(cls, vcf_file, variant):
-        hgvs = cls._variant_value_for_file(variant, 'hgvsNomenclature')
-        if hgvs == '.':
-            info = '.'
+        info_map = OrderedDict()
+        info_map['hgvs_nomenclature'] = cls._variant_value_for_file(variant, 'hgvsNomenclature')
+        info_map['symbol'] = cls._variant_value_for_file(variant, 'symbol')
+        info_map['allele_of_genes'] = cls._variant_value_for_file(variant,
+                                                                  'alleleOfGenes',
+                                                                  transform=', '.join)
+        if any(info_map.values()):
+            info = ';'.join('{}="{}"'.format(k, v)
+                            for (k, v) in info_map.items()
+                            if v)
         else:
-            symbol = cls._variant_value_for_file(variant, 'symbol')
-            allele_of_genes = cls._variant_value_for_file(variant, 'alleleOfGenes',
-                                                          transform=', '.join)
-            info = ';'.join(['hgvs_nomenclature="' + hgvs + '"',
-                             'symbol="' + symbol + '"',
-                             'allele_of_genes="' + allele_of_genes + '"'])
-        vcf_file.write('\n' + '\t'.join([variant['chromosome'],
-                                         str(variant['POS']),
-                                         variant['globalId'],
-                                         variant['genomicReferenceSequence'],
-                                         variant['genomicVariantSequence'],
-                                         '.',
-                                         '.',
-                                         info]))
+            info = cls.empty_value_marker
+        vcf_file.write('\t'.join([variant['chromosome'],
+                                  str(variant['POS']),
+                                  variant['globalId'],
+                                  variant['genomicReferenceSequence'],
+                                  variant['genomicVariantSequence'],
+                                  '.',
+                                  '.',
+                                  info]))
+        vcf_file.write('\n')
