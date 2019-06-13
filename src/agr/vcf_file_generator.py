@@ -106,10 +106,14 @@ class VcfFileGenerator:
         vcf_file.write('\t'.join(['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO']))
 
     @classmethod
-    def _variant_value_for_file(cls, variant, data_key, default='.'):
+    def _variant_value_for_file(cls, variant, data_key, default=None, transform=None):
         if variant[data_key]:
-            return variant[data_key]
-        return default
+            value = variant[data_key]
+            return transform(value)
+            if transform:
+                value = transform(value)
+            return value
+        return cls.empty_value_marker if default is None else default
 
     @classmethod
     def _add_variant_to_vcf_file(cls, vcf_file, variant):
@@ -118,7 +122,11 @@ class VcfFileGenerator:
             info = '.'
         else:
             symbol = cls._variant_value_for_file(variant, 'symbol')
-            info = 'hgvs_nomenclature=\'' + hgvs + '\';' + 'Symbol=\'' + symbol + '\''
+            allele_of_genes = cls._variant_value_for_file(variant, 'alleleOfGenes',
+                                                          transform=', '.join)
+            info = ';'.join(['hgvs_nomenclature="' + hgvs + '"',
+                             'symbol="' + symbol + '"',
+                             'allele_of_genes="' + allele_of_genes + '"'])
         vcf_file.write('\n' + '\t'.join([variant['chromosome'],
                                          str(variant['POS']),
                                          variant['globalId'],
