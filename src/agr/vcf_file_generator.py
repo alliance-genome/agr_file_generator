@@ -1,7 +1,14 @@
 from collections import defaultdict, OrderedDict
+import logging
+import os
 import time
 
-from agr.assembly_sequence import AssemblySequence
+import pyfaidx
+
+import agr.assembly_sequence as agr_asm_seq
+
+
+logger = logging.getLogger(name=__name__)
 
 
 class VcfFileGenerator:
@@ -27,76 +34,24 @@ class VcfFileGenerator:
 
     col_headers = ('#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO')
 
-    def __init__(self, variants, generated_files_folder, database_version):
+    def __init__(self, variants, generated_files_folder, fasta_sequences_folder, database_version):
         self.variants = variants
         self.database_version = database_version
+        self.fasta_sequences_folder = fasta_sequences_folder
         self.generated_files_folder = generated_files_folder
 
-    def _consume_data_source(self):
-        assembly_chr_variants = defaultdict(lambda : defaultdict(list))
-        assembly_species = {}
-        for variant in self.variants:
-            assembly = variant['assembly']
-            chromosome = variant['chromosome']
-            assembly_chr_variants[assembly][chromosome].append(variant)
-            assembly_species[assembly] = variant['species']
-        return (assembly_chr_variants, assembly_species)
-
-    def _handle_write_variant(self, assembly_sequence, variant, vcf_file):
-        so_term = variant['soTerm']
-        if so_term == 'deletion':
-            if variant['genomicReferenceSequence'] == '':
-                self._add_genomic_reference_sequence(assembly_sequence, variant)
-            if variant['genomicVariantSequence'] == '':
-                self._add_padded_base_to_variant(assembly_sequence, variant, 'deletion')
-                self._add_variant_to_vcf_file(vcf_file, variant)
-        elif so_term == 'insertion':
-            if variant['genomicReferenceSequence'] != '':
-                print('ERROR: Insertion Variant reference sequence is populated when it should not be')
-                exit()
-            if variant['genomicVariantSequence'] == '':
-                return
-            variant['POS'] = variant['start']
-            self._add_padded_base_to_variant(assembly_sequence, variant, 'insertion')
-            self._add_variant_to_vcf_file(vcf_file, variant)
-        elif so_term == 'point_mutation':
-            variant['POS'] = variant['start']
-            self._add_variant_to_vcf_file(vcf_file, variant)
-        elif so_term == 'MNV':
-            variant['POS'] = variant['end']
-            self._add_variant_to_vcf_file(vcf_file, variant)
-        else:
-            print('New SoTerm that We need to add logic for', so_term)
-            exit(1)
-            variant['POS'] = variant['start']
-            self._add_variant_to_vcf_file(vcf_file, variant)
-
-    def generate_files(self):
-        (assembly_chr_variants, assembly_species) = self._consume_data_source()
-        for (assembly, chromo_variants) in assembly_chr_variants.items():
-            print(assembly)
-            filename = assembly + '-' + self.database_version  + '.vcf'
-            filepath = self.generated_files_folder + '/' + filename
-            assembly_sequence = AssemblySequence(assembly)
-            with open(filepath, 'w') as vcf_file:
-                self._write_vcf_header(vcf_file, assembly, assembly_species[assembly], self.database_version)
-                for (chromosome, variants) in chromo_variants.items():
-                    if chromosome == 'Unmapped_Scaffold_8_D1580_D1567':
-                        continue
-                    for variant in variants:
-                        self._handle_write_variant(assembly_sequence, variant, vcf_file)
+    @classmethod
+    def _add_genomic_reference_sequence(cls, fasta, variant):
+        g_ref_seq = agr_asm_seq.get_seq(fasta, variant['chromosome'], variant['start'], variant['end'])
+        variant['genomicReferenceSequence'] = g_ref_seq
 
     @classmethod
-    def _add_genomic_reference_sequence(cls, assembly_sequence, variant):
-        variant['genomicReferenceSequence'] = assembly_sequence.get(variant['chromosome'], variant['start'], variant['end'])
-
-    @classmethod
-    def _add_padded_base_to_variant(cls, assembly_sequence, variant, so_term):
+    def _add_padded_base_to_variant(cls, fasta, variant, so_term):
         pos = variant['start']
         if so_term != 'insertion':
             pos -= 1
         variant['POS'] = pos
-        padded_base = assembly_sequence.get(variant['chromosome'], variant['POS'], variant['POS'])
+        padded_base = agr_asm_seq.get_seq(fasta, variant['chromosome'], variant['POS'], variant['POS'])
         variant['genomicReferenceSequence'] = padded_base + variant['genomicReferenceSequence']
         variant['genomicVariantSequence'] = padded_base + variant['genomicVariantSequence']
 
@@ -144,3 +99,64 @@ class VcfFileGenerator:
                                   '.',
                                   info]))
         vcf_file.write('\n')
+
+    def _consume_data_source(self):
+        assembly_chr_variants = defaultdict(lambda : defaultdict(list))
+        assembly_species = {}
+        for variant in self.variants:
+            assembly = variant['assembly']
+            chromosome = variant['chromosome']
+            assembly_chr_variants[assembly][chromosome].append(variant)
+            assembly_species[assembly] = variant['species']
+        return (assembly_chr_variants, assembly_species)
+
+    def _handle_write_variant(self, fasta, variant, vcf_file):
+        so_term = variant['soTerm']
+        if so_term == 'deletion':
+            if variant['genomicReferenceSequence'] == '':
+                self._add_genomic_reference_sequence(fasta, variant)
+            if variant['genomicVariantSequence'] == '':
+                self._add_padded_base_to_variant(fasta, variant, 'deletion')
+                self._add_variant_to_vcf_file(vcf_file, variant)
+        elif so_term == 'insertion':
+            if variant['genomicReferenceSequence'] != '':
+                logger.error('Insertion Variant reference sequence is populated '
+                             'when it should not be in '
+                             'variant ID: %r',
+                             variant['ID'])
+                return
+            if variant['genomicVariantSequence'] == '':
+                return
+            variant['POS'] = variant['start']
+            self._add_padded_base_to_variant(fasta, variant, 'insertion')
+            self._add_variant_to_vcf_file(vcf_file, variant)
+        elif so_term == 'point_mutation':
+            variant['POS'] = variant['start']
+            self._add_variant_to_vcf_file(vcf_file, variant)
+        elif so_term == 'MNV':
+            variant['POS'] = variant['end']
+            self._add_variant_to_vcf_file(vcf_file, variant)
+        else:
+            logger.fatal('New SoTerm that We need to add logic for: %r', so_term)
+
+    def generate_files(self, skip_chromosomes=()):
+        (assembly_chr_variants, assembly_species) = self._consume_data_source()
+        for (assembly, chromo_variants) in assembly_chr_variants.items():
+            logger.info('Generating VCF File for assembly %r', assembly)
+            filename = assembly + '-' + self.database_version  + '.vcf'
+            filepath = os.path.join(self.generated_files_folder, filename)
+            fasta = pyfaidx.Fasta(agr_asm_seq.get_local_path(self.fasta_sequences_folder,
+                                                             assembly))
+            with open(filepath, 'w') as vcf_file:
+                self._write_vcf_header(vcf_file,
+                                       assembly,
+                                       assembly_species[assembly],
+                                       self.database_version)
+                for (chromosome, variants) in chromo_variants.items():
+                    if chromosome in skip_chromosomes:
+                        logger.info('Skipping VCF file generation for chromosome %r',
+                                    chromosome)
+                        continue
+                    for variant in variants:
+                        self._handle_write_variant(fasta, variant, vcf_file)
+
