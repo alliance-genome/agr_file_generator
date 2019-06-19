@@ -34,6 +34,7 @@ def main(generated_files_folder='generated_files',
     os.makedirs(fasta_sequences_folder, exist_ok=True)
     variants_query = """MATCH (s:Species)-[:FROM_SPECIES]-(a:Allele)-[:VARIATION]-(v:Variant)-[l:LOCATED_ON]-(c:Chromosome)
 MATCH (v:Variant)-[:VARIATION_TYPE]-(st:SOTerm)
+OPTIONAL MATCH (a:Allele)-[:IS_ALLELE_OF]-(g:Gene)
 RETURN c.primaryKey AS chromosome,
        v.globalId AS globalId,
        v.genomicReferenceSequence AS genomicReferenceSequence,
@@ -41,6 +42,7 @@ RETURN c.primaryKey AS chromosome,
        v.hgvs_nomenclature AS hgvsNomenclature,
        v.dataProvider AS dataProvider,
        a.symbol AS symbol,
+       collect(g.primaryKey) as alleleOfGenes,
        l.start AS start,
        l.end AS end,
        l.assembly AS assembly,
