@@ -68,23 +68,31 @@ def parse_generated_file(path, assembly):
     return parse_vcf_file(path)
 
 
+def make_gen_files_fixture(asm_cached=False):
+    global VCF_DATA
+    tempdir = tempfile.mkdtemp()
+    gf_folder_path = os.path.join(tempdir, 'generated_files')
+    if asm_cached:
+        fasta_sequences_folder = 'sequences'
+    else:
+        fasta_sequences_folder = os.path.join(tempdir, 'sequences')
+    logger.debug('FOLDER PATH:', gf_folder_path)
+    os.makedirs(gf_folder_path)
+    agr_app.main(generated_files_folder=gf_folder_path,
+                 fasta_sequences_folder=fasta_sequences_folder)
+    for gf in os.listdir(gf_folder_path):
+        logger.debug(gf)
+        path = os.path.join(gf_folder_path, gf)
+        VCF_DATA[path] = parse_vcf_file(path)
+    return gf_folder_path
+
+
 @pytest.fixture(scope='module')
 def run_generate_files():
-    global VCF_DATA
-    logger.debug('RUN GEN FILES')
-    tempdir = tempfile.mkdtemp()
-    folder_path = os.path.join(tempdir, 'generated_files')
-    logger.debug('FOLDER PATH:', folder_path)
-    os.makedirs(folder_path)
-    agr_app.main(generated_files_folder=folder_path)
-    for gf in os.listdir(folder_path):
-        logger.debug(gf)
-        path = os.path.join(folder_path, gf)
-        VCF_DATA[path] = parse_vcf_file(path)
-    return folder_path
+    return make_gen_files_fixture(asm_cached=True)
 
 
-def test_files_generated(run_generate_files):
+def check_files_generated(fixture):
     assert VCF_DATA, 'VCF files not generated'
     paths = list(VCF_DATA.keys())
     for path in paths:
@@ -94,15 +102,25 @@ def test_files_generated(run_generate_files):
         assert path.endswith('.vcf')
 
 
+def test_files_generated_asm_cached(run_generate_files):
+    """Run the code to genreate files, assumes the assembly sequence FASTA files
+    have been pre-downloaded.
+
+    If they have not, this test should still pass but the test will take a lot longer
+    to run.
+    """
+    check_files_generated(run_generate_files)
+
+
 def test_ids_unique_in_files(run_generate_files):
-    for path, records in VCF_DATA.items():
+    for (path, records) in VCF_DATA.items():
         ids = list(rec['ID'] for rec in records)
         assert ids == list(ids), 'Duplicate id in file:' + path
 
 
 def vcf_data_by_filename_and_id():
     org_data = {}
-    for path, record in VCF_DATA.items():
+    for (path, record) in VCF_DATA.items():
         data = org_data[path] = defaultdict(list)
         for record in record:
             data[record['ID']].append(record)
