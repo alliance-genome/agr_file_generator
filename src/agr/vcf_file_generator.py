@@ -1,4 +1,6 @@
 from collections import defaultdict, OrderedDict
+from functools import partial
+from operator import itemgetter
 import logging
 import os
 import time
@@ -47,10 +49,6 @@ class VcfFileGenerator:
 
     @classmethod
     def _add_padded_base_to_variant(cls, fasta, variant, so_term):
-        pos = variant['start']
-        if so_term != 'insertion':
-            pos -= 1
-        variant['POS'] = pos
         padded_base = agr_asm_seq.get_seq(fasta, variant['chromosome'], variant['POS'], variant['POS'])
         variant['genomicReferenceSequence'] = padded_base + variant['genomicReferenceSequence']
         variant['genomicVariantSequence'] = padded_base + variant['genomicVariantSequence']
@@ -110,37 +108,37 @@ class VcfFileGenerator:
             assembly_species[assembly] = variant['species']
         return (assembly_chr_variants, assembly_species)
 
-    def _handle_write_variant(self, fasta, variant, vcf_file):
+    def _adjust_variant(self, fasta, variant):
         so_term = variant['soTerm']
+        start_pos = variant['start']
+        variant['POS'] = start_pos - 1 if so_term == 'insertion' else start_pos
         if so_term == 'deletion':
             if variant['genomicReferenceSequence'] == '':
                 self._add_genomic_reference_sequence(fasta, variant)
             if variant['genomicVariantSequence'] == '':
                 self._add_padded_base_to_variant(fasta, variant, 'deletion')
-                self._add_variant_to_vcf_file(vcf_file, variant)
         elif so_term == 'insertion':
             if variant['genomicReferenceSequence'] != '':
                 logger.error('Insertion Variant reference sequence is populated '
                              'when it should not be in '
                              'variant ID: %r',
                              variant['ID'])
-                return
+                return None
             if variant['genomicVariantSequence'] == '':
-                return
-            variant['POS'] = variant['start']
+                return None
             self._add_padded_base_to_variant(fasta, variant, 'insertion')
-            self._add_variant_to_vcf_file(vcf_file, variant)
         elif so_term == 'point_mutation':
             variant['POS'] = variant['start']
-            self._add_variant_to_vcf_file(vcf_file, variant)
         elif so_term == 'MNV':
             variant['POS'] = variant['end']
-            self._add_variant_to_vcf_file(vcf_file, variant)
         else:
             logger.fatal('New SoTerm that We need to add logic for: %r', so_term)
+            return None
+        return variant
 
     def generate_files(self, skip_chromosomes=()):
         (assembly_chr_variants, assembly_species) = self._consume_data_source()
+
         for (assembly, chromo_variants) in assembly_chr_variants.items():
             logger.info('Generating VCF File for assembly %r', assembly)
             filename = assembly + '-' + self.database_version  + '.vcf'
@@ -152,11 +150,13 @@ class VcfFileGenerator:
                                        assembly,
                                        assembly_species[assembly],
                                        self.database_version)
-                for (chromosome, variants) in chromo_variants.items():
+                for (chromosome, variants) in sorted(chromo_variants.items(),
+                                                     key=itemgetter(0)):
                     if chromosome in skip_chromosomes:
                         logger.info('Skipping VCF file generation for chromosome %r',
                                     chromosome)
                         continue
-                    for variant in variants:
-                        self._handle_write_variant(fasta, variant, vcf_file)
-
+                    adjust_varient = partial(self._adjust_variant, fasta)
+                    adjusted_variants = filter(None, map(adjust_varient, variants))
+                    for variant in sorted(adjusted_variants, key=itemgetter('POS')):
+                        self._add_variant_to_vcf_file(vcf_file, variant)
