@@ -47,7 +47,6 @@ RETURN c.primaryKey AS chromosome,
                     assembly_species_dict[assembly] = variant['species']
 
                 for assembly in assembly_chr_variant_dict:
-                    print(assembly)
                     filename = assembly + '-' + self.database_version  + '.vcf'
                     filepath = self.generated_files_folder + '/' + filename
                     assembly_sequence = AssemblySequence(assembly)
