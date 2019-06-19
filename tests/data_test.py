@@ -1,9 +1,11 @@
-from collections import defaultdict
+from collections import OrderedDict
 from itertools import groupby
 from operator import itemgetter
+import atexit
 import logging
 import os
 import re
+import shutil
 import tempfile
 
 import pytest
@@ -13,14 +15,22 @@ import agr.app as agr_app
 
 logger = logging.getLogger(name=__package__)
 
-VCF_DATA = {}
+VCF_DATA = OrderedDict()
+
+_temp_folders = set()
 
 _line_split_regex = re.compile(r'\W+')
+
+
+@atexit.register
+def cleanup_temp_folders():
+    for fldr in  _temp_folders:
+        shutil.rmtree(fldr)
 
 # Mapping from generated file name to a set of example data that should
 # appear in the generated file for each mod.
 EXAMPLE_CASES = {
-    'GRCm38-2.0.0.vcf': [{'CHROMO': 13,
+    'GRCm38-2.0.0.vcf': [{'CHROMO': '13',
                          'POS': '50540171',
                          'ID': 'ZFIN:ZDB-ALT-160601-8105',
                          'REF': 'C',
@@ -54,13 +64,12 @@ def parse_vcf_file(path):
            if line.startswith('##'):
                continue
            if line.startswith('#'):
-               cols = line[1:]
-               headers.extend(_line_split_regex.split(line[1:]))
+               cols = line[1:].split('\t')
+               headers.extend(cols)
                continue
            else:
-               cols = _line_split_regex.split(line)
-           data.append(dict(zip(headers, cols)))
-        # TODO: actually parse the file.
+               cols = line.split('\t')
+           data.append(OrderedDict(zip(headers, cols)))
     return data
 
 
@@ -71,6 +80,7 @@ def parse_generated_file(path, assembly):
 def make_gen_files_fixture(asm_cached=False):
     global VCF_DATA
     tempdir = tempfile.mkdtemp()
+    _temp_folders.add(tempdir)
     gf_folder_path = os.path.join(tempdir, 'generated_files')
     if asm_cached:
         fasta_sequences_folder = 'sequences'
@@ -94,10 +104,7 @@ def run_generate_files():
 
 def check_files_generated(fixture):
     assert VCF_DATA, 'VCF files not generated'
-    paths = list(VCF_DATA.keys())
-    for path in paths:
-        assert os.path.isfile(path)
-    for path, records in VCF_DATA.items():
+    for (path, records) in VCF_DATA.items():
         assert os.path.isfile(path)
         assert path.endswith('.vcf')
 
@@ -119,11 +126,11 @@ def test_ids_unique_in_files(run_generate_files):
 
 
 def vcf_data_by_filename_and_id():
-    org_data = {}
-    for (path, record) in VCF_DATA.items():
-        data = org_data[path] = defaultdict(list)
-        for record in record:
-            data[record['ID']].append(record)
+    org_data = OrderedDict()
+    for (path, records) in VCF_DATA.items():
+        data = org_data[path] = OrderedDict()
+        for record in records:
+            data.setdefault(record['ID'], []).append(record)
     return org_data
 
 
@@ -145,7 +152,11 @@ def test_example_expectations(run_generate_files):
 
 
 def test_generated_files_sorted_by_chr_and_pos(run_generate_files):
-    for path, records in VCF_DATA.items():
-        for chromo, recs in groupby(records, itemgetter("CHROM")):
-            positions = list(rec['POS'] for rec in recs)
-            assert positions == sorted(positions)
+    for (path, records) in VCF_DATA.items():
+        select_chromosome = itemgetter('CHROM')
+        chromosomes = list(map(select_chromosome, records))
+        assert chromosomes == sorted(chromosomes), 'Chromosomes not alphabetically sorted'
+        for (chromo, recs) in groupby(records, select_chromosome):
+            row = list(recs)
+            positions = list(int(col['POS']) for col in row)
+            assert positions == sorted(positions), 'Positions are not sorted in correct order'
