@@ -153,7 +153,10 @@ def test_example_expectations(run_generate_files):
 
 def test_generated_files_sorted_by_chr_and_pos(run_generate_files):
     for (path, records) in VCF_DATA.items():
-        for (chromo, recs) in groupby(records, itemgetter("CHROM")):
+        select_chromosome = itemgetter('CHROM')
+        chromosomes = list(map(select_chromosome, records))
+        assert chromosomes == sorted(chromosomes), 'Chromosomes not alphabetically sorted'
+        for (chromo, recs) in groupby(records, select_chromosome):
             row = list(recs)
             positions = list(int(col['POS']) for col in row)
-            assert positions == sorted(positions)
+            assert positions == sorted(positions), 'Positions are not sorted in correct order'
