@@ -34,7 +34,7 @@ class VcfFileGenerator:
 ##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">
 ##FORMAT=<ID=HQ,Number=2,Type=Integer,Description="Haplotype Quality">"""
 
-    col_headers = ('#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO')
+    col_headers = ('CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO')
 
     def __init__(self, variants, generated_files_folder, fasta_sequences_folder, database_version):
         self.variants = variants
@@ -62,7 +62,7 @@ class VcfFileGenerator:
                                         assembly=assembly)
         vcf_file.write(header)
         vcf_file.write('\n')
-        vcf_file.write('\t'.join(cls.col_headers))
+        vcf_file.write('#' + '\t'.join(cls.col_headers))
         vcf_file.write('\n')
 
     @classmethod
