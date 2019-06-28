@@ -39,7 +39,7 @@ class OrthologyFileGenerator:
                                                databaseVersion=database_version)
 
     def generate_file(self):
-        outputFilepath = self.generated_files_folder + "/orthology-report-" + self.database_version + ".tsv"
+        outputFilepath = self.generated_files_folder + "/agr_orthologs-" + self.database_version + ".tsv"
         orthology_file = open(outputFilepath,'w')
         orthology_file.write(self._generate_header(self.database_version))
         columns = ["Gene1ID",
