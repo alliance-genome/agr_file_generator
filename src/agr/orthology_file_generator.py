@@ -1,27 +1,18 @@
 import sys
 
+import logging
+
 from dateutil.parser import parse
 from datetime import datetime
 from time import gmtime, strftime
 
 from neo4j.v1 import GraphDatabase
 
-# USAGE python bin/generateorthology-report.py <output-file>
+logger = logging.getLogger(name=__name__)
 
-uri = "bolt://localhost:7687"
-uri = "bolt://stage.alliancegenome.org:7687"
-driver = GraphDatabase.driver(uri)
+class OrthologyFileGenerator:
 
-outputFile = sys.argv[1]
-databaseVersion = sys.argv[2]
-
-with driver.session() as session:
-
-    orthology_file = open(outputFile,'w')
-
-    datetimeNow = strftime("%Y-%m-%d %H:%M:%S", gmtime())
-    
-    header = """#########################################################################
+    file_header_template = """#########################################################################
 #
 # Ortholog File
 # Source: Alliance of Genome Resources (Alliance)
@@ -35,51 +26,54 @@ with driver.session() as session:
 # Date: {datetimeNow}
 #
 #########################################################################
-""".format(datetimeNow = datetimeNow, databaseVersion=databaseVersion)
+"""
 
-    orthology_file.write(header)
-   
-#                                     AND gene2.modGlobalId = "FB:FBgn0036980"
-#                                      gene1.taxonId = "NCBITaxon:9606"
+    def __init__(self, orthologs, generated_files_folder, database_version):
+        self.orthologs = orthologs
+        self.database_version = database_version
+        self.generated_files_folder = generated_files_folder
 
-    orthology_file.write( "Gene1ID\tGene1Symbol\tGene1SpeciesTaxonID\tGene1SpeciesName\tGene2ID\tGene2Symbol\tGene1SpeciesTaxonID\tGene1SpeciesName\tAlgorithms\tAlgorithmsMatch\tOutOfAlgorithms\tIsBestScore\tIsBestRevScore\n")
- 
-    orthologList = set()
+    @classmethod
+    def _generate_header(cls, database_version):
+        return cls.file_header_template.format(datetimeNow = strftime("%Y-%m-%d %H:%M:%S", gmtime()),
+                                                             databaseVersion = database_version)
 
-    with session.begin_transaction() as tx:
-        for record in tx.run("""MATCH (species1)<-[sa:FROM_SPECIES]-(gene1:Gene)-[o:ORTHOLOGOUS]->(gene2:Gene)-[sa2:FROM_SPECIES]->(species2:Species)
-WHERE o.strictFilter
-OPTIONAL MATCH (algorithm:OrthoAlgorithm)-[m:MATCHED]-(ogj:OrthologyGeneJoin)-[association:ASSOCIATION]-(gene1)
-WHERE ogj.primaryKey = o.primaryKey
-OPTIONAL MATCH (algorithm2:OrthoAlgorithm)-[m2:NOT_MATCHED]-(ogj2:OrthologyGeneJoin)-[ASSOCIATION]-(gene1)
-WHERE ogj2.primaryKey = o.primaryKey
-RETURN gene1.primaryKey AS gene1ID,
-       gene1.symbol AS gene1Symbol,
-       gene2.primaryKey AS gene2ID,
-       gene2.symbol AS gene2Symbol,
-       collect(DISTINCT algorithm.name) as Algorithms,
-       count(DISTINCT algorithm.name) AS numAlgorithmMatch,
-       count(DISTINCT algorithm2.name) AS numAlgorithmNotMatched,
-       toString(o.isBestScore) AS best,
-       toString(o.isBestRevScore) AS bestRev,
-       species1.primaryKey AS species1TaxonID,
-       species1.name AS species1Name,
-       species2.primaryKey AS species2TaxonID,
-       species2.name AS species2Name"""):
-            algorithms = "|".join(set(record["Algorithms"]))
-            numAlgorithm = record["numAlgorithmMatch"] + record["numAlgorithmNotMatched"]
-            orthology_file.write("\t".join([record["gene1ID"],
-                                            record["gene1Symbol"],
-                                            record["species1TaxonID"],
-                                            record["species1Name"],
-                                            record["gene2ID"],
-                                            record["gene2Symbol"],
-                                            record["species2TaxonID"],
-                                            record["species2Name"],
+    def generate_file(self):
+        outputFilepath = self.generated_files_folder + "/orthology-report-" + self.database_version + ".tsv"
+        orthology_file = open(outputFilepath,'w')
+        orthology_file.write(self._generate_header(self.database_version))
+        columns = ["Gene1ID",
+                   "Gene1Symbol",
+                   "Gene1SpeciesTaxonID",
+                   "Gene1SpeciesName",
+                   "Gene2ID",
+                   "Gene2Symbol",
+                   "Gene1SpeciesTaxonID",
+                   "Gene1SpeciesName",
+                   "Algorithms",
+                   "AlgorithmsMatch",
+                   "OutOfAlgorithms",
+                   "IsBestScore",
+                   "IsBestRevScore"]
+        orthology_file.write("\t".join(columns) + "\n")
+     
+        orthologList = set()
+    
+        for ortholog in self.orthologs:
+            algorithms = "|".join(set(ortholog["Algorithms"]))
+            numAlgorithm = ortholog["numAlgorithmMatch"] + ortholog["numAlgorithmNotMatched"]
+            orthology_file.write("\t".join([ortholog["gene1ID"],
+                                            ortholog["gene1Symbol"],
+                                            ortholog["species1TaxonID"],
+                                            ortholog["species1Name"],
+                                            ortholog["gene2ID"],
+                                            ortholog["gene2Symbol"],
+                                            ortholog["species2TaxonID"],
+                                            ortholog["species2Name"],
                                             algorithms,
-                                            str(record["numAlgorithmMatch"]),
+                                            str(ortholog["numAlgorithmMatch"]),
                                             str(numAlgorithm),
-                                            record["best"],
-                                            record["bestRev"]]) + "\n")
-
-orthology_file.close()
+                                            ortholog["best"],
+                                            ortholog["bestRev"]]) + "\n")
+    
+        orthology_file.close()
