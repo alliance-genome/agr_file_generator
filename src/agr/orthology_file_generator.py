@@ -35,8 +35,8 @@ class OrthologyFileGenerator:
 
     @classmethod
     def _generate_header(cls, database_version):
-        return cls.file_header_template.format(datetimeNow = strftime("%Y-%m-%d %H:%M:%S", gmtime()),
-                                                             databaseVersion = database_version)
+        return cls.file_header_template.format(datetimeNow=strftime("%Y-%m-%d %H:%M:%S", gmtime()),
+                                               databaseVersion=database_version)
 
     def generate_file(self):
         outputFilepath = self.generated_files_folder + "/orthology-report-" + self.database_version + ".tsv"
@@ -57,8 +57,6 @@ class OrthologyFileGenerator:
                    "IsBestRevScore"]
         orthology_file.write("\t".join(columns) + "\n")
      
-        orthologList = set()
-    
         for ortholog in self.orthologs:
             algorithms = "|".join(set(ortholog["Algorithms"]))
             numAlgorithm = ortholog["numAlgorithmMatch"] + ortholog["numAlgorithmNotMatched"]
