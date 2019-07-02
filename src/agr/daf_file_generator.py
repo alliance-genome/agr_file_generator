@@ -38,17 +38,26 @@ class DafFileGenerator:
         disease_file.write(self._generate_header(self.database_version))
     
         columns = ["Taxon",
-                   "TaxonName",
-                   "DBobjectType",
+                   "SpeciesName",
+                   "DBobjectType", #not in daf spec
                    "DBObjectID",
                    "DBObjectSymbol",
                    "InferredGeneAssociation",
+                   "GeneProductFormID", #data not available according to spreadsheet
+                   "AdditionalGeneticComponent", #data not available according to spec
+                   "ExperimentalConditions", #new
                    "AssociationType",
+                   "Qualifier", #new
                    "DOID",
-                   "DOname",
+                   "DOname", #not in spec
                    "withOrthologs",
+                   "Modifier-AssociationType", #new not yet implemented according to spec
+                   "Modifier-Qualifier", #new not yet implemented according to spec
+                   "Modifier-Genetic", #new not yet implemented according to spec
                    "EvidenceCode",
+                   "genetic-sex", #new
                    "Reference",
+                   "Date" #new
                    "AssignedBy"]
         disease_file.write("\t".join(columns) + "\n")
         for disease_association in self.disease_associations:
@@ -70,18 +79,37 @@ class DafFileGenerator:
             else:
                 evidenceCode = ""
 
+            geneProductFormId = ""
+            additionalGeneticComponent = ""
+            experimentalConeitions = ""
+            qualifier = ""
+            modifierAssociationType = ""
+            modifierQualifier = ""
+            modifierGenetic = ""
+            geneticSex = ""
+            date = ""
+
             disease_file.write("\t".join([disease_association["taxonId"],
                                           disease_association["speciesName"],
                                           dbObjectType,
                                           disease_association["dbObjectID"],
                                           disease_association["dbObjectSymbol"],
                                           inferredGeneAssociation,
+                                          geneProductFormId,
+                                          additionalGeneticComponent,
+                                          experimetalConditions,
                                           disease_association["associationType"].lower(),
+                                          qualifier,
                                           disease_association["DOID"],
                                           DOname,
                                           withOrthologs,
+                                          modifierAssociationType,
+                                          modifierQualifier,
+                                          modifierGenetic,
                                           evidenceCode,
+                                          geneticSex,
                                           pubID,
+                                          date,
                                           disease_association["dataProvider"]])
                              + "\n")
     
