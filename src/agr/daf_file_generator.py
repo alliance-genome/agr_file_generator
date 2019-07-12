@@ -5,7 +5,6 @@ from dateutil.parser import parse
 from datetime import datetime
 from time import gmtime, strftime
 
-
 logger = logging.getLogger(name=__name__)
 
 
@@ -54,10 +53,11 @@ class DafFileGenerator:
                    "Modifier-AssociationType", #new not yet implemented according to spec
                    "Modifier-Qualifier", #new not yet implemented according to spec
                    "Modifier-Genetic", #new not yet implemented according to spec
+                   "Modifier-ExperimentalConditions", #not yet implemented according to spec
                    "EvidenceCode",
                    "genetic-sex", #new
                    "Reference",
-                   "Date" #new
+                   "Date"
                    "AssignedBy"]
         disease_file.write("\t".join(columns) + "\n")
         for disease_association in self.disease_associations:
@@ -78,16 +78,22 @@ class DafFileGenerator:
                 evidenceCode = disease_association["evidenceCode"]
             else:
                 evidenceCode = ""
+            evidenceCode = ""
 
             geneProductFormId = ""
             additionalGeneticComponent = ""
-            experimentalConeitions = ""
+            experimentalConditions = ""
             qualifier = ""
             modifierAssociationType = ""
             modifierQualifier = ""
             modifierGenetic = ""
             geneticSex = ""
-            date = ""
+            if disease_association["dateAssigned"] is None and disease_association["associationType"] in ["IMPLICATED_VIA_ORTHOLOGY",
+                                                                                                          "BIOMARKER_VIA_ORTHOLOGY"]:
+                dateStr = strftime("%Y-%m-%d %H:%M:%S", gmtime())
+            else:
+                dateStr = disease_association["dateAssigned"]
+
 
             disease_file.write("\t".join([disease_association["taxonId"],
                                           disease_association["speciesName"],
@@ -97,7 +103,7 @@ class DafFileGenerator:
                                           inferredGeneAssociation,
                                           geneProductFormId,
                                           additionalGeneticComponent,
-                                          experimetalConditions,
+                                          experimentalConditions,
                                           disease_association["associationType"].lower(),
                                           qualifier,
                                           disease_association["DOID"],
@@ -109,9 +115,8 @@ class DafFileGenerator:
                                           evidenceCode,
                                           geneticSex,
                                           pubID,
-                                          date,
+                                          datetime.strptime(dateStr[:10], "%Y-%m-%d").strftime("%Y%m%d"),
                                           disease_association["dataProvider"]])
                              + "\n")
     
-        #parse(disease_association["dateProduced"]).strftime("%Y%m%d"),
         disease_file.close()

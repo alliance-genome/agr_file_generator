@@ -7,12 +7,13 @@ This tool creates files from Alliance resources. The tool is build and testsed w
 ## Current File Types
 
 - VCF
-
+- DAF
+- Orthology
 
 ## Running Tool Example command
 
 ```bash
-export ALLIANCE_DATABASE_VERSION='2.2.0'
+export ALLIANCE_DATABASE_VERSION='2.3.0'
 export NEO4J_HOST=build.alliancegenome.org
 ```
 

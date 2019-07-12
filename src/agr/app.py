@@ -94,17 +94,18 @@ RETURN gene1.primaryKey AS gene1ID,
 
 
 def generate_daf_file(generated_files_folder, alliance_db_version):
-    daf_query = """MATCH (dej:DiseaseEntityJoin)-[]-(object)-[da]->(disease:DOTerm)
-WHERE da.uuid = dej.primaryKey
+    daf_query = """MATCH (dej:Association:DiseaseEntityJoin)-[:ASSOCIATION]-(object)-[da:IS_MARKER_FOR|:IS_IMPLICATED_IN|:IMPLICATED_VIA_ORTHOLOGY|:BIOMARKER_VIA_ORTHOLOGY]->(disease:DOTerm)
+WHERE (object:Gene OR object:Allele)
+    AND da.uuid = dej.primaryKey
 MATCH (object)-[FROM_SPECIES]->(species:Species)
-OPTIONAL MATCH (ec:EvidenceCode)-[EVIDENCE]-(dej)
+OPTIONAL MATCH (ec:Ontology:ECOTerm)-[:ASSOCIATION]-(:PublicationEvidenceCodeJoin)-[:EVIDENCE]-(dej:Association:DiseaseEntityJoin)
 OPTIONAL MATCH (p:Publication)-[ev:EVIDENCE]-(dej)
 OPTIONAL MATCH (object)-[o:ORTHOLOGOUS]-(oGene:Gene)
-WHERE o.strictFilter AND (ec.primaryKey = "ISS" OR ec.primaryKey = "ISO")
+WHERE o.strictFilter AND (ec.primaryKey = "ECO:0000250" OR ec.primaryKey = "ECO:0000266") // ISS and ISO respectively
 OPTIONAL MATCH (object)-[IS_ALLELE_OF]->(gene:Gene)
 RETURN  object.taxonId AS taxonId,
         species.name AS speciesName,
-        collect(oGene.primaryKey) AS withOrthologs,
+        collect(DISTINCT oGene.primaryKey) AS withOrthologs,
         labels(object) AS objectType,
         object.primaryKey AS dbObjectID,
         object.symbol AS dbObjectSymbol,
@@ -115,6 +116,7 @@ RETURN  object.taxonId AS taxonId,
         disease.doId AS DOID,
         disease.name as DOname,
         ec.primaryKey AS evidenceCode,
+        dej.dateAssigned AS dateAssigned,
         da.dataProvider AS dataProvider"""
     data_source = DataSource(uri, daf_query)
     daf = DafFileGenerator(data_source,
