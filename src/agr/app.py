@@ -99,7 +99,7 @@ WHERE (object:Gene OR object:Allele)
     AND da.uuid = dej.primaryKey
 MATCH (object)-[FROM_SPECIES]->(species:Species)
 OPTIONAL MATCH (ec:Ontology:ECOTerm)-[:ASSOCIATION]-(:PublicationEvidenceCodeJoin)-[:EVIDENCE]-(dej:Association:DiseaseEntityJoin)
-OPTIONAL MATCH (p:Publication)-[ev:EVIDENCE]-(dej)
+OPTIONAL MATCH (p:Publication)-[:ASSOCIATION]-(:PublicationEvidenceCodeJoin)-[:EVIDENCE]-(dej:Association:DiseaseEntityJoin)
 OPTIONAL MATCH (object)-[o:ORTHOLOGOUS]-(oGene:Gene)
 WHERE o.strictFilter AND (ec.primaryKey = "ECO:0000250" OR ec.primaryKey = "ECO:0000266") // ISS and ISO respectively
 OPTIONAL MATCH (object)-[IS_ALLELE_OF]->(gene:Gene)

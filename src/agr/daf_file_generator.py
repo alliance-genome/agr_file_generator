@@ -14,7 +14,7 @@ class DafFileGenerator:
 #
 # Disease Association Format (DAF)
 # Source: Alliance of Genome Resources (Alliance)
-# Filter: stringent
+# Othology Filter: Stringent
 # Datebase Version: {databaseVersion}
 # Date: {datetimeNow}
 #
@@ -57,8 +57,8 @@ class DafFileGenerator:
                    "EvidenceCode",
                    "genetic-sex", #new
                    "Reference",
-                   "Date"
-                   "AssignedBy"]
+                   "Date",
+                   "Source"]
         disease_file.write("\t".join(columns) + "\n")
         for disease_association in self.disease_associations:
             dbObjectType = "allele" if disease_association["objectType"][0] == "Feature" else disease_association["objectType"][0].lower()
@@ -78,8 +78,6 @@ class DafFileGenerator:
                 evidenceCode = disease_association["evidenceCode"]
             else:
                 evidenceCode = ""
-            evidenceCode = ""
-
             geneProductFormId = ""
             additionalGeneticComponent = ""
             experimentalConditions = ""
@@ -87,13 +85,13 @@ class DafFileGenerator:
             modifierAssociationType = ""
             modifierQualifier = ""
             modifierGenetic = ""
+            modifierExperimentalConditions = ""
             geneticSex = ""
             if disease_association["dateAssigned"] is None and disease_association["associationType"] in ["IMPLICATED_VIA_ORTHOLOGY",
                                                                                                           "BIOMARKER_VIA_ORTHOLOGY"]:
                 dateStr = strftime("%Y-%m-%d %H:%M:%S", gmtime())
             else:
                 dateStr = disease_association["dateAssigned"]
-
 
             disease_file.write("\t".join([disease_association["taxonId"],
                                           disease_association["speciesName"],
@@ -112,6 +110,7 @@ class DafFileGenerator:
                                           modifierAssociationType,
                                           modifierQualifier,
                                           modifierGenetic,
+                                          modifierExperimentalConditions,
                                           evidenceCode,
                                           geneticSex,
                                           pubID,
