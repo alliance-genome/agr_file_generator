@@ -83,8 +83,11 @@ RETURN gene1.primaryKey AS gene1ID,
        species2.primaryKey AS species2TaxonID,
        species2.name AS species2Name"""
     data_source = DataSource(uri, orthology_query)
-    of = OrthologyFileGenerator(data_source, 
+    of = OrthologyFileGenerator(data_source,
                                 generated_files_folder,
                                 alliance_db_version)
     of.generate_file()
 
+
+if  __name__ == '__main__':
+    main()
