@@ -14,7 +14,7 @@ class DafFileGenerator:
 #
 # Disease Association Format (DAF)
 # Source: Alliance of Genome Resources (Alliance)
-# Othology Filter: Stringent
+# Orthology Filter: Stringent
 # Datebase Version: {databaseVersion}
 # Date: {datetimeNow}
 #
@@ -32,8 +32,8 @@ class DafFileGenerator:
                 databaseVersion=database_version)
 
     def generate_file(self):
-        outputFilepath = self.generated_files_folder + "/agr-daf-" + self.database_version + ".tsv"
-        disease_file = open(outputFilepath,'w')
+        output_filepath = self.generated_files_folder + "/agr-daf-" + self.database_version + ".tsv"
+        disease_file = open(output_filepath,'w')
         disease_file.write(self._generate_header(self.database_version))
     
         columns = ["Taxon",
@@ -61,59 +61,59 @@ class DafFileGenerator:
                    "Source"]
         disease_file.write("\t".join(columns) + "\n")
         for disease_association in self.disease_associations:
-            dbObjectType = "allele" if disease_association["objectType"][0] == "Feature" else disease_association["objectType"][0].lower()
-            pubID = disease_association["pubMedID"] if disease_association["pubMedID"] else disease_association["pubModID"]
-            if pubID is None:
-                pubID = ""
+            db_object_type = "allele" if disease_association["objectType"][0] == "Feature" else disease_association["objectType"][0].lower()
+            pub_id = disease_association["pubMedID"] if disease_association["pubMedID"] else disease_association["pubModID"]
+            if pub_id is None:
+                pub_id = ""
  
-            withOrthologs = "|".join(set(disease_association["withOrthologs"])) if disease_association["withOrthologs"] else ""
-            DOname = disease_association["DOname"] if disease_association["DOname"] else ""
-            inferredGeneAssociation = ""
-            if dbObjectType == "gene":
-                inferredGeneAssociation = disease_association["dbObjectID"]
-            elif dbObjectType == "allele":
-                inferredGeneAssociation = ",".join(disease_association["inferredGeneAssociation"])
+            with_orthologs = "|".join(set(disease_association["withOrthologs"])) if disease_association["withOrthologs"] else ""
+            do_name = disease_association["DOname"] if disease_association["DOname"] else ""
+            inferred_gene_association = ""
+            if db_object_type == "gene":
+                inferred_gene_association = disease_association["dbObjectID"]
+            elif db_object_type == "allele":
+                inferred_gene_association = ",".join(disease_association["inferredGeneAssociation"])
 
             if disease_association["evidenceCode"] is not None:
-                evidenceCode = disease_association["evidenceCode"]
+                evidence_code = disease_association["evidenceCode"]
             else:
-                evidenceCode = ""
-            geneProductFormId = ""
-            additionalGeneticComponent = ""
-            experimentalConditions = ""
+                evidence_code = ""
+            gene_product_form_id = ""
+            additional_genetic_component = ""
+            experimental_conditions = ""
             qualifier = ""
-            modifierAssociationType = ""
-            modifierQualifier = ""
-            modifierGenetic = ""
-            modifierExperimentalConditions = ""
-            geneticSex = ""
+            modifier_association_type = ""
+            modifier_qualifier = ""
+            modifier_genetic = ""
+            modifier_experimental_conditions = ""
+            genetic_sex = ""
             if disease_association["dateAssigned"] is None and disease_association["associationType"] in ["IMPLICATED_VIA_ORTHOLOGY",
                                                                                                           "BIOMARKER_VIA_ORTHOLOGY"]:
-                dateStr = strftime("%Y-%m-%d %H:%M:%S", gmtime())
+                date_str = strftime("%Y-%m-%d %H:%M:%S", gmtime())
             else:
-                dateStr = disease_association["dateAssigned"]
+                date_str = disease_association["dateAssigned"]
 
             disease_file.write("\t".join([disease_association["taxonId"],
                                           disease_association["speciesName"],
-                                          dbObjectType,
+                                          db_object_type,
                                           disease_association["dbObjectID"],
                                           disease_association["dbObjectSymbol"],
-                                          inferredGeneAssociation,
-                                          geneProductFormId,
-                                          additionalGeneticComponent,
-                                          experimentalConditions,
+                                          inferred_gene_association,
+                                          gene_product_form_id,
+                                          additional_genetic_component,
+                                          experimental_conditions,
                                           disease_association["associationType"].lower(),
                                           qualifier,
                                           disease_association["DOID"],
-                                          DOname,
-                                          withOrthologs,
-                                          modifierAssociationType,
-                                          modifierQualifier,
-                                          modifierGenetic,
-                                          modifierExperimentalConditions,
-                                          evidenceCode,
-                                          geneticSex,
-                                          pubID,
+                                          do_name,
+                                          with_orthologs,
+                                          modifier_association_type,
+                                          modifier_qualifier,
+                                          modifier_genetic,
+                                          modifier_experimental_conditions,
+                                          evidence_code,
+                                          genetic_sex,
+                                          pub_id,
                                           datetime.strptime(dateStr[:10], "%Y-%m-%d").strftime("%Y%m%d"),
                                           disease_association["dataProvider"]])
                              + "\n")
