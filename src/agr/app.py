@@ -6,7 +6,6 @@ from agr.orthology_file_generator import OrthologyFileGenerator
 import agr.assembly_sequence as agr_asm_seq
 from agr.data_source import DataSource
 
-
 host = os.environ.get('NEO4J_HOST', 'localhost')
 
 port = int(os.environ.get('NEO4J_PORT', 7687))
@@ -33,7 +32,6 @@ def main(generated_files_folder='generated_files',
          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):
     #  generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes)
     generate_orthology_file(generated_files_folder, alliance_db_version)
-    exit()
 
 
 def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes):
@@ -90,6 +88,3 @@ RETURN gene1.primaryKey AS gene1ID,
                                 alliance_db_version)
     of.generate_file()
 
-
-if __name__ == '__main__':
-    main()
