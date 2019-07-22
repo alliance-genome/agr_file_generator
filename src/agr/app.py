@@ -7,7 +7,6 @@ from agr.daf_file_generator import DafFileGenerator
 import agr.assembly_sequence as agr_asm_seq
 from agr.data_source import DataSource
 
-
 host = os.environ.get('NEO4J_HOST', 'localhost')
 
 port = int(os.environ.get('NEO4J_PORT', 7687))
@@ -34,7 +33,6 @@ def main(generated_files_folder='generated_files',
     generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes)
     generate_orthology_file(generated_files_folder, alliance_db_version)
     generate_daf_file(generated_files_folder, alliance_db_version)
-    exit()
 
 def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes):
     os.makedirs(generated_files_folder, exist_ok=True)
@@ -86,7 +84,7 @@ RETURN gene1.primaryKey AS gene1ID,
        species2.primaryKey AS species2TaxonID,
        species2.name AS species2Name"""
     data_source = DataSource(uri, orthology_query)
-    of = OrthologyFileGenerator(data_source, 
+    of = OrthologyFileGenerator(data_source,
                                 generated_files_folder,
                                 alliance_db_version)
     of.generate_file()

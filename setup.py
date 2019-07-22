@@ -29,7 +29,7 @@ setup(
     install_requires=INSTALL_REQUIRES,
     entry_points={
         'console_scripts': [
-            'agr_file_generator=agr.__main__:main',
+            'agr_file_generator=agr.app:main',
         ],
         # TOOD: add hooks for docs generation?
         # 'zest.releaser.releaser.after': [
