@@ -38,24 +38,24 @@ class DafFileGenerator:
     
         columns = ["Taxon",
                    "SpeciesName",
-                   "DBobjectType", #not in daf spec
+                   "DBobjectType",
                    "DBObjectID",
                    "DBObjectSymbol",
-                   "InferredGeneAssociation",
-                   "GeneProductFormID", #data not available according to spreadsheet
-                   "AdditionalGeneticComponent", #data not available according to spec
-                   "ExperimentalConditions", #new
+                   #"InferredGeneAssociation",
+                   #"GeneProductFormID",
+                   #"AdditionalGeneticComponent",
+                   #"ExperimentalConditions",
                    "AssociationType",
-                   "Qualifier", #new
+                   #"Qualifier",
                    "DOID",
-                   "DOname", #not in spec
+                   "DOname",
                    "withOrthologs",
-                   "Modifier-AssociationType", #new not yet implemented according to spec
-                   "Modifier-Qualifier", #new not yet implemented according to spec
-                   "Modifier-Genetic", #new not yet implemented according to spec
-                   "Modifier-ExperimentalConditions", #not yet implemented according to spec
+                   #"Modifier-AssociationType",
+                   #"Modifier-Qualifier",
+                   #"Modifier-Genetic",
+                   #"Modifier-ExperimentalConditions",
                    "EvidenceCode",
-                   "genetic-sex", #new
+                   #"genetic-sex",
                    "Reference",
                    "Date",
                    "Source"]
@@ -98,23 +98,23 @@ class DafFileGenerator:
                                           db_object_type,
                                           disease_association["dbObjectID"],
                                           disease_association["dbObjectSymbol"],
-                                          inferred_gene_association,
-                                          gene_product_form_id,
-                                          additional_genetic_component,
-                                          experimental_conditions,
+                                          #inferred_gene_association,
+                                          #gene_product_form_id,
+                                          #additional_genetic_component,
+                                          #experimental_conditions,
                                           disease_association["associationType"].lower(),
-                                          qualifier,
+                                          #qualifier,
                                           disease_association["DOID"],
                                           do_name,
                                           with_orthologs,
-                                          modifier_association_type,
-                                          modifier_qualifier,
-                                          modifier_genetic,
-                                          modifier_experimental_conditions,
+                                          #modifier_association_type,
+                                          #modifier_qualifier,
+                                          #modifier_genetic,
+                                          #modifier_experimental_conditions,
                                           evidence_code,
-                                          genetic_sex,
+                                          #genetic_sex,
                                           pub_id,
-                                          datetime.strptime(dateStr[:10], "%Y-%m-%d").strftime("%Y%m%d"),
+                                          datetime.strptime(date_str[:10], "%Y-%m-%d").strftime("%Y%m%d"),
                                           disease_association["dataProvider"]])
                              + "\n")
     

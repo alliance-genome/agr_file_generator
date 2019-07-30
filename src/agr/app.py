@@ -30,8 +30,8 @@ def setup_logging(logger_name):
 def main(generated_files_folder='generated_files',
          fasta_sequences_folder='sequences',
          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):
-    generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes)
-    generate_orthology_file(generated_files_folder, alliance_db_version)
+    #generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes)
+    #generate_orthology_file(generated_files_folder, alliance_db_version)
     generate_daf_file(generated_files_folder, alliance_db_version)
 
 def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes):
