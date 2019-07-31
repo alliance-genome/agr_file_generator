@@ -4,6 +4,7 @@ import os
 from agr.vcf_file_generator import VcfFileGenerator
 from agr.orthology_file_generator import OrthologyFileGenerator
 from agr.daf_file_generator import DafFileGenerator
+from agr.expression_file_generator import ExpressionFileGenerator
 import agr.assembly_sequence as agr_asm_seq
 from agr.data_source import DataSource
 
@@ -32,7 +33,9 @@ def main(generated_files_folder='generated_files',
          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):
     #generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes)
     #generate_orthology_file(generated_files_folder, alliance_db_version)
-    generate_daf_file(generated_files_folder, alliance_db_version)
+    #generate_daf_file(generated_files_folder, alliance_db_version)
+    generate_expression_file(generated_files_folder, alliance_db_version)
+
 
 def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes):
     os.makedirs(generated_files_folder, exist_ok=True)
@@ -120,6 +123,45 @@ RETURN  object.taxonId AS taxonId,
                            generated_files_folder,
                            alliance_db_version)
     daf.generate_file() 
+
+
+def generate_expression_file(generated_files_folder, alliance_db_version):
+    expression_query = """MATCH (ebe:ExpressionBioEntity)-[:EXPRESSED_IN]-(gene:Gene)-[:FROM_SPECIES]-(s:Species)
+MATCH (g:Gene)-[:ASSOCIATION]-(begj:BioEntityGeneExpressionJoin)-[:ASSOCIATION]-(ebe:ExpressionBioEntity)
+MATCH (begj:BioEntityGeneExpressionJoin)-[a:ASSAY]-(mmo:MMOTerm)
+MATCH (egj:BioEntityGeneExpressionJoin)-[:EVIDENCE]-(pub:Publication)
+MATCH (ebe:ExpressionBioEntity)-[:ANATOMICAL_STRUCTURE_QUALIFIER]-(asq:Ontology)
+OPTIONAL MATCH (ebe:ExpressionBioEntity)-[:CELLULAR_COMPONENT_QUALIFIER]-(ccq:Ontology)
+OPTIONAL MATCH (anatomicalStructure)-[:ANATOMICAL_STRUCTURE]-(ebe:ExpressionBioEntity)
+OPTIONAL MATCH (begj:BioEntityGeneExpressionJoin)-[:DURING]-(stage:Stage)
+OPTIONAL MATCH (g:Gene)-[:CELLULAR_COMPONENT]-(cc:GOTerm)
+RETURN s.name AS Species,
+       s.primaryKey AS SpeciesID,
+       gene.modGlobalId AS GeneID,
+       gene.symbol as GeneSymbol,
+       ebe.whereExpressedStatement AS location,
+       stage.primaryKey AS StageID,
+       stage.name AS StageTerm,
+       mmo.primaryKey AS AssayID,
+       mmo.nameKey AS AssayTerm,
+       cc.primaryKey AS CellularComponentID,
+       cc.name AS CellularComponentTerm,
+       //collect(DISTINCT ccq)  AS CellularComponentQualifier,
+       "REPLACEME" AS CellTypeID,
+       "REPLACEME" AS CellTypeName,
+       "REPLACEME" AS CellTypeQualifierIDs,
+       "REPLACEME" AS CellTypeQualifierTermNames,
+       anatomicalStructure.primaryKey AS AnatomyTermID,
+       anatomicalStructure.name AS AnatomyTermName,
+       asq AS AnatomyTermQualifier,
+       gene.dataProvider AS Source,
+       pub AS Reference
+LIMIT 10"""
+    data_source = DataSource(uri, expression_query)
+    daf = ExpressionFileGenerator(data_source,
+                                  generated_files_folder,
+                                  alliance_db_version)
+    daf.generate_file()
 
 
 if __name__ == '__main__':
