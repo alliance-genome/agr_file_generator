@@ -5,7 +5,6 @@ from agr.vcf_file_generator import VcfFileGenerator
 from agr.orthology_file_generator import OrthologyFileGenerator
 from agr.daf_file_generator import DafFileGenerator
 from agr.expression_file_generator import ExpressionFileGenerator
-import agr.assembly_sequence as agr_asm_seq
 from agr.data_source import DataSource
 
 host = os.environ.get('NEO4J_HOST', 'localhost')
@@ -15,13 +14,6 @@ port = int(os.environ.get('NEO4J_PORT', 7687))
 alliance_db_version = os.environ.get('ALLIANCE_DATABASE_VERSION', 'test')
 
 uri = "bolt://" + host + ":" + str(port)
-assembly_to_s3_uri = {
-    'R6.27': 'https://s3.amazonaws.com/agrjbrowse/FlyBase/fruitfly/fasta/',
-    'GRCz11': 'https://s3.amazonaws.com/agrjbrowse/zfin/zebrafish/fasta/',
-    'WBcel235': 'https://s3.amazonaws.com/agrjbrowse/WormBase/c_elegans_PRJNA13758/fasta/',
-    'Rnor_6.0': 'https://s3.amazonaws.com/agrjbrowse/RGD/rat/fasta/',
-    'GRCm38': 'https://s3.amazonaws.com/agrjbrowse/MGI/mouse/fasta/'
-}
 
 
 def setup_logging(logger_name):
@@ -45,6 +37,7 @@ MATCH (v:Variant)-[:VARIATION_TYPE]-(st:SOTerm)
 OPTIONAL MATCH (a:Allele)-[:IS_ALLELE_OF]-(g:Gene)
 RETURN c.primaryKey AS chromosome,
        v.globalId AS globalId,
+       right(v.paddingLeft,1) as paddingLeft,
        v.genomicReferenceSequence AS genomicReferenceSequence,
        v.genomicVariantSequence AS genomicVariantSequence,
        v.hgvs_nomenclature AS hgvsNomenclature,
@@ -58,10 +51,8 @@ RETURN c.primaryKey AS chromosome,
        st.nameKey AS soTerm
     """
     data_source = DataSource(uri, variants_query)
-    agr_asm_seq.ensure_downloaded(fasta_sequences_folder, assembly_to_s3_uri)
     gvf = VcfFileGenerator(data_source,
                            generated_files_folder,
-                           fasta_sequences_folder,
                            alliance_db_version)
     gvf.generate_files(skip_chromosomes=skip_chromosomes)
 
@@ -126,37 +117,36 @@ RETURN  object.taxonId AS taxonId,
 
 
 def generate_expression_file(generated_files_folder, alliance_db_version):
-    expression_query = """MATCH (ebe:ExpressionBioEntity)-[:EXPRESSED_IN]-(gene:Gene)-[:FROM_SPECIES]-(s:Species)
-MATCH (g:Gene)-[:ASSOCIATION]-(begj:BioEntityGeneExpressionJoin)-[:ASSOCIATION]-(ebe:ExpressionBioEntity)
-MATCH (begj:BioEntityGeneExpressionJoin)-[a:ASSAY]-(mmo:MMOTerm)
-MATCH (egj:BioEntityGeneExpressionJoin)-[:EVIDENCE]-(pub:Publication)
-MATCH (ebe:ExpressionBioEntity)-[:ANATOMICAL_STRUCTURE_QUALIFIER]-(asq:Ontology)
+    expression_query = """MATCH (begj:BioEntityGeneExpressionJoin)<-[:ASSOCIATION]-(ebe:ExpressionBioEntity)<-[ei:EXPRESSED_IN]-(gene:Gene)-[:FROM_SPECIES]->(species:Species)
+WITH begj, ebe, ei, gene, {id: species.primaryKey, name: species.name} as speciesObj
+where ei.uuid = begj.primaryKey
+MATCH (begj:BioEntityGeneExpressionJoin)-[:ASSAY]->(mmo:MMOTerm) //one to one
+MATCH (begj:BioEntityGeneExpressionJoin)-[:EVIDENCE]->(ref:Publication)
+WITH ebe, gene, speciesObj, begj, mmo, collect(ref) AS References
+OPTIONAL MATCH (ebe:ExpressionBioEntity)-[:ANATOMICAL_STRUCTURE_QUALIFIER]->(asq:Ontology)
+WITH ebe, gene, speciesObj, begj, mmo, References, CASE WHEN asq IS NOT NULL THEN collect(asq) ELSE [] END AS anatomyTermQualifiers
 OPTIONAL MATCH (ebe:ExpressionBioEntity)-[:CELLULAR_COMPONENT_QUALIFIER]-(ccq:Ontology)
-OPTIONAL MATCH (anatomicalStructure)-[:ANATOMICAL_STRUCTURE]-(ebe:ExpressionBioEntity)
+WITH ebe, gene, speciesObj, begj, mmo, References, anatomyTermQualifiers, CASE WHEN ccq IS NOT NULL THEN collect(ccq) ELSE [] END AS cellularComponentQualifiers
+OPTIONAL MATCH (ebe:ExpressionBioEntity)-[:ANATOMICAL_SUB_SUBSTRUCTURE_QUALIFIER]->(assq:Ontology)
+WITH ebe, gene, speciesObj, begj, mmo, References, anatomyTermQualifiers, cellularComponentQualifiers, CASE WHEN assq IS NOT NULL THEN collect(assq) ELSE [] END AS cellTypeQualifiers
+OPTIONAL MATCH (ebe:ExpressionBioEntity)-[:ANATOMICAL_STRUCTURE]->(anatomicalStructure:Ontology)
+OPTIONAL MATCH (ebe:ExpressionBioEntity)-[:ANATOMICAL_SUB_SUBSTRUCTURE]->(anatomicalSubStructure:Ontology)
+
 OPTIONAL MATCH (begj:BioEntityGeneExpressionJoin)-[:DURING]-(stage:Stage)
-OPTIONAL MATCH (g:Gene)-[:CELLULAR_COMPONENT]-(cc:GOTerm)
-RETURN s.name AS Species,
-       s.primaryKey AS SpeciesID,
-       gene.modGlobalId AS GeneID,
-       gene.symbol as GeneSymbol,
+OPTIONAL MATCH (gene:Gene)-[:CELLULAR_COMPONENT]-(cc:GOTerm)
+RETURN speciesObj,
+       {symbol: gene.symbol, id: gene.modGlobalId} as geneObj,
        ebe.whereExpressedStatement AS location,
-       stage.primaryKey AS StageID,
-       stage.name AS StageTerm,
-       mmo.primaryKey AS AssayID,
-       mmo.nameKey AS AssayTerm,
-       cc.primaryKey AS CellularComponentID,
-       cc.name AS CellularComponentTerm,
-       //collect(DISTINCT ccq)  AS CellularComponentQualifier,
-       "REPLACEME" AS CellTypeID,
-       "REPLACEME" AS CellTypeName,
-       "REPLACEME" AS CellTypeQualifierIDs,
-       "REPLACEME" AS CellTypeQualifierTermNames,
-       anatomicalStructure.primaryKey AS AnatomyTermID,
-       anatomicalStructure.name AS AnatomyTermName,
-       asq AS AnatomyTermQualifier,
+       {term: stage.name, id: stage.primaryKey} as stageObj,
+       {term: mmo.name, id: mmo.primaryKey} AS assayObj,
+       {term: cc.primaryKey, id: cc.primaryKey} AS cellularComponentObj,
+       cellularComponentQualifiers,
+       {term: anatomicalStructure.name, id: anatomicalStructure.primaryKey} AS anatomyTermObj,
+       {term: anatomicalSubStructure.name, id: anatomicalSubStructure.primaryKey} AS cellTypeObj,
+       anatomyTermQualifiers,
+       cellTypeQualifiers,
        gene.dataProvider AS Source,
-       pub AS Reference
-LIMIT 10"""
+       References"""
     data_source = DataSource(uri, expression_query)
     daf = ExpressionFileGenerator(data_source,
                                   generated_files_folder,
