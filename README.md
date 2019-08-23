@@ -9,6 +9,7 @@ This tool creates files from Alliance resources. The tool is build and testsed w
 - VCF
 - DAF
 - Orthology
+- Expression
 
 ## Running Tool Example command
 
