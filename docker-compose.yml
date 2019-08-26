@@ -6,14 +6,15 @@ services:
     image: agrdocker/agr_file_generator:latest
     volumes:
       - type: volume
-        source: agr_data_share
-        target: /usr/src/app/tmp
+        source: agr_generated_files
+        target: /usr/src/agr/tmp
         volume:
           nocopy: true
     environment:
       - PYTHONUNBUFFERED=1
       - NET=production
-      - ALLIANCE_RELEASE=2.2.0
+      - ALLIANCE_RELEASE=2.3.0
+      - NEO4J_HOST=build.alliancegenome.org
       - FMS_API_URL=https://fmsdev.alliancegenome.org
       - API_KEY=${API_KEY}
       - DEBUG=True
@@ -23,4 +24,4 @@ services:
       - src/agr/app.py
 
 volumes:
-  agr_data_share:
+  agr_generated_files:

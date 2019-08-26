@@ -81,7 +81,7 @@ def make_gen_files_fixture(asm_cached=False):
     global VCF_DATA
     tempdir = tempfile.mkdtemp()
     _temp_folders.add(tempdir)
-    gf_folder_path = os.path.join(tempdir, 'generated_files')
+    gf_folder_path = os.path.join(tempdir, 'agr_generated_files')
     if asm_cached:
         fasta_sequences_folder = 'sequences'
     else:

@@ -89,7 +89,7 @@ class ExpressionFileGenerator:
                                              expression['speciesObj']['id'],
                                              expression['geneObj']['id'],
                                              expression['geneObj']['symbol'],
-                                             '\"' + expression['location'].replace(''', '\\'').replace(',', '\\,') + '\"',
+                                             '\"' + expression['location'].replace('"', '\\"').replace(',', '\\,') + '\"',
                                              stage_id,
                                              stage_term,
                                              assay_id,
