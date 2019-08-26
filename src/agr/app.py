@@ -11,7 +11,7 @@ host = os.environ.get('NEO4J_HOST', 'localhost')
 
 port = int(os.environ.get('NEO4J_PORT', 7687))
 
-alliance_db_version = os.environ.get('ALLIANCE_DATABASE_VERSION', 'test')
+alliance_db_version = os.environ.get('ALLIANCE_RELEASE', 'test')
 
 uri = "bolt://" + host + ":" + str(port)
 
