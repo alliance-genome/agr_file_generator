@@ -7,7 +7,7 @@ services:
     volumes:
       - type: volume
         source: agr_generated_files
-        target: /usr/src/agr/tmp
+        target: /usr/src/tmp
         volume:
           nocopy: true
     environment:
@@ -20,7 +20,7 @@ services:
     entrypoint:
       - python3
       - -u 
-      - src/agr/app.py
+      - src/app.py
 
 volumes:
   agr_generated_files:
