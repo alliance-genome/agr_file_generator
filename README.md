@@ -41,3 +41,9 @@ Files that are generated are located in the docker shared folder. This folder ca
 ```bash
  docker inspect <container>
 ```
+
+## Run tests
+
+```bash
+ make test
+```
