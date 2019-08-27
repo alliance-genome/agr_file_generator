@@ -134,7 +134,6 @@ class VcfFileGenerator:
         (assembly_chr_variants, assembly_species) = self._consume_data_source()
 
         for (assembly, chromo_variants) in assembly_chr_variants.items():
-            print(chromo_variants)
             logger.info('Generating VCF File for assembly %r', assembly)
             filename = assembly + '-' + self.database_version  + '.vcf'
             filepath = os.path.join(self.generated_files_folder, filename)

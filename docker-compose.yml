@@ -11,7 +11,6 @@ services:
         volume:
           nocopy: true
     environment:
-      - PYTHONUNBUFFERED=1
       - NET=production
       - ALLIANCE_RELEASE=2.3.0
       - NEO4J_HOST=build.alliancegenome.org

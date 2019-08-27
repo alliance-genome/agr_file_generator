@@ -62,7 +62,6 @@ class ExpressionFileGenerator:
         expression_file.write('\t'.join(columns) + '\n')
 
         for expression in self.expressions:
-            print(expression)
             anatomy_term_id = expression['anatomyTermObj']['id'] or ''
             anatomy_term_name = expression['anatomyTermObj']['term'] or ''
             anatomy_term_qualifier_ids = ','.join(str(anatomyTermQualifier['primaryKey']) for anatomyTermQualifier in expression['anatomyTermQualifiers']) or ''
