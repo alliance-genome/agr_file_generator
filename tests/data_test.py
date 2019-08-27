@@ -9,8 +9,8 @@ import shutil
 import tempfile
 
 import pytest
-
-import agr.app as agr_app
+import sys
+import app
 
 
 logger = logging.getLogger(name=__package__)
@@ -88,7 +88,7 @@ def make_gen_files_fixture(asm_cached=False):
         fasta_sequences_folder = os.path.join(tempdir, 'sequences')
     logger.debug('FOLDER PATH:', gf_folder_path)
     os.makedirs(gf_folder_path)
-    agr_app.main(generated_files_folder=gf_folder_path,
+    app.main(generated_files_folder=gf_folder_path,
                  fasta_sequences_folder=fasta_sequences_folder)
     for gf in os.listdir(gf_folder_path):
         logger.debug(gf)
