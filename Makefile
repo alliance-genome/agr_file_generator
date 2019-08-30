@@ -8,3 +8,6 @@ pull:
 
 run: build
 	docker-compose up agr_file_generator
+
+test: run
+	docker-compose up agr_file_generator_test

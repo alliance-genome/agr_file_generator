@@ -6,8 +6,6 @@ from dateutil.parser import parse
 from datetime import datetime
 from time import gmtime, strftime
 
-from neo4j.v1 import GraphDatabase
-
 logger = logging.getLogger(name=__name__)
 
 class OrthologyFileGenerator:

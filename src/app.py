@@ -1,17 +1,17 @@
 import logging
 import os
 
-from agr.vcf_file_generator import VcfFileGenerator
-from agr.orthology_file_generator import OrthologyFileGenerator
-from agr.daf_file_generator import DafFileGenerator
-from agr.expression_file_generator import ExpressionFileGenerator
-from agr.data_source import DataSource
+from vcf_file_generator import VcfFileGenerator
+from orthology_file_generator import OrthologyFileGenerator
+from daf_file_generator import DafFileGenerator
+from expression_file_generator import ExpressionFileGenerator
+from data_source import DataSource
 
 host = os.environ.get('NEO4J_HOST', 'localhost')
 
 port = int(os.environ.get('NEO4J_PORT', 7687))
 
-alliance_db_version = os.environ.get('ALLIANCE_DATABASE_VERSION', 'test')
+alliance_db_version = os.environ.get('ALLIANCE_RELEASE', 'test')
 
 uri = "bolt://" + host + ":" + str(port)
 
@@ -20,7 +20,7 @@ def setup_logging(logger_name):
     logging.basicConfig(level=logging.DEBUG)
 
 
-def main(generated_files_folder='generated_files',
+def main(generated_files_folder='/usr/src/tmp',
          fasta_sequences_folder='sequences',
          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):
     #generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes)

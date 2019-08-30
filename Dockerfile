@@ -10,4 +10,4 @@ RUN mkdir tmp
 
 ADD . .
 
-CMD ["python3", "-u", "src/agr/app.py"]
+CMD ["python3", "-u", "src/app.py"]

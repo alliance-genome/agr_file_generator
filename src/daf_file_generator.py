@@ -59,7 +59,10 @@ class DafFileGenerator:
                    "Reference",
                    "Date",
                    "Source"]
-        disease_file.write("\t".join(columns) + "\n")
+
+        tsv_writer = csv.DictWriter(expression_file, delimiter='\t', fieldnames=columns)
+        tsv_writer.writeheader()
+
         for disease_association in self.disease_associations:
             db_object_type = "allele" if disease_association["objectType"][0] == "Feature" else disease_association["objectType"][0].lower()
             pub_id = disease_association["pubMedID"] if disease_association["pubMedID"] else disease_association["pubModID"]
@@ -93,29 +96,28 @@ class DafFileGenerator:
             else:
                 date_str = disease_association["dateAssigned"]
 
-            disease_file.write("\t".join([disease_association["taxonId"],
-                                          disease_association["speciesName"],
-                                          db_object_type,
-                                          disease_association["dbObjectID"],
-                                          disease_association["dbObjectSymbol"],
-                                          #inferred_gene_association,
-                                          #gene_product_form_id,
-                                          #additional_genetic_component,
-                                          #experimental_conditions,
-                                          disease_association["associationType"].lower(),
-                                          #qualifier,
-                                          disease_association["DOID"],
-                                          do_name,
-                                          with_orthologs,
-                                          #modifier_association_type,
-                                          #modifier_qualifier,
-                                          #modifier_genetic,
-                                          #modifier_experimental_conditions,
-                                          evidence_code,
-                                          #genetic_sex,
-                                          pub_id,
-                                          datetime.strptime(date_str[:10], "%Y-%m-%d").strftime("%Y%m%d"),
-                                          disease_association["dataProvider"]])
-                             + "\n")
-    
+            row = dict(zip(columns, [disease_association["taxonId"],
+                                     disease_association["speciesName"],
+                                     db_object_type,
+                                     disease_association["dbObjectID"],
+                                     disease_association["dbObjectSymbol"],
+                                     #inferred_gene_association,
+                                     #gene_product_form_id,
+                                     #additional_genetic_component,
+                                     #experimental_conditions,
+                                     disease_association["associationType"].lower(),
+                                     #qualifier,
+                                     disease_association["DOID"],
+                                     do_name,
+                                     with_orthologs,
+                                     #modifier_association_type,
+                                     #modifier_qualifier,
+                                     #modifier_genetic,
+                                     #modifier_experimental_conditions,
+                                     evidence_code,
+                                     #genetic_sex,
+                                     pub_id,
+                                     datetime.strptime(date_str[:10], "%Y-%m-%d").strftime("%Y%m%d"),
+                                     disease_association["dataProvider"])
+            writer.writerows(row)
         disease_file.close()

@@ -1,6 +1,6 @@
 import sys
 
-import logging
+import logging, csv
 from dateutil.parser import parse
 from datetime import datetime
 from time import gmtime, strftime
@@ -58,11 +58,11 @@ class ExpressionFileGenerator:
                    'AnatomyTermQualifierTermNames',
                    'Source',
                    'Reference']
-
-        expression_file.write('\t'.join(columns) + '\n')
-
+        
+        tsv_writer = csv.DictWriter(expression_file, delimiter='\t', fieldnames=columns)
+        tsv_writer.writeheader()
+        
         for expression in self.expressions:
-            print(expression)
             anatomy_term_id = expression['anatomyTermObj']['id'] or ''
             anatomy_term_name = expression['anatomyTermObj']['term'] or ''
             anatomy_term_qualifier_ids = ','.join(str(anatomyTermQualifier['primaryKey']) for anatomyTermQualifier in expression['anatomyTermQualifiers']) or ''
@@ -85,29 +85,28 @@ class ExpressionFileGenerator:
 
             references = ','.join(ref_obj['pubMedId'] or ref_obj['pubModId'] for ref_obj in expression['References']) or ''
 
-            expression_file.write('\t'.join([expression['speciesObj']['name'],
-                                             expression['speciesObj']['id'],
-                                             expression['geneObj']['id'],
-                                             expression['geneObj']['symbol'],
-                                             '\"' + expression['location'].replace(''', '\\'').replace(',', '\\,') + '\"',
-                                             stage_id,
-                                             stage_term,
-                                             assay_id,
-                                             assay_term,
-                                             cellular_component_id,
-                                             cellular_component_term,
-                                             cellular_component_qualifier_ids,
-                                             cellular_component_qualifier_term_names,
-                                             cell_type_id,
-                                             cell_type_term,
-                                             cell_type_qualifier_ids,
-                                             cell_type_qualifier_term_names,
-                                             anatomy_term_id,
-                                             anatomy_term_name,
-                                             anatomy_term_qualifier_ids,
-                                             anatomy_term_qualifier_term_names,
-                                             expression['Source'],
-                                             references])
-                             + '\n')
-    
+            row = dict(zip(columns, [expression['speciesObj']['name'],
+                                      expression['speciesObj']['id'],
+                                      expression['geneObj']['id'],
+                                      expression['geneObj']['symbol'],
+                                      expression['location'],
+                                      stage_id,
+                                      stage_term,
+                                      assay_id,
+                                      assay_term,
+                                      cellular_component_id,
+                                      cellular_component_term,
+                                      cellular_component_qualifier_ids,
+                                      cellular_component_qualifier_term_names,
+                                      cell_type_id,
+                                      cell_type_term,
+                                      cell_type_qualifier_ids,
+                                      cell_type_qualifier_term_names,
+                                      anatomy_term_id,
+                                      anatomy_term_name,
+                                      anatomy_term_qualifier_ids,
+                                      anatomy_term_qualifier_term_names,
+                                      expression['Source'],
+                                      references]))
+            writer.writerows(row)
         expression_file.close()
