@@ -25,6 +25,7 @@ class VcfFileGenerator:
 ##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
 ##FORMAT=<ID=HQ,Number=2,Type=Integer,Description="Haplotype Quality">
 ##INFO=<ID=allele_of_genes,Type=String,Number=0,Description="The genes that the Allele is located on">
+##INFO=<ID=alleles,Type=String,Number=0,Description="The alleles of the variant">
 ##INFO=<ID=DP,Number=0,Type=Integer,Description="The label to be used for visual purposes">
 ##INFO=<ID=hgvs_nomenclature,Type=String,Number=0,Description="the HGVS name of the allele">
 ##INFO=<ID=symbol,Type=String,Number=0,Description="The human readable name of the allele">
@@ -72,6 +73,9 @@ class VcfFileGenerator:
         info_map['hgvs_nomenclature'] = cls._variant_value_for_file(variant, 'hgvsNomenclature')
         info_map['symbol'] = cls._variant_value_for_file(variant, 'symbol')
         info_map['globalId'] = variant['globalId']
+        info_map['alleles'] = cls._variant_value_for_file(variant,
+                                                         'alleles',
+                                                         transform=', '.join)
         info_map['allele_of_genes'] = cls._variant_value_for_file(variant,
                                                                   'alleleOfGenes',
                                                                   transform=', '.join)

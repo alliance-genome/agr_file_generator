@@ -23,10 +23,10 @@ def setup_logging(logger_name):
 def main(generated_files_folder='/usr/src/tmp',
          fasta_sequences_folder='sequences',
          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):
-    #generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes)
+    generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes)
     #generate_orthology_file(generated_files_folder, alliance_db_version)
     #generate_daf_file(generated_files_folder, alliance_db_version)
-    generate_expression_file(generated_files_folder, alliance_db_version)
+    #generate_expression_file(generated_files_folder, alliance_db_version)
 
 
 def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes):
@@ -37,13 +37,14 @@ MATCH (v:Variant)-[:VARIATION_TYPE]-(st:SOTerm)
 OPTIONAL MATCH (a:Allele)-[:IS_ALLELE_OF]-(g:Gene)
 RETURN c.primaryKey AS chromosome,
        v.globalId AS globalId,
-       right(v.paddingLeft,1) as paddingLeft,
+       right(v.paddingLeft,1) AS paddingLeft,
        v.genomicReferenceSequence AS genomicReferenceSequence,
        v.genomicVariantSequence AS genomicVariantSequence,
        v.hgvs_nomenclature AS hgvsNomenclature,
        v.dataProvider AS dataProvider,
        a.symbol AS symbol,
-       collect(g.primaryKey) as alleleOfGenes,
+       collect(a.primaryKey) AS alleles,
+       CASE WHEN g IS NOT NULL THEN collect(g.primaryKey) ELSE [] END AS alleleOfGenes,
        l.start AS start,
        l.end AS end,
        l.assembly AS assembly,

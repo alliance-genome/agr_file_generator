@@ -118,6 +118,6 @@ class DafFileGenerator:
                                      #genetic_sex,
                                      pub_id,
                                      datetime.strptime(date_str[:10], "%Y-%m-%d").strftime("%Y%m%d"),
-                                     disease_association["dataProvider"])
+                                     disease_association["dataProvider"]]))
             writer.writerows(row)
         disease_file.close()
