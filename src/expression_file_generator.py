@@ -59,54 +59,98 @@ class ExpressionFileGenerator:
                    'Source',
                    'Reference']
         
-        tsv_writer = csv.DictWriter(expression_file, delimiter='\t', fieldnames=columns)
+        tsv_writer = csv.DictWriter(expression_file, delimiter='\t', fieldnames=columns, lineterminator="\n")
         tsv_writer.writeheader()
-        
         for expression in self.expressions:
-            anatomy_term_id = expression['anatomyTermObj']['id'] or ''
-            anatomy_term_name = expression['anatomyTermObj']['term'] or ''
-            anatomy_term_qualifier_ids = ','.join(str(anatomyTermQualifier['primaryKey']) for anatomyTermQualifier in expression['anatomyTermQualifiers']) or ''
-            anatomy_term_qualifier_term_names = ','.join(str(anatomyTermQualifier['name']) for anatomyTermQualifier in expression['anatomyTermQualifiers']) or ''
+            publications = []
+            sources = []
+            stage_id = ''
+            stage_term = ''
+            assay_id = ''
+            assay_term = ''
+            anatomy_term_id = ''
+            anatomy_term_name = ''
+            for term in expression['terms']:
+               if 'CrossReference' in term.labels:
+                   sources.append(term['crossRefCompleteUrl']) # according to spec should use globalCrossRefId
+               elif 'Publication' in term.labels:
+                   publications.append(term['pubMedId'] or term['pubModId'])
+               elif 'Stage' in term.labels:
+                   stage_id = term['primaryKey']
+                   stage_term = term['name']
+               elif 'MMOTerm' in term.labels:
+                   assay_id = term['primaryKey']
+                   assay_term = term['name']
+               elif 'UBERONTerm' in term.labels:
+                   anatomy_term_id = term['primaryKey']
+                   anatomy_term_name = term['name']
+               else:
+                   logger.error('Not handling term %r off gene %r %r', term['primaryKey'], expression['gene']['primaryKey'])
 
-            cellular_component_id = expression['cellularComponentObj']['id'] or ''
-            cellular_component_term = expression['cellularComponentObj']['term'] or ''
-            cellular_component_qualifier_ids = ','.join(str(cellularComponentQualifierObj['primaryKey']) for cellularComponentQualifierObj in expression['cellularComponentQualifiers']) or ''
-            cellular_component_qualifier_term_names = ','.join(str(cellularComponentQualifierObj['name']) for cellularComponentQualifierObj in expression['cellularComponentQualifiers']) or ''
+            location = ''
+            cell_type_id = ''
+            cell_type_name = ''
+            cellular_component_id = ''
+            cellular_component_term = ''
+            cellular_type_qualifier_ids = []
+            cellular_type_qualifier_term_names = []
+            cellular_component_qualifier_ids = []
+            cellular_component_qualifier_term_names = []
+            anatomy_term_qualifier_ids = []
+            anatomy_term_qualifier_term_names = []
+            for [expressionBioEntity, association, ontology] in expression['entities']:
+                location = expressionBioEntity['whereExpressedStatement']
+                if association.type in ['CELLULAR_COMPONENT_RIBBON_TERM', 'ANATOMICAL_RIBBON_TERM']:
+                    pass
+                elif association.type == 'ANATOMICAL_STRUCTURE':
+                    anatomy_term_id = ontology['primaryKey']
+                    anatomy_term_name = ontology['name']
+                elif association.type == 'CELLULAR_COMPONENT':
+                    if 'GOTerm' in ontology.labels:
+                        cellular_component_id = ontology['primaryKey']
+                        cellular_component_term = ontology['name']
+                    else:
+                        print('cc entity')
+                        print(association)
+                        print(ontology)
+                        exit()
+                elif association.type == 'ANATOMICAL_SUB_SUBSTRUCTURE':
+                    cell_type_id = ontology['primaryKey']
+                    cell_type_name = ontology['name']
+                elif association.type == 'CELLULAR_COMPONENT_QUALIFIER':
+                    cellular_component_qualifier_ids.append(ontology['primaryKey'])
+                    cellular_component_qualifier_term_names.append(ontology['name'])
+                elif association.type == 'ANATOMICAL_SUB_STRUCTURE_QUALIFIER':
+                    cell_type_qualifier_ids.append(ontology['primaryKey'])
+                    cell_type_qualifier_term_names.append(ontology['name'])
+                elif association.type == 'ANATOMICAL_STRUCTURE_QUALIFIER':
+                    anatomy_term_qualifier_ids.append(ontology['primaryKey'])
+                    anatomy_term_qualifier_term_names(ontology['primaryKey'])
+                else:
+                    logger.error('Not handling ontology term %r off gene %r %r', ontology['primaryKey'], expression['gene']['primaryKey'])
 
-            cell_type_id = expression['cellTypeObj']['id'] or ''
-            cell_type_term = expression['cellTypeObj']['term'] or ''
-            cell_type_qualifier_ids = ','.join(str(cellTypeQualifierObj['primaryKey']) for cellTypeQualifierObj in expression['cellTypeQualifiers']) or ''
-            cell_type_qualifier_term_names = ','.join(str(cellTypeQualifierObj['name']) for cellTypeQualifierObj in expression['cellTypeQualifiers']) or ''
-
-            stage_id = expression['stageObj']['id'] or ''
-            stage_term = expression['stageObj']['term'] or ''
-            assay_id = expression['assayObj']['id'] or ''
-            assay_term = expression['assayObj']['term'] or ''
-
-            references = ','.join(ref_obj['pubMedId'] or ref_obj['pubModId'] for ref_obj in expression['References']) or ''
-
-            row = dict(zip(columns, [expression['speciesObj']['name'],
-                                      expression['speciesObj']['id'],
-                                      expression['geneObj']['id'],
-                                      expression['geneObj']['symbol'],
-                                      expression['location'],
-                                      stage_id,
-                                      stage_term,
-                                      assay_id,
-                                      assay_term,
-                                      cellular_component_id,
-                                      cellular_component_term,
-                                      cellular_component_qualifier_ids,
-                                      cellular_component_qualifier_term_names,
-                                      cell_type_id,
-                                      cell_type_term,
-                                      cell_type_qualifier_ids,
-                                      cell_type_qualifier_term_names,
-                                      anatomy_term_id,
-                                      anatomy_term_name,
-                                      anatomy_term_qualifier_ids,
-                                      anatomy_term_qualifier_term_names,
-                                      expression['Source'],
-                                      references]))
-            writer.writerows(row)
+            row = dict(zip(columns, [expression['species']['primaryKey'],
+                                     expression['species']['name'],
+                                     expression['gene']['primaryKey'],
+                                     expression['gene']['symbol'],
+                                     location,
+                                     stage_id,
+                                     stage_term,
+                                     assay_id,
+                                     assay_term,
+                                     cellular_component_id,
+                                     cellular_component_term,
+                                     ','.join(cellular_component_qualifier_ids) or '',
+                                     ','.join(cellular_component_qualifier_term_names) or '',
+                                     cell_type_id,
+                                     cell_type_name,
+                                     ','.join(cellular_type_qualifier_ids) or '',
+                                     ','.join(cellular_type_qualifier_term_names) or '',
+                                     anatomy_term_id or '',
+                                     anatomy_term_name or '',
+                                     ','.join(anatomy_term_qualifier_ids) or '',
+                                     ','.join(anatomy_term_qualifier_term_names) or '',
+                                     ','.join(list(dict.fromkeys(sources))) or '',
+                                     ','.join(list(dict.fromkeys(publications))) or '']))
+            tsv_writer.writerows([row])
         expression_file.close()

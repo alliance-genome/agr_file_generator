@@ -23,10 +23,10 @@ def setup_logging(logger_name):
 def main(generated_files_folder='/usr/src/tmp',
          fasta_sequences_folder='sequences',
          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):
-    generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes)
+    #generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes)
     #generate_orthology_file(generated_files_folder, alliance_db_version)
     #generate_daf_file(generated_files_folder, alliance_db_version)
-    #generate_expression_file(generated_files_folder, alliance_db_version)
+    generate_expression_file(generated_files_folder, alliance_db_version)
 
 
 def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes):
@@ -59,7 +59,7 @@ RETURN c.primaryKey AS chromosome,
 
 
 def generate_orthology_file(generated_files_folder, alliance_db_version):
-    orthology_query = """MATCH (species1)<-[sa:FROM_SPECIES]-(gene1:Gene)-[o:ORTHOLOGOUS]->(gene2:Gene)-[sa2:FROM_SPECIES]->(species2:Species)
+    orthology_query = '''MATCH (species1)<-[sa:FROM_SPECIES]-(gene1:Gene)-[o:ORTHOLOGOUS]->(gene2:Gene)-[sa2:FROM_SPECIES]->(species2:Species)
 WHERE o.strictFilter
 OPTIONAL MATCH (algorithm:OrthoAlgorithm)-[m:MATCHED]-(ogj:OrthologyGeneJoin)-[association:ASSOCIATION]-(gene1)
 WHERE ogj.primaryKey = o.primaryKey
@@ -77,7 +77,7 @@ RETURN gene1.primaryKey AS gene1ID,
        species1.primaryKey AS species1TaxonID,
        species1.name AS species1Name,
        species2.primaryKey AS species2TaxonID,
-       species2.name AS species2Name"""
+       species2.name AS species2Name'''
     data_source = DataSource(uri, orthology_query)
     of = OrthologyFileGenerator(data_source,
                                 generated_files_folder,
@@ -86,7 +86,7 @@ RETURN gene1.primaryKey AS gene1ID,
 
 
 def generate_daf_file(generated_files_folder, alliance_db_version):
-    daf_query = """MATCH (dej:Association:DiseaseEntityJoin)-[:ASSOCIATION]-(object)-[da:IS_MARKER_FOR|:IS_IMPLICATED_IN|:IMPLICATED_VIA_ORTHOLOGY|:BIOMARKER_VIA_ORTHOLOGY]->(disease:DOTerm)
+    daf_query = '''MATCH (dej:Association:DiseaseEntityJoin)-[:ASSOCIATION]-(object)-[da:IS_MARKER_FOR|:IS_IMPLICATED_IN|:IMPLICATED_VIA_ORTHOLOGY|:BIOMARKER_VIA_ORTHOLOGY]->(disease:DOTerm)
 WHERE (object:Gene OR object:Allele)
     AND da.uuid = dej.primaryKey
 MATCH (object)-[FROM_SPECIES]->(species:Species)
@@ -109,7 +109,7 @@ RETURN  object.taxonId AS taxonId,
         disease.name as DOname,
         ec.primaryKey AS evidenceCode,
         dej.dateAssigned AS dateAssigned,
-        da.dataProvider AS dataProvider"""
+        da.dataProvider AS dataProvider'''
     data_source = DataSource(uri, daf_query)
     daf = DafFileGenerator(data_source,
                            generated_files_folder,
@@ -118,36 +118,9 @@ RETURN  object.taxonId AS taxonId,
 
 
 def generate_expression_file(generated_files_folder, alliance_db_version):
-    expression_query = """MATCH (begj:BioEntityGeneExpressionJoin)<-[:ASSOCIATION]-(ebe:ExpressionBioEntity)<-[ei:EXPRESSED_IN]-(gene:Gene)-[:FROM_SPECIES]->(species:Species)
-WITH begj, ebe, ei, gene, {id: species.primaryKey, name: species.name} as speciesObj
-where ei.uuid = begj.primaryKey
-MATCH (begj:BioEntityGeneExpressionJoin)-[:ASSAY]->(mmo:MMOTerm) //one to one
-MATCH (begj:BioEntityGeneExpressionJoin)-[:EVIDENCE]->(ref:Publication)
-WITH ebe, gene, speciesObj, begj, mmo, collect(ref) AS References
-OPTIONAL MATCH (ebe:ExpressionBioEntity)-[:ANATOMICAL_STRUCTURE_QUALIFIER]->(asq:Ontology)
-WITH ebe, gene, speciesObj, begj, mmo, References, CASE WHEN asq IS NOT NULL THEN collect(asq) ELSE [] END AS anatomyTermQualifiers
-OPTIONAL MATCH (ebe:ExpressionBioEntity)-[:CELLULAR_COMPONENT_QUALIFIER]-(ccq:Ontology)
-WITH ebe, gene, speciesObj, begj, mmo, References, anatomyTermQualifiers, CASE WHEN ccq IS NOT NULL THEN collect(ccq) ELSE [] END AS cellularComponentQualifiers
-OPTIONAL MATCH (ebe:ExpressionBioEntity)-[:ANATOMICAL_SUB_SUBSTRUCTURE_QUALIFIER]->(assq:Ontology)
-WITH ebe, gene, speciesObj, begj, mmo, References, anatomyTermQualifiers, cellularComponentQualifiers, CASE WHEN assq IS NOT NULL THEN collect(assq) ELSE [] END AS cellTypeQualifiers
-OPTIONAL MATCH (ebe:ExpressionBioEntity)-[:ANATOMICAL_STRUCTURE]->(anatomicalStructure:Ontology)
-OPTIONAL MATCH (ebe:ExpressionBioEntity)-[:ANATOMICAL_SUB_SUBSTRUCTURE]->(anatomicalSubStructure:Ontology)
-
-OPTIONAL MATCH (begj:BioEntityGeneExpressionJoin)-[:DURING]-(stage:Stage)
-OPTIONAL MATCH (gene:Gene)-[:CELLULAR_COMPONENT]-(cc:GOTerm)
-RETURN speciesObj,
-       {symbol: gene.symbol, id: gene.modGlobalId} as geneObj,
-       ebe.whereExpressedStatement AS location,
-       {term: stage.name, id: stage.primaryKey} as stageObj,
-       {term: mmo.name, id: mmo.primaryKey} AS assayObj,
-       {term: cc.primaryKey, id: cc.primaryKey} AS cellularComponentObj,
-       cellularComponentQualifiers,
-       {term: anatomicalStructure.name, id: anatomicalStructure.primaryKey} AS anatomyTermObj,
-       {term: anatomicalSubStructure.name, id: anatomicalSubStructure.primaryKey} AS cellTypeObj,
-       anatomyTermQualifiers,
-       cellTypeQualifiers,
-       gene.dataProvider AS Source,
-       References"""
+    expression_query = '''MATCH p1=(species:Species)<-[:FROM_SPECIES]-(gene:Gene)-[:ASSOCIATION]->(begej:BioEntityGeneExpressionJoin)--(term),
+                                entity = (begej:BioEntityGeneExpressionJoin)<-[:ASSOCIATION]-(exp:ExpressionBioEntity)-[a]->(ontology:Ontology)
+                          RETURN species, gene, begej, collect(term) as terms, collect([exp, a, ontology]) AS entities'''
     data_source = DataSource(uri, expression_query)
     daf = ExpressionFileGenerator(data_source,
                                   generated_files_folder,

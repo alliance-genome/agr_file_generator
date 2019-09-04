@@ -60,7 +60,7 @@ class DafFileGenerator:
                    "Date",
                    "Source"]
 
-        tsv_writer = csv.DictWriter(expression_file, delimiter='\t', fieldnames=columns)
+        tsv_writer = csv.DictWriter(expression_file, delimiter='\t', fieldnames=columns, lineterminator="\n")
         tsv_writer.writeheader()
 
         for disease_association in self.disease_associations:
@@ -119,5 +119,5 @@ class DafFileGenerator:
                                      pub_id,
                                      datetime.strptime(date_str[:10], "%Y-%m-%d").strftime("%Y%m%d"),
                                      disease_association["dataProvider"]]))
-            writer.writerows(row)
+            writer.writerows([row])
         disease_file.close()
