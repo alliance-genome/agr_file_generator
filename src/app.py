@@ -23,9 +23,10 @@ def setup_logging(logger_name):
 def main(generated_files_folder='/usr/src/tmp',
          fasta_sequences_folder='sequences',
          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):
-    #generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes)
-    #generate_orthology_file(generated_files_folder, alliance_db_version)
-    #generate_daf_file(generated_files_folder, alliance_db_version)
+    //generated_files_folder = 'agr_generated_files'
+    generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes)
+    generate_orthology_file(generated_files_folder, alliance_db_version)
+    generate_daf_file(generated_files_folder, alliance_db_version)
     generate_expression_file(generated_files_folder, alliance_db_version)
 
 
@@ -118,14 +119,22 @@ RETURN  object.taxonId AS taxonId,
 
 
 def generate_expression_file(generated_files_folder, alliance_db_version):
-    expression_query = '''MATCH p1=(species:Species)<-[:FROM_SPECIES]-(gene:Gene)-[:ASSOCIATION]->(begej:BioEntityGeneExpressionJoin)--(term),
-                                entity = (begej:BioEntityGeneExpressionJoin)<-[:ASSOCIATION]-(exp:ExpressionBioEntity)-[a]->(ontology:Ontology)
-                          RETURN species, gene, begej, collect(term) as terms, collect([exp, a, ontology]) AS entities'''
+    expression_query = '''MATCH (speciesObj:Species)<-[:FROM_SPECIES]-(geneObj:Gene)-[:ASSOCIATION]->(begej:BioEntityGeneExpressionJoin)--(term)
+                          WITH {primaryKey: speciesObj.primaryKey, name: speciesObj.name} AS species,
+                               {primaryKey: geneObj.primaryKey, symbol: geneObj.symbol} AS  gene,
+                               begej,
+                               COLLECT(term) AS terms
+                          MATCH (begej:BioEntityGeneExpressionJoin)<-[:ASSOCIATION]-(exp:ExpressionBioEntity)-[a:ANATOMICAL_STRUCTURE|CELLULAR_COMPONENT|ANATOMICAL_SUB_SUBSTRUCTURE|CELLULAR_COMPONENT_QUALIFIER|ANATOMICAL_SUB_STRUCTURE_QUALIFIER|ANATOMICAL_STRUCTURE_QUALIFIER]->(ontology:Ontology)
+                          //WHERE gene.primaryKey = 'ZFIN:ZDB-GENE-020419-39'
+                          RETURN species, gene, terms, begej.primaryKey as begejId, exp.whereExpressedStatement as location,
+                                                       COLLECT({edge: type(a),
+                                                                primaryKey: ontology.primaryKey,
+                                                                name: ontology.name}) as ontologyPaths'''
     data_source = DataSource(uri, expression_query)
-    daf = ExpressionFileGenerator(data_source,
-                                  generated_files_folder,
-                                  alliance_db_version)
-    daf.generate_file()
+    expression = ExpressionFileGenerator(data_source,
+                                         generated_files_folder,
+                                         alliance_db_version)
+    expression.generate_file()
 
 
 if __name__ == '__main__':

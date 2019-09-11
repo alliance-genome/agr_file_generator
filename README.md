@@ -16,8 +16,8 @@ This tool creates files from Alliance resources. The tool is build and testsed w
 You will want to customize your run by setting these two env variable in the docker-compose.yaml file
 
 ```bash
- ALLIANCE_RELEASE='2.3.0'
- NEO4J_HOST=build.alliancegenome.org
+ export ALLIANCE_RELEASE='2.3.0'
+ export NEO4J_HOST=build.alliancegenome.org
 ```
 
 if you only want to generate certain types of files make sure to comment/uncomment the files in the src/agr/app.py file.

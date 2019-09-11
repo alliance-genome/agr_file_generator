@@ -18,3 +18,8 @@ class DataSource:
             with session.begin_transaction() as tx:
                 for record in tx.run(self.query):
                     yield record.data()
+
+    def get_data(self):
+        with self.driver.session() as session:
+            with session.begin_transaction() as tx:
+                return list(tx.run(self.query))

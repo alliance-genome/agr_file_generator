@@ -1,4 +1,4 @@
-generated_files/*
+agr_generated_files/*
 sequences/*
 # Byte-compiled / optimized / DLL files
 __pycache__/
