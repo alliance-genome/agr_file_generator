@@ -31,8 +31,7 @@ class VcfFileGenerator:
 ##INFO=<ID=symbol,Type=String,Number=0,Description="The human readable name of the allele">
 ##phasing=partial
 ##reference=
-##source=agr_file_generator
-                  """
+##source=agr_file_generator"""
 
     col_headers = ('CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO')
 
