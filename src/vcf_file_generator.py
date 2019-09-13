@@ -71,7 +71,10 @@ class VcfFileGenerator:
     def _add_variant_to_vcf_file(cls, vcf_file, variant):
         info_map = OrderedDict()
         info_map['hgvs_nomenclature'] = cls._variant_value_for_file(variant, 'hgvsNomenclature')
-        info_map['geneLevelConsequence'] = cls._variant_value_for_file(variant, 'geneLevelConsequence')
+        if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
+            info_map['geneLevelConsequence'] = ' '.join(cls._variant_value_for_file(variant, 'geneLevelConsequence').split('_'))
+        else:
+            info_map['geneLevelConsequence'] = cls._variant_value_for_file(variant, 'geneLevelConsequence')
         info_map['symbol'] = cls._variant_value_for_file(variant, 'symbol')
         info_map['globalId'] = variant['globalId']
         info_map['alleles'] = cls._variant_value_for_file(variant,
@@ -130,6 +133,8 @@ class VcfFileGenerator:
             variant['POS'] = variant['start']
         elif so_term == 'MNV':
             variant['POS'] = variant['end']
+            if variant['POS'] == None:
+                return None
         else:
             logger.fatal('New SoTerm that We need to add logic for: %r', so_term)
             return None
@@ -141,20 +146,19 @@ class VcfFileGenerator:
             logger.info('Generating VCF File for assembly %r', assembly)
             filename = assembly + '-' + self.database_version + '.vcf'
             filepath = os.path.join(self.generated_files_folder, filename)
-            if assembly != 'GRCm38':
-                print(assembly)
-                with open(filepath, 'w') as vcf_file:
-                    self._write_vcf_header(vcf_file,
-                                           assembly,
-                                           assembly_species[assembly],
-                                           self.database_version)
-                    for (chromosome, variants) in sorted(chromo_variants.items(), key=itemgetter(0)):
-                        # if assembly.find('GRCm38') >= 0:
-                            # print(type(variants))
-                        if chromosome in skip_chromosomes:
-                            logger.info('Skipping VCF file generation for chromosome %r',chromosome)
-                            continue
-                        adjust_varient = partial(self._adjust_variant)
-                        adjusted_variants = filter(None, map(adjust_varient, variants))
-                        for variant in sorted(adjusted_variants, key=itemgetter('POS')):
-                            self._add_variant_to_vcf_file(vcf_file, variant)
+            print('INFO\t\t', assembly)
+            with open(filepath, 'w') as vcf_file:
+                self._write_vcf_header(vcf_file,
+                                       assembly,
+                                       assembly_species[assembly],
+                                       self.database_version)
+                for (chromosome, variants) in sorted(chromo_variants.items(), key=itemgetter(0)):
+                    # if assembly.find('GRCm38') >= 0:
+                        # print(type(variants))
+                    if chromosome in skip_chromosomes:
+                        logger.info('Skipping VCF file generation for chromosome %r',chromosome)
+                        continue
+                    adjust_varient = partial(self._adjust_variant)
+                    adjusted_variants = filter(None, map(adjust_varient, variants))
+                    for variant in sorted(adjusted_variants, key=itemgetter('POS')):
+                        self._add_variant_to_vcf_file(vcf_file, variant)
