@@ -52,7 +52,7 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
     os.makedirs(fasta_sequences_folder, exist_ok=True)
     variants_query = """MATCH (s:Species)-[:FROM_SPECIES]-(a:Allele)-[:VARIATION]-(v:Variant)-[l:LOCATED_ON]-(c:Chromosome)
                      MATCH (v:Variant)-[:VARIATION_TYPE]-(st:SOTerm)
-                     MATCH (v:Variant)-[:ASSOCIATION]-(g:GenomicLocation)
+                     MATCH (v:Variant)-[:ASSOCIATION]-(p:GenomicLocation)
                      OPTIONAL MATCH (a:Allele)-[:IS_ALLELE_OF]-(g:Gene)
                      RETURN c.primaryKey AS chromosome,
                             v.globalId AS globalId,
@@ -63,8 +63,10 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
                             v.hgvsNomenclature AS hgvsNomenclature,
                             v.dataProvider AS dataProvider,
                             a.symbol AS symbol,
-                            g.assembly AS assembly,
+                            a.symbolText as symbolText,
+                            p.assembly AS assembly,
                             collect(a.primaryKey) AS alleles,
+                            collect(g.primaryKey) AS geneSymbol,
                             CASE WHEN g IS NOT NULL THEN collect(g.primaryKey) ELSE [] END AS alleleOfGenes,
                             l.start AS start,
                             l.end AS end,

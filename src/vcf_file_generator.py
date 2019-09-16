@@ -77,12 +77,10 @@ class VcfFileGenerator:
             info_map['geneLevelConsequence'] = cls._variant_value_for_file(variant, 'geneLevelConsequence')
         info_map['symbol'] = cls._variant_value_for_file(variant, 'symbol')
         info_map['globalId'] = variant['globalId']
-        info_map['alleles'] = cls._variant_value_for_file(variant,
-                                                          'alleles',
-                                                          transform=', '.join)
-        info_map['allele_of_genes'] = cls._variant_value_for_file(variant,
-                                                                  'alleleOfGenes',
-                                                                  transform=', '.join)
+        info_map['alleles'] = cls._variant_value_for_file(variant,'alleles',transform=', '.join)
+        # info_map['allele_of_genes'] = cls._variant_value_for_file(variant,'alleleOfGenes',transform=', '.join)
+        info_map['allele_of_genes'] = cls._variant_value_for_file(variant, 'geneSymbol', transform=', '.join)
+        info_map['symbol_text'] = cls._variant_value_for_file(variant, 'symbolText')
         if any(info_map.values()):
             info = ';'.join('{}="{}"'.format(k, v)
                             for (k, v) in info_map.items()
@@ -153,8 +151,6 @@ class VcfFileGenerator:
                                        assembly_species[assembly],
                                        self.database_version)
                 for (chromosome, variants) in sorted(chromo_variants.items(), key=itemgetter(0)):
-                    # if assembly.find('GRCm38') >= 0:
-                        # print(type(variants))
                     if chromosome in skip_chromosomes:
                         logger.info('Skipping VCF file generation for chromosome %r',chromosome)
                         continue
