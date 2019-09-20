@@ -30,28 +30,27 @@ def main(vcf, ortho, daf, expr,
          generated_files_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output',
          fasta_sequences_folder='sequences',
          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):
-
-    print('INFO\t\tFiles output: ' + generated_files_folder)
+    
+    click.echo('INFO:\tFiles output: ' + generated_files_folder)
     if vcf is True:
-        print('INFO\t\tGenerating VCF files')
+        click.echo('INFO:\tGenerating VCF files')
         generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes)
-    if ortho is True:
-        print('INFO\t\tGenerating Orthology files')
+    elif ortho is True:
+        click.echo('INFO:\tGenerating Orthology file')
         generate_orthology_file(generated_files_folder, alliance_db_version)
-    if daf is True:
-        print('INFO\t\tGenerating DAF files')
+    elif daf is True:
+        click.echo('INFO:\tGenerating DAF file')
         generate_daf_file(generated_files_folder, alliance_db_version)
-    if expr is True:
-        print('INFO\t\tGenerating Expression files')
+    elif expr is True:
+        click.echo('INFO:\tGenerating Expression file')
         generate_expression_file(generated_files_folder, alliance_db_version)
-
 
 def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes):
     os.makedirs(generated_files_folder, exist_ok=True)
     os.makedirs(fasta_sequences_folder, exist_ok=True)
-    variants_query = """MATCH (s:Species)-[:FROM_SPECIES]-(a:Allele)-[:VARIATION]-(v:Variant)-[l:LOCATED_ON]-(c:Chromosome)
-                     MATCH (v:Variant)-[:VARIATION_TYPE]-(st:SOTerm)
-                     MATCH (v:Variant)-[:ASSOCIATION]-(p:GenomicLocation)
+    variants_query = """MATCH (s:Species)-[:FROM_SPECIES]-(a:Allele)-[:VARIATION]-(v:Variant)-[l:LOCATED_ON]-(c:Chromosome),
+                              (v:Variant)-[:VARIATION_TYPE]-(st:SOTerm),
+                              (v:Variant)-[:ASSOCIATION]-(p:GenomicLocation)
                      OPTIONAL MATCH (a:Allele)-[:IS_ALLELE_OF]-(g:Gene)
                      RETURN c.primaryKey AS chromosome,
                             v.globalId AS globalId,
@@ -145,7 +144,7 @@ def generate_expression_file(generated_files_folder, alliance_db_version):
                                begej,
                                COLLECT(term) AS terms
                           MATCH (begej:BioEntityGeneExpressionJoin)<-[:ASSOCIATION]-(exp:ExpressionBioEntity)-[a:ANATOMICAL_STRUCTURE|CELLULAR_COMPONENT|ANATOMICAL_SUB_SUBSTRUCTURE|CELLULAR_COMPONENT_QUALIFIER|ANATOMICAL_SUB_STRUCTURE_QUALIFIER|ANATOMICAL_STRUCTURE_QUALIFIER]->(ontology:Ontology)
-                          //WHERE gene.primaryKey = 'ZFIN:ZDB-GENE-020419-39'
+                          //WHERE gene.primaryKey = 'ZFIN:ZDB-GENE-110411-206'
                           RETURN species, gene, terms, begej.primaryKey as begejId, exp.whereExpressedStatement as location,
                                                        COLLECT({edge: type(a),
                                                                 primaryKey: ontology.primaryKey,

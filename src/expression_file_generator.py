@@ -40,7 +40,7 @@ class ExpressionFileGenerator:
                    'GeneID',
                    'GeneSymbol',
                    'Location',
-                   'StageID',
+                  # 'StageID', currently don't have stage IDs in the database
                    'StageTerm',
                    'AssayID',
                    'AssayTermName',
@@ -84,17 +84,15 @@ class ExpressionFileGenerator:
                     else:
                         row['Reference'] = publication
                 elif 'Stage' in term.labels:
-                    row['StageID'] = term['primaryKey']
+                    #row['StageID'] = term['primaryKey']
                     row['StageTerm'] = term['name']
                 elif 'MMOTerm' in term.labels:
                     row['AssayID'] = term['primaryKey']
                     row['AssayTermName'] = term['name']
-                elif 'UBERONTerm' in term.labels:
-                    row['AnatomyTermID'] = term['primaryKey']
             for ontologyPath in expression['ontologyPaths']:
                 if ontologyPath['edge'] == 'ANATOMICAL_STRUCTURE':
                     row['AnatomyTermID'] = ontologyPath['primaryKey']
-                    row['AnatomyTermID'] = ontologyPath['name']
+                    row['AnatomyTermName'] = ontologyPath['name']
                 elif ontologyPath['edge'] == 'CELLULAR_COMPONENT':
                     row['CellularComponentID'] = ontologyPath['primaryKey']
                     row['CellularComponentTerm'] = ontologyPath['name']
