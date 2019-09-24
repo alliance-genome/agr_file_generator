@@ -6,6 +6,7 @@ import yaml
 import click
 import urllib3
 import requests
+import logging
 
 from generators import VcfFileGenerator
 from generators import OrthologyFileGenerator
