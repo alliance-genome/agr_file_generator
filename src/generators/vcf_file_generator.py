@@ -1,11 +1,13 @@
+import os
+import time
+
 from collections import defaultdict, OrderedDict
 from functools import partial
 from operator import itemgetter
 import logging
-import os
-import time
-
 import pyfaidx
+
+from upload import upload_process
 
 
 logger = logging.getLogger(name=__name__)
@@ -35,9 +37,9 @@ class VcfFileGenerator:
 
     col_headers = ('CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO')
 
-    def __init__(self, variants, generated_files_folder, database_version):
+    def __init__(self, variants, generated_files_folder, config_info):
         self.variants = variants
-        self.database_version = database_version
+        self.config_info = config_info
         self.generated_files_folder = generated_files_folder
 
     @classmethod
@@ -47,10 +49,10 @@ class VcfFileGenerator:
         variant['genomicVariantSequence'] = padded_base + variant['genomicVariantSequence']
 
     @classmethod
-    def _write_vcf_header(cls, vcf_file, assembly, species, database_version):
+    def _write_vcf_header(cls, vcf_file, assembly, species, config_info):
         dt = time.strftime("%Y%m%d", time.gmtime())
         header = cls.file_header.format(datetime=dt,
-                                        database_version=database_version,
+                                        database_version=config_info.config['RELEASE_VERSION'],
                                         species=species,
                                         assembly=assembly)
         vcf_file.write(header)
@@ -101,7 +103,7 @@ class VcfFileGenerator:
         assembly_chr_variants = defaultdict(lambda : defaultdict(list))
         assembly_species = {}
         for variant in self.variants:
-            assembly = variant['assembly']
+            assembly = 'R6' if variant['assembly'].startswith('R6') else variant['assembly'].replace('.', '').replace('_', '')
             chromosome = variant['chromosome']
             assembly_chr_variants[assembly][chromosome].append(variant)
             assembly_species[assembly] = variant['species']
@@ -138,18 +140,17 @@ class VcfFileGenerator:
             return None
         return variant
 
-    def generate_files(self, skip_chromosomes=()):
+    def generate_files(self, skip_chromosomes=(), upload_flag=False):
         (assembly_chr_variants, assembly_species) = self._consume_data_source()
         for (assembly, chromo_variants) in assembly_chr_variants.items():
             logger.info('Generating VCF File for assembly %r', assembly)
-            filename = assembly + '-' + self.database_version + '.vcf'
+            filename = assembly + '-' + self.config_info.config['RELEASE_VERSION'] + '.vcf'
             filepath = os.path.join(self.generated_files_folder, filename)
-            print('INFO\t\t', assembly)
             with open(filepath, 'w') as vcf_file:
                 self._write_vcf_header(vcf_file,
                                        assembly,
                                        assembly_species[assembly],
-                                       self.database_version)
+                                       self.config_info)
                 for (chromosome, variants) in sorted(chromo_variants.items(), key=itemgetter(0)):
                     if chromosome in skip_chromosomes:
                         logger.info('Skipping VCF file generation for chromosome %r',chromosome)
@@ -158,3 +159,7 @@ class VcfFileGenerator:
                     adjusted_variants = filter(None, map(adjust_varient, variants))
                     for variant in sorted(adjusted_variants, key=itemgetter('POS')):
                         self._add_variant_to_vcf_file(vcf_file, variant)
+            if upload_flag:
+                logger.info("Submitting to FMS")
+                process_name = "1"
+                upload_process(process_name, filename, self.generated_files_folder, 'VCF', assembly, self.config_info)

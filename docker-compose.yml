@@ -12,8 +12,8 @@ services:
           nocopy: true
     environment:
       - NET=production
-      - ALLIANCE_RELEASE=2.3.0
-      - NEO4J_HOST=localhost
+      - RELEASE_VERSION=2.3.0
+      - NEO4J_HOST=build.alliancegenome.org
       - FMS_API_URL=https://fmsdev.alliancegenome.org
       - API_KEY=${API_KEY}
       - DEBUG=True
@@ -21,6 +21,8 @@ services:
       - python3
       - -u 
       - src/app.py
+      - --upload
+      - --vcf
   agr_file_generator_test:
     image: agrdocker/agr_file_generator:latest
     volumes:
@@ -32,7 +34,7 @@ services:
     environment:
       - PYTHONPATH=/usr/src/app/src
       - NET=production
-      - ALLIANCE_RELEASE=2.3.0
+      - RELEASE_VERSION=2.3.0
       - NEO4J_HOST=build.alliancegenome.org
       - FMS_API_URL=https://fmsdev.alliancegenome.org
       - API_KEY=${API_KEY}

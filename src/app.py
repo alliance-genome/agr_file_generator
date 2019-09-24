@@ -1,14 +1,18 @@
-import logging
+import sys
 import os
 
+import coloredlogs
+import yaml
 import click
+import urllib3
+import requests
+import logging
 
-from vcf_file_generator import VcfFileGenerator
-from orthology_file_generator import OrthologyFileGenerator
-from daf_file_generator import DafFileGenerator
-from expression_file_generator import ExpressionFileGenerator
+from generators import VcfFileGenerator
+from generators import OrthologyFileGenerator
+from generators import DafFileGenerator
+from generators import ExpressionFileGenerator
 from data_source import DataSource
-
 
 host = os.environ.get('NEO4J_HOST', 'build.alliancegenome.org')
 port = int(os.environ.get('NEO4J_PORT', 7687))
@@ -16,25 +20,54 @@ alliance_db_version = os.environ.get('ALLIANCE_RELEASE', '2.3.0')
 
 uri = "bolt://" + host + ":" + str(port)
 
+debug_level = logging.INFO
+coloredlogs.install(level=debug_level,
+                    fmt='%(asctime)s %(levelname)s: %(name)s:%(lineno)d: %(message)s',
+                    field_styles={
+                            'asctime': {'color': 'green'},
+                            'hostname': {'color': 'magenta'},
+                            'levelname': {'color': 'white', 'bold': True},
+                            'name': {'color': 'blue'},
+                            'programname': {'color': 'cyan'}
+                    })
 
-def setup_logging(logger_name):
-    logging.basicConfig(level=logging.DEBUG)
+logging.getLogger("urllib3").setLevel(debug_level)
+logger = logging.getLogger(__name__)
 
+
+# Common configuration variables used throughout the script.
+class ContextInfo(object):
+
+    def __init__(self):
+        config_file = open('src/config.yaml', 'r')
+        self.config = yaml.load(config_file, Loader=yaml.FullLoader)
+
+        # Look for ENV variables to replace default variables from config file.
+        for key in self.config.keys():
+            try: 
+                self.config[key] = os.environ[key]
+            except KeyError:
+                logger.info('Environmental variable not found for \'{}\'. Using config.yaml value.'.format(key))
+                pass  # If we don't find an ENV variable, keep the value from the config file.
+        
+        logger.debug('Initialized with config values: {}'.format(self.config))
 
 @click.command()
-@click.option('--vcf', is_flag=True, help='generates VCF files')
-@click.option('--ortho', is_flag=True, help='generates orthology files')
-@click.option('--daf', is_flag=True, help='generates DAF files')
-@click.option('--expr', is_flag=True, help='generates expression files')
-def main(vcf, ortho, daf, expr,
+@click.option('--vcf', is_flag=True, help='Generates VCF files')
+@click.option('--ortho', is_flag=True, help='Generates orthology files')
+@click.option('--daf', is_flag=True, help='Generates DAF files')
+@click.option('--expr', is_flag=True, help='Generates expression files')
+@click.option('--upload', is_flag=True, help='Submits generated files to File Management System (FMS)')
+def main(vcf, ortho, daf, expr, upload,
          generated_files_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output',
          fasta_sequences_folder='sequences',
          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):
     
     click.echo('INFO:\tFiles output: ' + generated_files_folder)
+    context_info = ContextInfo()
     if vcf is True:
         click.echo('INFO:\tGenerating VCF files')
-        generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes)
+        generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, context_info, upload)
     elif ortho is True:
         click.echo('INFO:\tGenerating Orthology file')
         generate_orthology_file(generated_files_folder, alliance_db_version)
@@ -45,7 +78,7 @@ def main(vcf, ortho, daf, expr,
         click.echo('INFO:\tGenerating Expression file')
         generate_expression_file(generated_files_folder, alliance_db_version)
 
-def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes):
+def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, context_info, upload_flag):
     os.makedirs(generated_files_folder, exist_ok=True)
     os.makedirs(fasta_sequences_folder, exist_ok=True)
     variants_query = """MATCH (s:Species)-[:FROM_SPECIES]-(a:Allele)-[:VARIATION]-(v:Variant)-[l:LOCATED_ON]-(c:Chromosome),
@@ -74,8 +107,8 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
     data_source = DataSource(uri, variants_query)
     gvf = VcfFileGenerator(data_source,
                            generated_files_folder,
-                           alliance_db_version)
-    gvf.generate_files(skip_chromosomes=skip_chromosomes)
+                           context_info)
+    gvf.generate_files(skip_chromosomes=skip_chromosomes, upload_flag=upload_flag)
 
 
 def generate_orthology_file(generated_files_folder, alliance_db_version):
