@@ -48,10 +48,10 @@ class ExpressionFileGenerator:
                    'CellularComponentTerm',
                    'CellularComponentQualifierIDs',
                    'CellularComponentQualifierTermNames',
-                   'CellTypeID',
-                   'CellTypeName',
-                   'CellTypeQualifierIDs',
-                   'CellTypeQualifierTermNames',
+                   'SubStructureID',
+                   'SubStructureName',
+                   'SubStructureQualifierIDs',
+                   'SubStructureQualifierTermNames',
                    'AnatomyTermID',
                    'AnatomyTermName',
                    'AnatomyTermQualifierIDs',
@@ -97,8 +97,8 @@ class ExpressionFileGenerator:
                     row['CellularComponentID'] = ontologyPath['primaryKey']
                     row['CellularComponentTerm'] = ontologyPath['name']
                 elif ontologyPath['edge'] == 'ANATOMICAL_SUB_SUBSTRUCTURE':
-                    row['CellTypeID'] = ontologyPath['primaryKey']
-                    row['CellTypeName'] = ontologyPath['name']
+                    row['SubStructureID'] = ontologyPath['primaryKey']
+                    row['SubStructureName'] = ontologyPath['name']
                 elif ontologyPath['edge'] == 'CELLULAR_COMPONENT_QUALIFIER':
                     if row['CellularComponentQualifierIDs']:
                         row['CellularComponentQualifierIDs'] += ','
@@ -111,16 +111,16 @@ class ExpressionFileGenerator:
                     else:
                         row['CellularComponentQualifierTermNames'] = ontologyPath['name']
                 elif ontologyPath['edge'] == 'ANATOMICAL_SUB_STRUCTURE_QUALIFIER':
-                    if row['CellTypeQualifierIDs']:
-                        row['CellTypeQualifierIDs'] += ','
-                        row['CellTypeQualifierIDs'] += ontologyPath['primaryKey']
+                    if row['SubStructureQualifierIDs']:
+                        row['SubStructureQualifierIDs'] += ','
+                        row['SubStructureQualifierIDs'] += ontologyPath['primaryKey']
                     else:
-                        row['CellTypeQualifierIDs'] = ontologyPath['primaryKey']
-                    if row['CellTypeQualifierTermNames']:
-                        row['CellTypeQualifierTermNames'] += ','
-                        row['CellTypeQualifierTermNames'] += ontologyPath['name']
+                        row['SubStructureQualifierIDs'] = ontologyPath['primaryKey']
+                    if row['SubStructureQualifierTermNames']:
+                        row['SubStructureQualifierTermNames'] += ','
+                        row['SubStructureQualifierTermNames'] += ontologyPath['name']
                     else:
-                        row['CellTypeQualifierTermNames'] = ontologyPath['name']
+                        row['SubStructureQualifierTermNames'] = ontologyPath['name']
                 elif ontologyPath['edge'] == 'ANATOMICAL_STRUCTURE_QUALIFIER':
                     if row['AnatomyTermQualifierIDs']:
                         row['AnatomyTermQualifierIDs'] += ','
