@@ -1,6 +1,7 @@
 import sys
 
-import logging, csv
+import logging
+import csv
 from dateutil.parser import parse
 from datetime import datetime
 from time import gmtime, strftime

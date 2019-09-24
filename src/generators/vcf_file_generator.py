@@ -1,12 +1,13 @@
+import os
+import time
+
 from collections import defaultdict, OrderedDict
 from functools import partial
 from operator import itemgetter
 import logging
-import os
-import time
 import pyfaidx
 
-from upload import *
+from upload import upload_process
 
 
 logger = logging.getLogger(name=__name__)

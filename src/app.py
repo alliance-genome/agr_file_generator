@@ -1,8 +1,16 @@
-import logging, coloredlogs, yaml, os, sys, urllib3, requests
+import sys
 import os
-import click
 
-from generators import *
+import coloredlogs
+import yaml
+import click
+import urllib3
+import requests
+
+from generators import VcfFileGenerator
+from generators import OrthologyFileGenerator
+from generators import DafFileGenerator
+from generators import ExpressionFileGenerator
 from data_source import DataSource
 
 host = os.environ.get('NEO4J_HOST', 'build.alliancegenome.org')

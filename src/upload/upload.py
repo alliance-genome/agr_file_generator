@@ -1,6 +1,11 @@
 # Functions for use in downloading files.
+import os
 
-import logging, os, requests, json, hashlib, urllib
+import logging
+import requests
+import json
+import hashlib
+import urllib
 from requests_toolbelt.utils import dump
 from retry import retry
 from app import ContextInfo
