@@ -102,7 +102,7 @@ class VcfFileGenerator:
         assembly_chr_variants = defaultdict(lambda : defaultdict(list))
         assembly_species = {}
         for variant in self.variants:
-            assembly = variant['assembly']
+            assembly = 'R6' if variant['assembly'].startswith('R6') else variant['assembly'].replace('.', '').replace('_', '')
             chromosome = variant['chromosome']
             assembly_chr_variants[assembly][chromosome].append(variant)
             assembly_species[assembly] = variant['species']
@@ -141,17 +141,15 @@ class VcfFileGenerator:
 
     def generate_files(self, skip_chromosomes=(), upload_flag=False):
         (assembly_chr_variants, assembly_species) = self._consume_data_source()
-        fms_data_type = 'VCF'
         for (assembly, chromo_variants) in assembly_chr_variants.items():
             logger.info('Generating VCF File for assembly %r', assembly)
             filename = assembly + '-' + self.config_info.config['RELEASE_VERSION'] + '.vcf'
             filepath = os.path.join(self.generated_files_folder, filename)
-            logger.info(assembly)
             with open(filepath, 'w') as vcf_file:
                 self._write_vcf_header(vcf_file,
                                        assembly,
                                        assembly_species[assembly],
-                                       config_info)
+                                       self.config_info)
                 for (chromosome, variants) in sorted(chromo_variants.items(), key=itemgetter(0)):
                     if chromosome in skip_chromosomes:
                         logger.info('Skipping VCF file generation for chromosome %r',chromosome)
@@ -161,10 +159,6 @@ class VcfFileGenerator:
                     for variant in sorted(adjusted_variants, key=itemgetter('POS')):
                         self._add_variant_to_vcf_file(vcf_file, variant)
             if upload_flag:
-                fms_data_sub_type = assembly.replace('.', '').replace('_', '')
-                if fms_data_sub_type.startswith('R6'):
-                    fms_data_sub_type = 'R626'
                 logger.info("Submitting to FMS")
-                print("Submitting to FMS")
                 process_name = "1"
-                upload_process(process_name, filename, self.generated_files_folder, fms_data_type, fms_data_sub_type, self.config_info)
+                upload_process(process_name, filename, self.generated_files_folder, 'VCF', assembly, self.config_info)

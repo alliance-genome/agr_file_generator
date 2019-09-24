@@ -1,14 +1,9 @@
-import logging
+import logging, coloredlogs, yaml, os, sys, urllib3, requests
 import os
-
 import click
 
-import VcfFileGenerator
-import OrthologyFileGenerator
-import DafFileGenerator
-import ExpressionFileGenerator
+from generators import *
 from data_source import DataSource
-
 
 host = os.environ.get('NEO4J_HOST', 'build.alliancegenome.org')
 port = int(os.environ.get('NEO4J_PORT', 7687))
@@ -16,9 +11,20 @@ alliance_db_version = os.environ.get('ALLIANCE_RELEASE', '2.3.0')
 
 uri = "bolt://" + host + ":" + str(port)
 
+debug_level = logging.INFO
+coloredlogs.install(level=debug_level,
+                    fmt='%(asctime)s %(levelname)s: %(name)s:%(lineno)d: %(message)s',
+                    field_styles={
+                            'asctime': {'color': 'green'},
+                            'hostname': {'color': 'magenta'},
+                            'levelname': {'color': 'white', 'bold': True},
+                            'name': {'color': 'blue'},
+                            'programname': {'color': 'cyan'}
+                    })
 
-def setup_logging(logger_name):
-    logging.basicConfig(level=logging.DEBUG)
+logging.getLogger("urllib3").setLevel(debug_level)
+logger = logging.getLogger(__name__)
+
 
 # Common configuration variables used throughout the script.
 class ContextInfo(object):
@@ -36,7 +42,6 @@ class ContextInfo(object):
                 pass  # If we don't find an ENV variable, keep the value from the config file.
         
         logger.debug('Initialized with config values: {}'.format(self.config))
-        logger.info('Retrieval errors will be emailed to: {}'.format(self.config['notification_emails'])) 
 
 @click.command()
 @click.option('--vcf', is_flag=True, help='Generates VCF files')
