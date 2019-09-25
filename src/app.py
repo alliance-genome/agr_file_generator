@@ -169,7 +169,7 @@ def generate_daf_file(generated_files_folder, alliance_db_version):
     daf = daf_file_generator.DafFileGenerator(data_source,
                                               generated_files_folder,
                                               alliance_db_version)
-    daf.generate_file() 
+    daf.generate_file()
 
 
 def generate_expression_file(generated_files_folder, alliance_db_version):
