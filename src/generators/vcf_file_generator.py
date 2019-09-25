@@ -112,7 +112,10 @@ class VcfFileGenerator:
     def _adjust_variant(self, variant):
         so_term = variant['soTerm']
         start_pos = variant['start']
-        variant['POS'] = start_pos - 1 if so_term == 'insertion' else start_pos
+        if so_term in ['deletion', 'insertion']:
+            variant['POS'] = start_pos - 1
+        else:
+            variant['POS'] = start_pos
         if so_term == 'deletion':
             if variant['genomicReferenceSequence'] == '':
                 logger.error('No reference sequence for variant Id: %r', variant['ID'])

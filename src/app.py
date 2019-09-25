@@ -8,10 +8,10 @@ import urllib3
 import requests
 import logging
 
-from generators import VcfFileGenerator
-from generators import OrthologyFileGenerator
-from generators import DafFileGenerator
-from generators import ExpressionFileGenerator
+from generators import vcf_file_generator
+from generators import orthology_file_generator
+from daf_file_generator import daf_file_generator
+from generators import expression_file_generator
 from data_source import DataSource
 
 host = os.environ.get('NEO4J_HOST', 'build.alliancegenome.org')
@@ -105,9 +105,9 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
                             st.nameKey AS soTerm
                      """
     data_source = DataSource(uri, variants_query)
-    gvf = VcfFileGenerator(data_source,
-                           generated_files_folder,
-                           context_info)
+    gvf = vcf_file_generator.VcfFileGenerator(data_source,
+                             generated_files_folder,
+                             context_info)
     gvf.generate_files(skip_chromosomes=skip_chromosomes, upload_flag=upload_flag)
 
 
@@ -132,7 +132,7 @@ def generate_orthology_file(generated_files_folder, alliance_db_version):
                               species2.primaryKey AS species2TaxonID,
                               species2.name AS species2Name'''
     data_source = DataSource(uri, orthology_query)
-    of = OrthologyFileGenerator(data_source,
+    of = orthology_file_generator.OrthologyFileGenerator(data_source,
                                 generated_files_folder,
                                 alliance_db_version)
     of.generate_file()
@@ -164,7 +164,7 @@ def generate_daf_file(generated_files_folder, alliance_db_version):
                            dej.dateAssigned AS dateAssigned,
                            da.dataProvider AS dataProvider'''
     data_source = DataSource(uri, daf_query)
-    daf = DafFileGenerator(data_source,
+    daf = daf_file_generator.DafFileGenerator(data_source,
                            generated_files_folder,
                            alliance_db_version)
     daf.generate_file() 
@@ -183,7 +183,7 @@ def generate_expression_file(generated_files_folder, alliance_db_version):
                                                                 primaryKey: ontology.primaryKey,
                                                                 name: ontology.name}) as ontologyPaths'''
     data_source = DataSource(uri, expression_query)
-    expression = ExpressionFileGenerator(data_source,
+    expression = expression_file_generator.ExpressionFileGenerator(data_source,
                                          generated_files_folder,
                                          alliance_db_version)
     expression.generate_file()
