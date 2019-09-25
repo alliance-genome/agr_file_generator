@@ -10,7 +10,7 @@ import logging
 
 from generators import vcf_file_generator
 from generators import orthology_file_generator
-from daf_file_generator import daf_file_generator
+from generators import daf_file_generator
 from generators import expression_file_generator
 from data_source import DataSource
 
@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 class ContextInfo(object):
 
     def __init__(self):
-        config_file = open('src/config.yaml', 'r')
+        config_file = open('config.yaml', 'r')
         self.config = yaml.load(config_file, Loader=yaml.FullLoader)
 
         # Look for ENV variables to replace default variables from config file.
@@ -49,8 +49,9 @@ class ContextInfo(object):
             except KeyError:
                 logger.info('Environmental variable not found for \'{}\'. Using config.yaml value.'.format(key))
                 pass  # If we don't find an ENV variable, keep the value from the config file.
-        
+
         logger.debug('Initialized with config values: {}'.format(self.config))
+
 
 @click.command()
 @click.option('--vcf', is_flag=True, help='Generates VCF files')
@@ -62,7 +63,7 @@ def main(vcf, ortho, daf, expr, upload,
          generated_files_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output',
          fasta_sequences_folder='sequences',
          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):
-    
+
     click.echo('INFO:\tFiles output: ' + generated_files_folder)
     context_info = ContextInfo()
     if vcf is True:
@@ -77,6 +78,7 @@ def main(vcf, ortho, daf, expr, upload,
     elif expr is True:
         click.echo('INFO:\tGenerating Expression file')
         generate_expression_file(generated_files_folder, alliance_db_version)
+
 
 def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, context_info, upload_flag):
     os.makedirs(generated_files_folder, exist_ok=True)
@@ -106,8 +108,8 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
                      """
     data_source = DataSource(uri, variants_query)
     gvf = vcf_file_generator.VcfFileGenerator(data_source,
-                             generated_files_folder,
-                             context_info)
+                                              generated_files_folder,
+                                              context_info)
     gvf.generate_files(skip_chromosomes=skip_chromosomes, upload_flag=upload_flag)
 
 
@@ -133,8 +135,8 @@ def generate_orthology_file(generated_files_folder, alliance_db_version):
                               species2.name AS species2Name'''
     data_source = DataSource(uri, orthology_query)
     of = orthology_file_generator.OrthologyFileGenerator(data_source,
-                                generated_files_folder,
-                                alliance_db_version)
+                                                         generated_files_folder,
+                                                         alliance_db_version)
     of.generate_file()
 
 
@@ -165,8 +167,8 @@ def generate_daf_file(generated_files_folder, alliance_db_version):
                            da.dataProvider AS dataProvider'''
     data_source = DataSource(uri, daf_query)
     daf = daf_file_generator.DafFileGenerator(data_source,
-                           generated_files_folder,
-                           alliance_db_version)
+                                              generated_files_folder,
+                                              alliance_db_version)
     daf.generate_file() 
 
 
@@ -184,8 +186,8 @@ def generate_expression_file(generated_files_folder, alliance_db_version):
                                                                 name: ontology.name}) as ontologyPaths'''
     data_source = DataSource(uri, expression_query)
     expression = expression_file_generator.ExpressionFileGenerator(data_source,
-                                         generated_files_folder,
-                                         alliance_db_version)
+                                                                   generated_files_folder,
+                                                                   alliance_db_version)
     expression.generate_file()
 
 

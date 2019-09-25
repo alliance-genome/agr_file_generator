@@ -136,7 +136,7 @@ class VcfFileGenerator:
             variant['POS'] = variant['start']
         elif so_term == 'MNV':
             variant['POS'] = variant['end']
-            if variant['POS'] == None:
+            if variant['POS'] is None:
                 return None
         else:
             logger.fatal('New SoTerm that We need to add logic for: %r', so_term)
