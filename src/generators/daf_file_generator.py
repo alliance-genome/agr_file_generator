@@ -1,7 +1,5 @@
-import sys
 
 import logging
-from dateutil.parser import parse
 from datetime import datetime
 from time import gmtime, strftime
 
@@ -29,13 +27,13 @@ class DafFileGenerator:
     @classmethod
     def _generate_header(cls, database_version):
         return cls.file_header_template.format(datetimeNow=strftime("%Y-%m-%d %H:%M:%S", gmtime()),
-                databaseVersion=database_version)
+                                               databaseVersion=database_version)
 
     def generate_file(self):
         output_filepath = self.generated_files_folder + "/agr-daf-" + self.database_version + ".tsv"
         disease_file = open(output_filepath,'w')
         disease_file.write(self._generate_header(self.database_version))
-    
+
         columns = ["Taxon",
                    "SpeciesName",
                    "DBobjectType",
@@ -60,7 +58,7 @@ class DafFileGenerator:
                    "Date",
                    "Source"]
 
-        tsv_writer = csv.DictWriter(expression_file, delimiter='\t', fieldnames=columns, lineterminator="\n")
+        tsv_writer = csv.DictWriter(disease_file, delimiter='\t', fieldnames=columns, lineterminator="\n")
         tsv_writer.writeheader()
 
         for disease_association in self.disease_associations:
@@ -68,7 +66,7 @@ class DafFileGenerator:
             pub_id = disease_association["pubMedID"] if disease_association["pubMedID"] else disease_association["pubModID"]
             if pub_id is None:
                 pub_id = ""
- 
+
             with_orthologs = "|".join(set(disease_association["withOrthologs"])) if disease_association["withOrthologs"] else ""
             do_name = disease_association["DOname"] if disease_association["DOname"] else ""
             inferred_gene_association = ""
@@ -81,15 +79,15 @@ class DafFileGenerator:
                 evidence_code = disease_association["evidenceCode"]
             else:
                 evidence_code = ""
-            gene_product_form_id = ""
-            additional_genetic_component = ""
-            experimental_conditions = ""
-            qualifier = ""
-            modifier_association_type = ""
-            modifier_qualifier = ""
-            modifier_genetic = ""
-            modifier_experimental_conditions = ""
-            genetic_sex = ""
+            # gene_product_form_id = ""
+            # additional_genetic_component = ""
+            # experimental_conditions = ""
+            # qualifier = ""
+            # modifier_association_type = ""
+            # modifier_qualifier = ""
+            # modifier_genetic = ""
+            # modifier_experimental_conditions = ""
+            # genetic_sex = ""
             if disease_association["dateAssigned"] is None and disease_association["associationType"] in ["IMPLICATED_VIA_ORTHOLOGY",
                                                                                                           "BIOMARKER_VIA_ORTHOLOGY"]:
                 date_str = strftime("%Y-%m-%d %H:%M:%S", gmtime())
@@ -119,5 +117,5 @@ class DafFileGenerator:
                                      pub_id,
                                      datetime.strptime(date_str[:10], "%Y-%m-%d").strftime("%Y%m%d"),
                                      disease_association["dataProvider"]]))
-            writer.writerows([row])
+            tsv_writer.writerows([row])
         disease_file.close()

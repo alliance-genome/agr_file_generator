@@ -5,7 +5,6 @@ from collections import defaultdict, OrderedDict
 from functools import partial
 from operator import itemgetter
 import logging
-import pyfaidx
 
 from upload import upload_process
 
@@ -20,20 +19,14 @@ class VcfFileGenerator:
     file_header = """##contig=<ID=,length=,assembly={assembly},md5=,species="{species}",taxonomy=x>
 ##fileDate={datetime}
 ##fileformat=VCFv4.2
-##FILTER=<ID=q10,Description="Quality below 10">
-##FILTER=<ID=s50,Description="Less than 50% of samples have data">
-##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">
-##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">
-##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
-##FORMAT=<ID=HQ,Number=2,Type=Integer,Description="Haplotype Quality">
+##INFO=<ID=hgvs_nomenclature,Type=String,Description="the HGVS name of the allele">
+##INFO=<ID=geneLevelConsequence,Type=String,Description="VEP consequence of the variant">
+##INFO=<ID=symbol,Type=String,Description="The human readable name of the allele">
+##INFO=<ID=alleles,Type=String,Description="The alleles of the variant">
 ##INFO=<ID=allele_of_genes,Type=String,Number=0,Description="The genes that the Allele is located on">
-##INFO=<ID=alleles,Type=String,Number=0,Description="The alleles of the variant">
-##INFO=<ID=DP,Number=0,Type=Integer,Description="The label to be used for visual purposes">
-##INFO=<ID=hgvs_nomenclature,Type=String,Number=0,Description="the HGVS name of the allele">
-##INFO=<ID=symbol,Type=String,Number=0,Description="The human readable name of the allele">
+##INFO=<ID=symbol_text,Type=String,Description="Another human readable representation of the allele">
 ##phasing=partial
-##reference=
-##source=agr_file_generator"""
+##source=AGR VCF File generator"""
 
     col_headers = ('CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO')
 
@@ -100,7 +93,7 @@ class VcfFileGenerator:
         vcf_file.write('\n')
 
     def _consume_data_source(self):
-        assembly_chr_variants = defaultdict(lambda : defaultdict(list))
+        assembly_chr_variants = defaultdict(lambda: defaultdict(list))
         assembly_species = {}
         for variant in self.variants:
             assembly = 'R6' if variant['assembly'].startswith('R6') else variant['assembly'].replace('.', '').replace('_', '')

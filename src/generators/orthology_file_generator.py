@@ -1,12 +1,9 @@
-import sys
 
 import logging
-
-from dateutil.parser import parse
-from datetime import datetime
 from time import gmtime, strftime
 
 logger = logging.getLogger(name=__name__)
+
 
 class OrthologyFileGenerator:
 
@@ -54,7 +51,7 @@ class OrthologyFileGenerator:
                    "IsBestScore",
                    "IsBestRevScore"]
         orthology_file.write("\t".join(columns) + "\n")
-     
+
         for ortholog in self.orthologs:
             algorithms = "|".join(set(ortholog["Algorithms"]))
             numAlgorithm = ortholog["numAlgorithmMatch"] + ortholog["numAlgorithmNotMatched"]
@@ -71,5 +68,4 @@ class OrthologyFileGenerator:
                                             str(numAlgorithm),
                                             ortholog["best"],
                                             ortholog["bestRev"]]) + "\n")
-    
         orthology_file.close()

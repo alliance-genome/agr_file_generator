@@ -1,9 +1,6 @@
-import sys
 
 import logging
 import csv
-from dateutil.parser import parse
-from datetime import datetime
 from time import gmtime, strftime
 
 logger = logging.getLogger(name=__name__)
@@ -29,13 +26,13 @@ class ExpressionFileGenerator:
     @classmethod
     def _generate_header(cls, database_version):
         return cls.file_header_template.format(datetimeNow=strftime("%Y-%m-%d %H:%M:%S", gmtime()),
-                databaseVersion=database_version)
+                                               databaseVersion=database_version)
 
     def generate_file(self):
         output_filepath = self.generated_files_folder + '/agr-expression-' + self.database_version + '.tsv'
         expression_file = open(output_filepath,'w')
         expression_file.write(self._generate_header(self.database_version))
-    
+
         columns = ['Species',
                    'SpeciesID',
                    'GeneID',
@@ -73,12 +70,12 @@ class ExpressionFileGenerator:
                 if 'CrossReference' in term.labels:
                     if row['Source']:
                         row['Source'] += ','
-                        row['Source'] += term['crossRefCompleteUrl'] # according to spec should use globalCrossRefId
+                        row['Source'] += term['crossRefCompleteUrl']  # according to spec should use globalCrossRefId
                     else:
                         row['Source'] = term['crossRefCompleteUrl']
                 elif 'Publication' in term.labels:
                     publication = term['pubMedId'] or term['pubModId']
-                    reference = row['Reference']
+                    # reference = row['Reference']
                     if row['Reference']:
                         row['Reference'] += ','
                         row['Reference'] += publication

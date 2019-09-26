@@ -1,4 +1,4 @@
-import sys
+
 import os
 
 import coloredlogs
@@ -44,7 +44,7 @@ class ContextInfo(object):
 
         # Look for ENV variables to replace default variables from config file.
         for key in self.config.keys():
-            try: 
+            try:
                 self.config[key] = os.environ[key]
             except KeyError:
                 logger.info('Environmental variable not found for \'{}\'. Using config.yaml value.'.format(key))
@@ -169,7 +169,7 @@ def generate_daf_file(generated_files_folder, alliance_db_version):
     daf = daf_file_generator.DafFileGenerator(data_source,
                                               generated_files_folder,
                                               alliance_db_version)
-    daf.generate_file() 
+    daf.generate_file()
 
 
 def generate_expression_file(generated_files_folder, alliance_db_version):
