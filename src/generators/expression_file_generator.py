@@ -1,9 +1,6 @@
-# import sys
 
 import logging
 import csv
-# from dateutil.parser import parse
-# from datetime import datetime
 from time import gmtime, strftime
 
 logger = logging.getLogger(name=__name__)

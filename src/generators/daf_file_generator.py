@@ -1,7 +1,5 @@
-# import sys
 
 import logging
-# from dateutil.parser import parse
 from datetime import datetime
 from time import gmtime, strftime
 

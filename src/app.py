@@ -1,4 +1,4 @@
-import sys
+
 import os
 
 import coloredlogs
@@ -44,7 +44,7 @@ class ContextInfo(object):
 
         # Look for ENV variables to replace default variables from config file.
         for key in self.config.keys():
-            try: 
+            try:
                 self.config[key] = os.environ[key]
             except KeyError:
                 logger.info('Environmental variable not found for \'{}\'. Using config.yaml value.'.format(key))
