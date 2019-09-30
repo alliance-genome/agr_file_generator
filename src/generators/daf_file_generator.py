@@ -1,7 +1,10 @@
-
+import os
 import logging
 from datetime import datetime
 from time import gmtime, strftime
+
+import csv
+import upload
 
 logger = logging.getLogger(name=__name__)
 
@@ -19,20 +22,21 @@ class DafFileGenerator:
 #########################################################################
 """
 
-    def __init__(self, disease_associations, generated_files_folder, database_version):
+    def __init__(self, disease_associations, generated_files_folder, config_info):
         self.disease_associations = disease_associations
-        self.database_version = database_version
+        self.config_info = config_info
         self.generated_files_folder = generated_files_folder
 
     @classmethod
-    def _generate_header(cls, database_version):
+    def _generate_header(cls, config_info):
         return cls.file_header_template.format(datetimeNow=strftime("%Y-%m-%d %H:%M:%S", gmtime()),
-                                               databaseVersion=database_version)
+                                               databaseVersion=config_info.config['RELEASE_VERSION'])
 
-    def generate_file(self):
-        output_filepath = self.generated_files_folder + "/agr-daf-" + self.database_version + ".tsv"
+    def generate_file(self, upload_flag=False):
+        filename = "agr-daf-" + self.config_info.config['RELEASE_VERSION'] + ".tsv"
+        output_filepath = os.path.join(self.generated_files_folder, filename)
         disease_file = open(output_filepath,'w')
-        disease_file.write(self._generate_header(self.database_version))
+        disease_file.write(self._generate_header(self.config_info))
 
         columns = ["Taxon",
                    "SpeciesName",
@@ -119,3 +123,7 @@ class DafFileGenerator:
                                      disease_association["dataProvider"]]))
             tsv_writer.writerows([row])
         disease_file.close()
+        if upload_flag:
+            logger.info("Submitting to FMS")
+            process_name = "1"
+            upload.upload_process(process_name, filename, self.generated_files_folder, 'DISEASE', 'ALL', self.config_info)

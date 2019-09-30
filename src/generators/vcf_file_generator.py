@@ -6,7 +6,7 @@ from functools import partial
 from operator import itemgetter
 import logging
 
-from upload import upload_process
+import upload
 
 
 logger = logging.getLogger(name=__name__)
@@ -148,7 +148,7 @@ class VcfFileGenerator:
                 logger.error('Insertion Variant reference sequence is populated'
                              'when it should not be in '
                              'variant ID: %r',
-                             variant['ID'])
+                             variant['globalId'])
                 return None
             if variant['genomicVariantSequence'] == '':
                 return None
@@ -177,6 +177,7 @@ class VcfFileGenerator:
                                        assembly_species[assembly],
                                        self.config_info)
                 for (chromosome, variants) in sorted(chromo_variants.items(), key=itemgetter(0)):
+
                     if chromosome in skip_chromosomes:
                         logger.info('Skipping VCF file generation for chromosome %r', chromosome)
                         continue
@@ -199,4 +200,4 @@ class VcfFileGenerator:
             if upload_flag:
                 logger.info("Submitting to FMS")
                 process_name = "1"
-                upload_process(process_name, filename, self.generated_files_folder, 'VCF', assembly, self.config_info)
+                upload.upload_process(process_name, filename, self.generated_files_folder, 'VCF', assembly, self.config_info)

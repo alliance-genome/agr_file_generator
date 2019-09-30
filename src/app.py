@@ -55,29 +55,33 @@ class ContextInfo(object):
 
 @click.command()
 @click.option('--vcf', is_flag=True, help='Generates VCF files')
-@click.option('--ortho', is_flag=True, help='Generates orthology files')
-@click.option('--daf', is_flag=True, help='Generates DAF files')
-@click.option('--expr', is_flag=True, help='Generates expression files')
+@click.option('--orthology', is_flag=True, help='Generates orthology files')
+@click.option('--disease', is_flag=True, help='Generates DAF files')
+@click.option('--expression', is_flag=True, help='Generates expression files')
+@click.option('--all-filetypes', is_flag=True, help='Generates all filetypes')
 @click.option('--upload', is_flag=True, help='Submits generated files to File Management System (FMS)')
-def main(vcf, ortho, daf, expr, upload,
+def main(vcf, orthology, disease, expression, all_filetypes, upload,
          generated_files_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output',
          fasta_sequences_folder='sequences',
          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):
 
+    if not os.path.exists(generated_files_folder):
+        os.makedirs(generated_files_folder)
+
     click.echo('INFO:\tFiles output: ' + generated_files_folder)
     context_info = ContextInfo()
-    if vcf is True:
+    if vcf is True or all_filetypes is True:
         click.echo('INFO:\tGenerating VCF files')
         generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, context_info, upload)
-    elif ortho is True:
+    elif orthology is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Orthology file')
-        generate_orthology_file(generated_files_folder, alliance_db_version)
-    elif daf is True:
-        click.echo('INFO:\tGenerating DAF file')
-        generate_daf_file(generated_files_folder, alliance_db_version)
-    elif expr is True:
+        generate_orthology_file(generated_files_folder, context_info, upload)
+    elif disease is True or all_filetypes is True:
+        click.echo('INFO:\tGenerating Disease file')
+        generate_daf_file(generated_files_folder, context_info, upload)
+    elif expression is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Expression file')
-        generate_expression_file(generated_files_folder, alliance_db_version)
+        generate_expression_file(generated_files_folder, context_info, upload)
 
 
 def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, context_info, upload_flag):
@@ -113,7 +117,7 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
     gvf.generate_files(skip_chromosomes=skip_chromosomes, upload_flag=upload_flag)
 
 
-def generate_orthology_file(generated_files_folder, alliance_db_version):
+def generate_orthology_file(generated_files_folder, context_info, upload_flag):
     orthology_query = '''MATCH (species1)<-[sa:FROM_SPECIES]-(gene1:Gene)-[o:ORTHOLOGOUS]->(gene2:Gene)-[sa2:FROM_SPECIES]->(species2:Species)
                        WHERE o.strictFilter
                        OPTIONAL MATCH (algorithm:OrthoAlgorithm)-[m:MATCHED]-(ogj:OrthologyGeneJoin)-[association:ASSOCIATION]-(gene1)
@@ -136,11 +140,11 @@ def generate_orthology_file(generated_files_folder, alliance_db_version):
     data_source = DataSource(uri, orthology_query)
     of = orthology_file_generator.OrthologyFileGenerator(data_source,
                                                          generated_files_folder,
-                                                         alliance_db_version)
-    of.generate_file()
+                                                         context_info)
+    of.generate_file(upload_flag=upload_flag)
 
 
-def generate_daf_file(generated_files_folder, alliance_db_version):
+def generate_daf_file(generated_files_folder, context_info, upload_flag):
     daf_query = '''MATCH (dej:Association:DiseaseEntityJoin)-[:ASSOCIATION]-(object)-[da:IS_MARKER_FOR|:IS_IMPLICATED_IN|:IMPLICATED_VIA_ORTHOLOGY|:BIOMARKER_VIA_ORTHOLOGY]->(disease:DOTerm)
                    WHERE (object:Gene OR object:Allele)
                    AND da.uuid = dej.primaryKey
@@ -168,11 +172,11 @@ def generate_daf_file(generated_files_folder, alliance_db_version):
     data_source = DataSource(uri, daf_query)
     daf = daf_file_generator.DafFileGenerator(data_source,
                                               generated_files_folder,
-                                              alliance_db_version)
-    daf.generate_file()
+                                              context_info)
+    daf.generate_file(upload_flag=upload_flag)
 
 
-def generate_expression_file(generated_files_folder, alliance_db_version):
+def generate_expression_file(generated_files_folder, context_info, upload_flag):
     expression_query = '''MATCH (speciesObj:Species)<-[:FROM_SPECIES]-(geneObj:Gene)-[:ASSOCIATION]->(begej:BioEntityGeneExpressionJoin)--(term)
                           WITH {primaryKey: speciesObj.primaryKey, name: speciesObj.name} AS species,
                                {primaryKey: geneObj.primaryKey, symbol: geneObj.symbol} AS  gene,
@@ -187,8 +191,8 @@ def generate_expression_file(generated_files_folder, alliance_db_version):
     data_source = DataSource(uri, expression_query)
     expression = expression_file_generator.ExpressionFileGenerator(data_source,
                                                                    generated_files_folder,
-                                                                   alliance_db_version)
-    expression.generate_file()
+                                                                   context_info)
+    expression.generate_file(upload_flag=upload_flag)
 
 
 if __name__ == '__main__':

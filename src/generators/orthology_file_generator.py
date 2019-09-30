@@ -1,6 +1,9 @@
-
+import os
 import logging
 from time import gmtime, strftime
+
+#from upload.upload import upload_process
+import upload
 
 logger = logging.getLogger(name=__name__)
 
@@ -23,20 +26,21 @@ class OrthologyFileGenerator:
 #########################################################################
 """
 
-    def __init__(self, orthologs, generated_files_folder, database_version):
+    def __init__(self, orthologs, generated_files_folder, config_info):
         self.orthologs = orthologs
-        self.database_version = database_version
+        self.config_info = config_info
         self.generated_files_folder = generated_files_folder
 
     @classmethod
-    def _generate_header(cls, database_version):
+    def _generate_header(cls, config_info):
         return cls.file_header_template.format(datetimeNow=strftime("%Y-%m-%d %H:%M:%S", gmtime()),
-                                               databaseVersion=database_version)
+                                               databaseVersion=config_info.config['RELEASE_VERSION'])
 
-    def generate_file(self):
-        outputFilepath = self.generated_files_folder + "/agr_orthologs-" + self.database_version + ".tsv"
+    def generate_file(self, upload_flag=False):
+        filename = "agr_orthologs-" + self.config_info.config['RELEASE_VERSION'] + ".tsv"
+        outputFilepath = os.path.join(self.generated_files_folder, filename)
         orthology_file = open(outputFilepath,'w')
-        orthology_file.write(self._generate_header(self.database_version))
+        orthology_file.write(self._generate_header(self.config_info))
         columns = ["Gene1ID",
                    "Gene1Symbol",
                    "Gene1SpeciesTaxonID",
@@ -69,3 +73,7 @@ class OrthologyFileGenerator:
                                             ortholog["best"],
                                             ortholog["bestRev"]]) + "\n")
         orthology_file.close()
+        if upload_flag:
+            logger.info("Submitting to FMS")
+            process_name = "1"
+            upload.upload_process(process_name, filename, self.generated_files_folder, 'ORTHOLOGY', 'ALL', self.config_info)
