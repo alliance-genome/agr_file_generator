@@ -1,7 +1,9 @@
-
+import os
 import logging
 import csv
 from time import gmtime, strftime
+
+import upload
 
 logger = logging.getLogger(name=__name__)
 
@@ -18,20 +20,21 @@ class ExpressionFileGenerator:
 #########################################################################
 """
 
-    def __init__(self, expressions, generated_files_folder, database_version):
+    def __init__(self, expressions, generated_files_folder, config_info):
         self.expressions = expressions
-        self.database_version = database_version
+        self.config_info = config_info
         self.generated_files_folder = generated_files_folder
 
     @classmethod
-    def _generate_header(cls, database_version):
+    def _generate_header(cls, config_info):
         return cls.file_header_template.format(datetimeNow=strftime("%Y-%m-%d %H:%M:%S", gmtime()),
-                                               databaseVersion=database_version)
+                                               databaseVersion=config_info.config['RELEASE_VERSION'])
 
-    def generate_file(self):
-        output_filepath = self.generated_files_folder + '/agr-expression-' + self.database_version + '.tsv'
+    def generate_file(self, upload_flag=False):
+        filename = 'agr-expression-' + self.config_info.config['RELEASE_VERSION'] + '.tsv'
+        output_filepath = os.path.join(self.generated_files_folder, filename)
         expression_file = open(output_filepath,'w')
-        expression_file.write(self._generate_header(self.database_version))
+        expression_file.write(self._generate_header(self.config_info))
 
         columns = ['Species',
                    'SpeciesID',
@@ -132,3 +135,7 @@ class ExpressionFileGenerator:
                         row['AnatomyTermQualifierTermNames'] = ontologyPath['name']
             tsv_writer.writerows([row])
         expression_file.close()
+        if upload_flag:
+            logger.info("Submitting to FMS")
+            process_name = "1"
+            upload.upload_process(process_name, filename, self.generated_files_folder, 'EXPRESSION', 'ALL', self.config_info)
