@@ -133,6 +133,8 @@ class VcfFileGenerator:
     def _adjust_variant(self, variant):
         so_term = variant['soTerm']
         start_pos = variant['start']
+        if start_pos == None:
+            return None
         if so_term in ['deletion', 'insertion']:
             variant['POS'] = start_pos - 1
         else:
@@ -155,7 +157,7 @@ class VcfFileGenerator:
             self._add_padded_base_to_variant(variant, 'insertion')
         elif so_term == 'point_mutation':
             variant['POS'] = variant['start']
-        elif so_term == 'MNV':
+        elif so_term == 'MNV' or so_term == 'delins':
             variant['POS'] = variant['end']
             if variant['POS'] is None:
                 return None
