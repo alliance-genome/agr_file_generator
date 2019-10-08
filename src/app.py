@@ -14,11 +14,8 @@ from generators import daf_file_generator
 from generators import expression_file_generator
 from data_source import DataSource
 
-host = os.environ.get('NEO4J_HOST', 'build.alliancegenome.org')
 port = int(os.environ.get('NEO4J_PORT', 7687))
 alliance_db_version = os.environ.get('ALLIANCE_RELEASE', '2.3.0')
-
-uri = "bolt://" + host + ":" + str(port)
 
 debug_level = logging.INFO
 coloredlogs.install(level=debug_level,
@@ -73,16 +70,24 @@ def main(vcf, orthology, disease, expression, all_filetypes, upload,
     if vcf is True or all_filetypes is True:
         click.echo('INFO:\tGenerating VCF files')
         generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, context_info, upload)
-    elif orthology is True or all_filetypes is True:
+    if orthology is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Orthology file')
         generate_orthology_file(generated_files_folder, context_info, upload)
-    elif disease is True or all_filetypes is True:
+    if disease is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Disease file')
         generate_daf_file(generated_files_folder, context_info, upload)
-    elif expression is True or all_filetypes is True:
+    if expression is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Expression file')
         generate_expression_file(generated_files_folder, context_info, upload)
 
+def get_neo_uri(context_info):
+    if  context_info.config['NEO4J_HOST']:
+        uri = "bolt://" + context_info.config['NEO4J_HOST'] + ":" + str(port)
+        logger.info("Using db URI: {}".format(uri))
+        return uri
+    else:
+        logger.error("Need to set NEO4J_HOST env variable")
+        exit()
 
 def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, context_info, upload_flag):
     os.makedirs(generated_files_folder, exist_ok=True)
@@ -110,7 +115,7 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
                             s.name AS species,
                             st.nameKey AS soTerm
                      """
-    data_source = DataSource(uri, variants_query)
+    data_source = DataSource(get_neo_uri(context_info), variants_query)
     gvf = vcf_file_generator.VcfFileGenerator(data_source,
                                               generated_files_folder,
                                               context_info)
@@ -137,7 +142,7 @@ def generate_orthology_file(generated_files_folder, context_info, upload_flag):
                               species1.name AS species1Name,
                               species2.primaryKey AS species2TaxonID,
                               species2.name AS species2Name'''
-    data_source = DataSource(uri, orthology_query)
+    data_source = DataSource(get_neo_uri(context_info), orthology_query)
     of = orthology_file_generator.OrthologyFileGenerator(data_source,
                                                          generated_files_folder,
                                                          context_info)
@@ -169,7 +174,7 @@ def generate_daf_file(generated_files_folder, context_info, upload_flag):
                            ec.primaryKey AS evidenceCode,
                            dej.dateAssigned AS dateAssigned,
                            da.dataProvider AS dataProvider'''
-    data_source = DataSource(uri, daf_query)
+    data_source = DataSource(get_neo_uri(context_info), daf_query)
     daf = daf_file_generator.DafFileGenerator(data_source,
                                               generated_files_folder,
                                               context_info)
@@ -188,7 +193,7 @@ def generate_expression_file(generated_files_folder, context_info, upload_flag):
                                                        COLLECT({edge: type(a),
                                                                 primaryKey: ontology.primaryKey,
                                                                 name: ontology.name}) as ontologyPaths'''
-    data_source = DataSource(uri, expression_query)
+    data_source = DataSource(get_neo_uri(context_info), expression_query)
     expression = expression_file_generator.ExpressionFileGenerator(data_source,
                                                                    generated_files_folder,
                                                                    context_info)

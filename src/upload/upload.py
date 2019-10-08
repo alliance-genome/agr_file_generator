@@ -32,7 +32,6 @@ def upload_file(worker, filename, save_path, upload_file_prefix, config_info):
         headers = {
             'Authorization': 'Bearer {}'.format(config_info.config['API_KEY'])
         }
-    
         logger.debug('{}: Attempting upload of data file: {}'.format(worker, os.path.join(save_path, filename)))
         logger.debug('{}: Attempting upload with header: {}'.format(worker, headers))
         logger.info("{}: Uploading data to {}) ...".format(worker, config_info.config['FMS_API_URL']+'/api/data/submit/'))

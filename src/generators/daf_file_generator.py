@@ -126,4 +126,4 @@ class DafFileGenerator:
         if upload_flag:
             logger.info("Submitting to FMS")
             process_name = "1"
-            upload.upload_process(process_name, filename, self.generated_files_folder, 'DISEASE', 'ALL', self.config_info)
+            upload.upload_process(process_name, filename, self.generated_files_folder, 'DISEASE-ALLIANCE', 'COMBINED', self.config_info)
