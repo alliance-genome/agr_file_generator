@@ -105,8 +105,8 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
                             collect(a.primaryKey) AS alleles,
                             collect(g.primaryKey) AS geneSymbol,
                             CASE WHEN g IS NOT NULL THEN collect(g.primaryKey) ELSE [] END AS alleleOfGenes,
-                            l.start AS start,
-                            l.end AS end,
+                            p.start AS start,
+                            p.end AS end,
                             s.name AS species,
                             st.nameKey AS soTerm
                      """
