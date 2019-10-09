@@ -166,39 +166,41 @@ class VcfFileGenerator:
             return None
         return variant
 
-    def generate_files(self, skip_chromosomes=(), upload_flag=False):
+    def generate_files(self, skip_chromosomes=(), upload_flag=False, tab_flag=False):
         (assembly_chr_variants, assembly_species) = self._consume_data_source()
         for (assembly, chromo_variants) in assembly_chr_variants.items():
-            logger.info('Generating VCF File for assembly %r', assembly)
             filename = assembly + '-' + self.config_info.config['RELEASE_VERSION'] + '.vcf'
             tab_filename = assembly + '-' + self.config_info.config['RELEASE_VERSION'] + '.txt'
             filepath = os.path.join(self.generated_files_folder, filename)
             filepath_tab = os.path.join(self.generated_files_folder, tab_filename)
-            with open(filepath, 'w') as vcf_file:
-                self._write_vcf_header(vcf_file, assembly,
-                                       assembly_species[assembly],
-                                       self.config_info)
-                for (chromosome, variants) in sorted(chromo_variants.items(), key=itemgetter(0)):
-
-                    if chromosome in skip_chromosomes:
-                        logger.info('Skipping VCF file generation for chromosome %r', chromosome)
-                        continue
-                    adjust_varient = partial(self._adjust_variant)
-                    adjusted_variants = filter(None, map(adjust_varient, variants))
-                    for variant in sorted(adjusted_variants, key=itemgetter('POS')):
-                        self._add_variant_to_vcf_file(vcf_file, variant)
-            with open(filepath_tab, 'w') as tab_delimited_file:
-                self._write_tab_delimited_header(tab_delimited_file, assembly, 
-                                                 assembly_species[assembly],
-                                                 self.config_info)
-                for (chromosome, variants) in sorted(chromo_variants.items(), key=itemgetter(0)):
-                    if chromosome in skip_chromosomes:
-                        logger.info('Skipping tab delimited file generation for chromosome %r', chromosome)
-                        continue
-                    adjust_varient = partial(self._adjust_variant)
-                    adjusted_variants = filter(None, map(adjust_varient, variants))
-                    for variant in sorted(adjusted_variants, key=itemgetter('POS')):
-                        self._add_variant_to_tab_file(tab_delimited_file, variant)
+            if not tab_flag:
+                logger.info('Generating VCF File for assembly %r', assembly)
+                with open(filepath, 'w') as vcf_file:
+                    self._write_vcf_header(vcf_file, assembly,
+                                           assembly_species[assembly],
+                                           self.config_info)
+                    for (chromosome, variants) in sorted(chromo_variants.items(), key=itemgetter(0)):
+                        if chromosome in skip_chromosomes:
+                            logger.info('Skipping VCF file generation for chromosome %r', chromosome)
+                            continue
+                        adjust_varient = partial(self._adjust_variant)
+                        adjusted_variants = filter(None, map(adjust_varient, variants))
+                        for variant in sorted(adjusted_variants, key=itemgetter('POS')):
+                            self._add_variant_to_vcf_file(vcf_file, variant)
+            else:
+                logger.info('Generating TAB delimited File for assembly %r', assembly)
+                with open(filepath_tab, 'w') as tab_delimited_file:
+                    self._write_tab_delimited_header(tab_delimited_file, assembly, 
+                                                     assembly_species[assembly],
+                                                     self.config_info)
+                    for (chromosome, variants) in sorted(chromo_variants.items(), key=itemgetter(0)):
+                        if chromosome in skip_chromosomes:
+                            logger.info('Skipping tab delimited file generation for chromosome %r', chromosome)
+                            continue
+                        adjust_varient = partial(self._adjust_variant)
+                        adjusted_variants = filter(None, map(adjust_varient, variants))
+                        for variant in sorted(adjusted_variants, key=itemgetter('POS')):
+                            self._add_variant_to_tab_file(tab_delimited_file, variant)
             if upload_flag:
                 logger.info("Submitting to FMS")
                 process_name = "1"
