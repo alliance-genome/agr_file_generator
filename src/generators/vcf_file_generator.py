@@ -21,6 +21,7 @@ class VcfFileGenerator:
 ##fileformat=VCFv4.2
 ##INFO=<ID=hgvs_nomenclature,Type=String,Description="the HGVS name of the allele">
 ##INFO=<ID=geneLevelConsequence,Type=String,Description="VEP consequence of the variant">
+##INFO=<ID=impact,Type=String,Description="Variant impact scale">
 ##INFO=<ID=symbol,Type=String,Description="The human readable name of the allele">
 ##INFO=<ID=alleles,Type=String,Description="The alleles of the variant">
 ##INFO=<ID=allele_of_genes,Type=String,Number=0,Description="The genes that the Allele is located on">
@@ -75,9 +76,13 @@ class VcfFileGenerator:
         info_map = OrderedDict()
         info_map['hgvs_nomenclature'] = cls._variant_value_for_file(variant, 'hgvsNomenclature')
         if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
-            info_map['geneLevelConsequence'] = ' '.join(cls._variant_value_for_file(variant, 'geneLevelConsequence').split('_'))
+            info_map['geneLevelConsequence'] = ' '.join(cls._variant_value_for_file(variant, 'geneLevelConsequence'))
         else:
             info_map['geneLevelConsequence'] = cls._variant_value_for_file(variant, 'geneLevelConsequence')
+        if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
+            info_map['impact'] = ' '.join(cls._variant_value_for_file(variant, 'impact'))
+        else:
+            info_map['impact'] = cls._variant_value_for_file(variant, 'impact')
         info_map['symbol'] = cls._variant_value_for_file(variant, 'symbol')
         info_map['globalId'] = variant['globalId']
         info_map['alleles'] = cls._variant_value_for_file(variant,'alleles',transform=', '.join)
@@ -108,6 +113,11 @@ class VcfFileGenerator:
             info_map['geneLevelConsequence'] = ' '.join(cls._variant_value_for_file(variant, 'geneLevelConsequence').split('_'))
         else:
             info_map['geneLevelConsequence'] = cls._variant_value_for_file(variant, 'geneLevelConsequence')
+        if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
+            info_map['impact'] = ' '.join(cls._variant_value_for_file(variant, 'impact'))
+        else:
+            info_map['impact'] = cls._variant_value_for_file(variant, 'impact')
+
         info_map['symbol'] = cls._variant_value_for_file(variant, 'symbol')
         info_map['globalId'] = variant['globalId']
         info_map['alleles'] = cls._variant_value_for_file(variant,'alleles',transform=', '.join)
@@ -180,6 +190,7 @@ class VcfFileGenerator:
                                            assembly_species[assembly],
                                            self.config_info)
                     for (chromosome, variants) in sorted(chromo_variants.items(), key=itemgetter(0)):
+                        # print(variants)
                         if chromosome in skip_chromosomes:
                             logger.info('Skipping VCF file generation for chromosome %r', chromosome)
                             continue

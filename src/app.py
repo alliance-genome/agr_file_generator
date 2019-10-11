@@ -84,6 +84,7 @@ def main(vcf, orthology, disease, expression, all_filetypes, upload, tab,
         click.echo('INFO:\tGenerating Expression file')
         generate_expression_file(generated_files_folder, context_info, upload)
 
+
 def get_neo_uri(context_info):
     if  context_info.config['NEO4J_HOST']:
         uri = "bolt://" + context_info.config['NEO4J_HOST'] + ":" + str(port)
@@ -93,6 +94,7 @@ def get_neo_uri(context_info):
         logger.error("Need to set NEO4J_HOST env variable")
         exit()
 
+
 def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, context_info, upload_flag, tab_flag):
     os.makedirs(generated_files_folder, exist_ok=True)
     os.makedirs(fasta_sequences_folder, exist_ok=True)
@@ -100,12 +102,12 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
                               (v:Variant)-[:VARIATION_TYPE]-(st:SOTerm),
                               (v:Variant)-[:ASSOCIATION]-(p:GenomicLocation)
                      OPTIONAL MATCH (a:Allele)-[:IS_ALLELE_OF]-(g:Gene)
+                     OPTIONAL MATCH (v:Variant)-[:ASSOCATION]-(m:GeneLevelConsequence)
                      RETURN c.primaryKey AS chromosome,
                             v.globalId AS globalId,
                             right(v.paddingLeft,1) AS paddingLeft,
                             v.genomicReferenceSequence AS genomicReferenceSequence,
                             v.genomicVariantSequence AS genomicVariantSequence,
-                            v.geneLevelConsequence AS geneLevelConsequence,
                             v.hgvsNomenclature AS hgvsNomenclature,
                             v.dataProvider AS dataProvider,
                             a.symbol AS symbol,
@@ -114,6 +116,8 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
                             collect(a.primaryKey) AS alleles,
                             collect(g.primaryKey) AS geneSymbol,
                             CASE WHEN g IS NOT NULL THEN collect(g.primaryKey) ELSE [] END AS alleleOfGenes,
+                            CASE WHEN m IS NOT NULL THEN collect(m.geneLevelConsequence) ELSE [] END AS geneLevelConsequence,
+                            CASE WHEN m IS NOT NULL THEN collect(m.impact) ELSE '' END AS impact,
                             p.start AS start,
                             p.end AS end,
                             s.name AS species,
