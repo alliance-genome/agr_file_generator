@@ -20,11 +20,11 @@ class VcfFileGenerator:
 ##fileDate={datetime}
 ##fileformat=VCFv4.2
 ##INFO=<ID=hgvs_nomenclature,Number=1,Type=String,Description="the HGVS name of the allele">
-##INFO=<ID=geneLevelConsequence,Number=1,Type=String,Description="VEP consequence of the variant">
+##INFO=<ID=geneLevelConsequence,Number=.,Type=String,Description="VEP consequence of the variant">
 ##INFO=<ID=impact,Type=String,Number=1,Description="Variant impact scale">
 ##INFO=<ID=symbol,Type=String,Number=1,Description="The human readable name of the allele">
-##INFO=<ID=alleles,Type=String,Number=1,Description="The alleles of the variant">
-##INFO=<ID=allele_of_genes,Number=1,Type=String,Number=0,Description="The genes that the Allele is located on">
+##INFO=<ID=alleles,Type=String,Number=.,Description="The alleles of the variant">
+##INFO=<ID=allele_of_genes,Number=.,Type=String,Number=0,Description="The genes that the Allele is located on">
 ##INFO=<ID=symbol_text,Number=1,Type=String,Description="Another human readable representation of the allele">
 ##phasing=partial
 ##source=AGR VCF File generator"""
@@ -190,7 +190,7 @@ class VcfFileGenerator:
                                            assembly_species[assembly],
                                            self.config_info)
                     for (chromosome, variants) in sorted(chromo_variants.items(), key=itemgetter(0)):
-                        # print(variants)
+                        print(variants)
                         if chromosome in skip_chromosomes:
                             logger.info('Skipping VCF file generation for chromosome %r', chromosome)
                             continue
