@@ -190,7 +190,7 @@ class VcfFileGenerator:
                                            assembly_species[assembly],
                                            self.config_info)
                     for (chromosome, variants) in sorted(chromo_variants.items(), key=itemgetter(0)):
-                        print(variants)
+                        # print(variants)
                         if chromosome in skip_chromosomes:
                             logger.info('Skipping VCF file generation for chromosome %r', chromosome)
                             continue
