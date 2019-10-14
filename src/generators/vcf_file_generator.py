@@ -19,13 +19,13 @@ class VcfFileGenerator:
     file_header = """##contig=<ID=,length=,assembly={assembly},md5=,species="{species}",taxonomy=x>
 ##fileDate={datetime}
 ##fileformat=VCFv4.2
-##INFO=<ID=hgvs_nomenclature,Type=String,Description="the HGVS name of the allele">
-##INFO=<ID=geneLevelConsequence,Type=String,Description="VEP consequence of the variant">
-##INFO=<ID=impact,Type=String,Description="Variant impact scale">
-##INFO=<ID=symbol,Type=String,Description="The human readable name of the allele">
-##INFO=<ID=alleles,Type=String,Description="The alleles of the variant">
-##INFO=<ID=allele_of_genes,Type=String,Number=0,Description="The genes that the Allele is located on">
-##INFO=<ID=symbol_text,Type=String,Description="Another human readable representation of the allele">
+##INFO=<ID=hgvs_nomenclature,Number=1,Type=String,Description="the HGVS name of the allele">
+##INFO=<ID=geneLevelConsequence,Number=1,Type=String,Description="VEP consequence of the variant">
+##INFO=<ID=impact,Type=String,Number=1,Description="Variant impact scale">
+##INFO=<ID=symbol,Type=String,Number=1,Description="The human readable name of the allele">
+##INFO=<ID=alleles,Type=String,Number=1,Description="The alleles of the variant">
+##INFO=<ID=allele_of_genes,Number=1,Type=String,Number=0,Description="The genes that the Allele is located on">
+##INFO=<ID=symbol_text,Number=1,Type=String,Description="Another human readable representation of the allele">
 ##phasing=partial
 ##source=AGR VCF File generator"""
 
