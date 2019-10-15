@@ -1,7 +1,6 @@
 FROM agrdocker/agr_python_env:latest
 
 WORKDIR /usr/src/app
-ENV PYTHONPATH="${PYTHONPATH}:/usr/src/app/src"
 
 ADD requirements.txt .
 
