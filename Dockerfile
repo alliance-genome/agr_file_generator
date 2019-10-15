@@ -10,4 +10,4 @@ RUN mkdir tmp
 
 ADD . .
 
-CMD ["python3", "-u", "src/app.py --all-filetypes --upload"]
+CMD ["python3", "-u", "src/app.py", "--all-filetypes", "--upload"]
