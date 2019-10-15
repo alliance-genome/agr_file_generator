@@ -19,12 +19,13 @@ class VcfFileGenerator:
     file_header = """##contig=<ID=,length=,assembly={assembly},md5=,species="{species}",taxonomy=x>
 ##fileDate={datetime}
 ##fileformat=VCFv4.2
-##INFO=<ID=hgvs_nomenclature,Type=String,Description="the HGVS name of the allele">
-##INFO=<ID=geneLevelConsequence,Type=String,Description="VEP consequence of the variant">
-##INFO=<ID=symbol,Type=String,Description="The human readable name of the allele">
-##INFO=<ID=alleles,Type=String,Description="The alleles of the variant">
-##INFO=<ID=allele_of_genes,Type=String,Number=0,Description="The genes that the Allele is located on">
-##INFO=<ID=symbol_text,Type=String,Description="Another human readable representation of the allele">
+##INFO=<ID=hgvs_nomenclature,Number=1,Type=String,Description="the HGVS name of the allele">
+##INFO=<ID=geneLevelConsequence,Number=.,Type=String,Description="VEP consequence of the variant">
+##INFO=<ID=impact,Type=String,Number=1,Description="Variant impact scale">
+##INFO=<ID=symbol,Type=String,Number=1,Description="The human readable name of the allele">
+##INFO=<ID=alleles,Type=String,Number=.,Description="The alleles of the variant">
+##INFO=<ID=allele_of_genes,Number=.,Type=String,Number=0,Description="The genes that the Allele is located on">
+##INFO=<ID=symbol_text,Number=1,Type=String,Description="Another human readable representation of the allele">
 ##phasing=partial
 ##source=AGR VCF File generator"""
 
@@ -75,9 +76,13 @@ class VcfFileGenerator:
         info_map = OrderedDict()
         info_map['hgvs_nomenclature'] = cls._variant_value_for_file(variant, 'hgvsNomenclature')
         if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
-            info_map['geneLevelConsequence'] = ' '.join(cls._variant_value_for_file(variant, 'geneLevelConsequence').split('_'))
+            info_map['geneLevelConsequence'] = ' '.join(cls._variant_value_for_file(variant, 'geneLevelConsequence'))
         else:
             info_map['geneLevelConsequence'] = cls._variant_value_for_file(variant, 'geneLevelConsequence')
+        if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
+            info_map['impact'] = ' '.join(cls._variant_value_for_file(variant, 'impact'))
+        else:
+            info_map['impact'] = cls._variant_value_for_file(variant, 'impact')
         info_map['symbol'] = cls._variant_value_for_file(variant, 'symbol')
         info_map['globalId'] = variant['globalId']
         info_map['alleles'] = cls._variant_value_for_file(variant,'alleles',transform=', '.join)
@@ -108,6 +113,11 @@ class VcfFileGenerator:
             info_map['geneLevelConsequence'] = ' '.join(cls._variant_value_for_file(variant, 'geneLevelConsequence').split('_'))
         else:
             info_map['geneLevelConsequence'] = cls._variant_value_for_file(variant, 'geneLevelConsequence')
+        if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
+            info_map['impact'] = ' '.join(cls._variant_value_for_file(variant, 'impact'))
+        else:
+            info_map['impact'] = cls._variant_value_for_file(variant, 'impact')
+
         info_map['symbol'] = cls._variant_value_for_file(variant, 'symbol')
         info_map['globalId'] = variant['globalId']
         info_map['alleles'] = cls._variant_value_for_file(variant,'alleles',transform=', '.join)
@@ -166,39 +176,42 @@ class VcfFileGenerator:
             return None
         return variant
 
-    def generate_files(self, skip_chromosomes=(), upload_flag=False):
+    def generate_files(self, skip_chromosomes=(), upload_flag=False, tab_flag=False):
         (assembly_chr_variants, assembly_species) = self._consume_data_source()
         for (assembly, chromo_variants) in assembly_chr_variants.items():
-            logger.info('Generating VCF File for assembly %r', assembly)
             filename = assembly + '-' + self.config_info.config['RELEASE_VERSION'] + '.vcf'
             tab_filename = assembly + '-' + self.config_info.config['RELEASE_VERSION'] + '.txt'
             filepath = os.path.join(self.generated_files_folder, filename)
             filepath_tab = os.path.join(self.generated_files_folder, tab_filename)
-            with open(filepath, 'w') as vcf_file:
-                self._write_vcf_header(vcf_file, assembly,
-                                       assembly_species[assembly],
-                                       self.config_info)
-                for (chromosome, variants) in sorted(chromo_variants.items(), key=itemgetter(0)):
-
-                    if chromosome in skip_chromosomes:
-                        logger.info('Skipping VCF file generation for chromosome %r', chromosome)
-                        continue
-                    adjust_varient = partial(self._adjust_variant)
-                    adjusted_variants = filter(None, map(adjust_varient, variants))
-                    for variant in sorted(adjusted_variants, key=itemgetter('POS')):
-                        self._add_variant_to_vcf_file(vcf_file, variant)
-            with open(filepath_tab, 'w') as tab_delimited_file:
-                self._write_tab_delimited_header(tab_delimited_file, assembly, 
-                                                 assembly_species[assembly],
-                                                 self.config_info)
-                for (chromosome, variants) in sorted(chromo_variants.items(), key=itemgetter(0)):
-                    if chromosome in skip_chromosomes:
-                        logger.info('Skipping tab delimited file generation for chromosome %r', chromosome)
-                        continue
-                    adjust_varient = partial(self._adjust_variant)
-                    adjusted_variants = filter(None, map(adjust_varient, variants))
-                    for variant in sorted(adjusted_variants, key=itemgetter('POS')):
-                        self._add_variant_to_tab_file(tab_delimited_file, variant)
+            if not tab_flag:
+                logger.info('Generating VCF File for assembly %r', assembly)
+                with open(filepath, 'w') as vcf_file:
+                    self._write_vcf_header(vcf_file, assembly,
+                                           assembly_species[assembly],
+                                           self.config_info)
+                    for (chromosome, variants) in sorted(chromo_variants.items(), key=itemgetter(0)):
+                        # print(variants)
+                        if chromosome in skip_chromosomes:
+                            logger.info('Skipping VCF file generation for chromosome %r', chromosome)
+                            continue
+                        adjust_varient = partial(self._adjust_variant)
+                        adjusted_variants = filter(None, map(adjust_varient, variants))
+                        for variant in sorted(adjusted_variants, key=itemgetter('POS')):
+                            self._add_variant_to_vcf_file(vcf_file, variant)
+            else:
+                logger.info('Generating TAB delimited File for assembly %r', assembly)
+                with open(filepath_tab, 'w') as tab_delimited_file:
+                    self._write_tab_delimited_header(tab_delimited_file, assembly, 
+                                                     assembly_species[assembly],
+                                                     self.config_info)
+                    for (chromosome, variants) in sorted(chromo_variants.items(), key=itemgetter(0)):
+                        if chromosome in skip_chromosomes:
+                            logger.info('Skipping tab delimited file generation for chromosome %r', chromosome)
+                            continue
+                        adjust_varient = partial(self._adjust_variant)
+                        adjusted_variants = filter(None, map(adjust_varient, variants))
+                        for variant in sorted(adjusted_variants, key=itemgetter('POS')):
+                            self._add_variant_to_tab_file(tab_delimited_file, variant)
             if upload_flag:
                 logger.info("Submitting to FMS")
                 process_name = "1"

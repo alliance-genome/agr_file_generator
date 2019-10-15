@@ -44,8 +44,9 @@ logger = logging.getLogger(__name__)
 @click.option('--disease', is_flag=True, help='Generates DAF files')
 @click.option('--expression', is_flag=True, help='Generates expression files')
 @click.option('--all-filetypes', is_flag=True, help='Generates all filetypes')
+@click.option('--tab', is_flag=True, help='Generates tab delimited files with VCF info columns contents')
 @click.option('--upload', is_flag=True, help='Submits generated files to File Management System (FMS)')
-def main(vcf, orthology, disease, expression, all_filetypes, upload,
+def main(vcf, orthology, disease, expression, all_filetypes, upload, tab, 
          generated_files_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output',
          fasta_sequences_folder='sequences',
          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):
@@ -59,8 +60,11 @@ def main(vcf, orthology, disease, expression, all_filetypes, upload,
 
     click.echo('INFO:\tFiles output: ' + generated_files_folder)
     if vcf is True or all_filetypes is True:
-        click.echo('INFO:\tGenerating VCF files')
-        generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, context_info, upload)
+        if not tab:
+            click.echo('INFO:\tGenerating VCF files')
+        else:
+            click.echo('INFO:\tGenerating TAB delimited files')
+        generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, context_info, upload, tab)
     if orthology is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Orthology file')
         generate_orthology_file(generated_files_folder, context_info, upload)
@@ -75,7 +79,6 @@ def main(vcf, orthology, disease, expression, all_filetypes, upload,
     elapsed_time = end_time - start_time
     click.echo('File Generator finished. Elapsed time: %s' % time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
 
-
 def get_neo_uri(context_info):
     if  context_info.config['NEO4J_HOST']:
         uri = "bolt://" + context_info.config['NEO4J_HOST'] + ":" + str(port)
@@ -85,19 +88,20 @@ def get_neo_uri(context_info):
         logger.error("Need to set NEO4J_HOST env variable")
         exit()
 
-def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, context_info, upload_flag):
+
+def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, context_info, upload_flag, tab_flag):
     os.makedirs(generated_files_folder, exist_ok=True)
     os.makedirs(fasta_sequences_folder, exist_ok=True)
     variants_query = """MATCH (s:Species)-[:FROM_SPECIES]-(a:Allele)-[:VARIATION]-(v:Variant)-[l:LOCATED_ON]-(c:Chromosome),
                               (v:Variant)-[:VARIATION_TYPE]-(st:SOTerm),
                               (v:Variant)-[:ASSOCIATION]-(p:GenomicLocation)
                      OPTIONAL MATCH (a:Allele)-[:IS_ALLELE_OF]-(g:Gene)
+                     OPTIONAL MATCH (v:Variant)-[:ASSOCATION]-(m:GeneLevelConsequence)
                      RETURN c.primaryKey AS chromosome,
                             v.globalId AS globalId,
                             right(v.paddingLeft,1) AS paddingLeft,
                             v.genomicReferenceSequence AS genomicReferenceSequence,
                             v.genomicVariantSequence AS genomicVariantSequence,
-                            v.geneLevelConsequence AS geneLevelConsequence,
                             v.hgvsNomenclature AS hgvsNomenclature,
                             v.dataProvider AS dataProvider,
                             a.symbol AS symbol,
@@ -106,6 +110,8 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
                             collect(a.primaryKey) AS alleles,
                             collect(g.primaryKey) AS geneSymbol,
                             CASE WHEN g IS NOT NULL THEN collect(g.primaryKey) ELSE [] END AS alleleOfGenes,
+                            CASE WHEN m IS NOT NULL THEN collect(m.geneLevelConsequence) ELSE [] END AS geneLevelConsequence,
+                            CASE WHEN m IS NOT NULL THEN collect(m.impact) ELSE '' END AS impact,
                             p.start AS start,
                             p.end AS end,
                             s.name AS species,
@@ -115,7 +121,7 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
     gvf = vcf_file_generator.VcfFileGenerator(data_source,
                                               generated_files_folder,
                                               context_info)
-    gvf.generate_files(skip_chromosomes=skip_chromosomes, upload_flag=upload_flag)
+    gvf.generate_files(skip_chromosomes=skip_chromosomes, upload_flag=upload_flag, tab_flag=tab_flag)
 
 
 def generate_orthology_file(generated_files_folder, context_info, upload_flag):
