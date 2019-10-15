@@ -1,6 +1,7 @@
 agr_generated_files/*
 sequences/*
-src/config.yaml
+config.yaml
+config.yaml.bak
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

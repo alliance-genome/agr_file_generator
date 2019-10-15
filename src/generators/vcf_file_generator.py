@@ -141,13 +141,13 @@ class VcfFileGenerator:
             variant['POS'] = start_pos
         if so_term == 'deletion':
             if variant['genomicReferenceSequence'] == '':
-                logger.error('No reference sequence for variant Id: %r', variant['ID'])
+                logger.warn('No reference sequence for variant Id: %r', variant['ID'])
                 return None
             if variant['genomicVariantSequence'] == '':
                 self._add_padded_base_to_variant(variant, 'deletion')
         elif so_term == 'insertion':
             if variant['genomicReferenceSequence'] != '':
-                logger.error('Insertion Variant reference sequence is populated'
+                logger.warn('Insertion Variant reference sequence is populated'
                              'when it should not be in '
                              'variant ID: %r',
                              variant['globalId'])

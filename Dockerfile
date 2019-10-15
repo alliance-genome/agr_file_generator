@@ -1,4 +1,4 @@
-FROM agrdocker/agr_base_linux_env:latest
+FROM agrdocker/agr_python_env:latest
 
 WORKDIR /usr/src/app
 ENV PYTHONPATH="${PYTHONPATH}:/usr/src/app/src"
@@ -11,4 +11,4 @@ RUN mkdir tmp
 
 ADD . .
 
-CMD ["python3", "-u", "src/app.py"]
+CMD ["python3", "-u", "src/app.py --all-filetypes --upload"]

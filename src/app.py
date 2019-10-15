@@ -7,17 +7,22 @@ import click
 import urllib3
 import requests
 import logging
+import time
 
 from generators import vcf_file_generator
 from generators import orthology_file_generator
 from generators import daf_file_generator
 from generators import expression_file_generator
 from data_source import DataSource
+from common import ContextInfo
 
 port = int(os.environ.get('NEO4J_PORT', 7687))
 alliance_db_version = os.environ.get('ALLIANCE_RELEASE', '2.3.0')
 
-debug_level = logging.INFO
+context_info = ContextInfo()
+debug_level = logging.DEBUG if context_info.config["DEBUG"] else logging.INFO
+neo_debug_level = logging.DEBUG if context_info.config["NEO_DEBUG"] else logging.INFO
+
 coloredlogs.install(level=debug_level,
                     fmt='%(asctime)s %(levelname)s: %(name)s:%(lineno)d: %(message)s',
                     field_styles={
@@ -29,25 +34,8 @@ coloredlogs.install(level=debug_level,
                     })
 
 logging.getLogger("urllib3").setLevel(debug_level)
+logging.getLogger("neobolt").setLevel(neo_debug_level)
 logger = logging.getLogger(__name__)
-
-
-# Common configuration variables used throughout the script.
-class ContextInfo(object):
-
-    def __init__(self):
-        config_file = open('config.yaml', 'r')
-        self.config = yaml.load(config_file, Loader=yaml.FullLoader)
-
-        # Look for ENV variables to replace default variables from config file.
-        for key in self.config.keys():
-            try:
-                self.config[key] = os.environ[key]
-            except KeyError:
-                logger.info('Environmental variable not found for \'{}\'. Using config.yaml value.'.format(key))
-                pass  # If we don't find an ENV variable, keep the value from the config file.
-
-        logger.debug('Initialized with config values: {}'.format(self.config))
 
 
 @click.command()
@@ -62,11 +50,14 @@ def main(vcf, orthology, disease, expression, all_filetypes, upload,
          fasta_sequences_folder='sequences',
          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):
 
+    start_time = time.time()
+    click.echo(start_time)
+
+
     if not os.path.exists(generated_files_folder):
         os.makedirs(generated_files_folder)
 
     click.echo('INFO:\tFiles output: ' + generated_files_folder)
-    context_info = ContextInfo()
     if vcf is True or all_filetypes is True:
         click.echo('INFO:\tGenerating VCF files')
         generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, context_info, upload)
@@ -79,6 +70,11 @@ def main(vcf, orthology, disease, expression, all_filetypes, upload,
     if expression is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Expression file')
         generate_expression_file(generated_files_folder, context_info, upload)
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    click.echo('File Generator finished. Elapsed time: %s' % time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
+
 
 def get_neo_uri(context_info):
     if  context_info.config['NEO4J_HOST']:
