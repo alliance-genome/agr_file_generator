@@ -2,7 +2,6 @@
 import os
 
 import coloredlogs
-import yaml
 import click
 import urllib3
 import requests

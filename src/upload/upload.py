@@ -3,9 +3,6 @@ import os
 
 import logging
 import requests
-import json
-import hashlib
-import urllib
 from requests_toolbelt.utils import dump
 from retry import retry
 
