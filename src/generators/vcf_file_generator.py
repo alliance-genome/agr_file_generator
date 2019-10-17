@@ -152,7 +152,6 @@ class VcfFileGenerator:
             if variant['genomicVariantSequence'] == '':
                 self._add_padded_base_to_variant(variant, 'deletion')
         elif so_term == 'insertion':
-            variant['POS'] = variant['start'] - 1
             if variant['genomicReferenceSequence'] != '':
                 logger.warn('Insertion Variant reference sequence is populated'
                              'when it should not be in '
@@ -160,14 +159,18 @@ class VcfFileGenerator:
                              variant['globalId'])
                 return None
             if variant['genomicVariantSequence'] == '':
-                return None
-            self._add_padded_base_to_variant(variant, 'insertion')
+                variant['genomicVariantSequence'] = '.'
+                variant['POS'] = variant['start']
+            else:
+                variant['POS'] = variant['start'] - 1
+                self._add_padded_base_to_variant(variant, 'insertion')
         elif so_term in ['point_mutation', 'MNV']:
             variant['POS'] = variant['start']
         elif so_term == 'delins':
-            if len(variant['genomicVariantSequence']) == 0:
-                return None  ## this is because sometimes when they put no reference sequence it means that it is unknown
-            if len(variant['genomicVariantSequence']) == len(variant['genomicReferenceSequence']):
+            if variant['genomicVariantSequence'] == '':
+                variant['genomicVariantSequence'] = '.'
+                variant['POS'] = variant['start']
+            elif len(variant['genomicVariantSequence']) == len(variant['genomicReferenceSequence']):
                 variant['POS'] = variant['start']
             else:
                 variant['POS'] = variant['start'] - 1
