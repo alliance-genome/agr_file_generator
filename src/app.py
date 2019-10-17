@@ -16,7 +16,7 @@ from data_source import DataSource
 from common import ContextInfo
 
 port = int(os.environ.get('NEO4J_PORT', 7687))
-alliance_db_version = os.environ.get('ALLIANCE_RELEASE', '2.3.0')
+alliance_db_version = os.environ.get('ALLIANCE_RELEASE')
 
 context_info = ContextInfo()
 debug_level = logging.DEBUG if context_info.config["DEBUG"] else logging.INFO

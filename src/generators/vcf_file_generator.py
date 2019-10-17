@@ -142,20 +142,17 @@ class VcfFileGenerator:
 
     def _adjust_variant(self, variant):
         so_term = variant['soTerm']
-        start_pos = variant['start']
-        if start_pos == None:
+        if variant['start'] == None:
             return None
-        if so_term in ['deletion', 'insertion']:
-            variant['POS'] = start_pos - 1
-        else:
-            variant['POS'] = start_pos
         if so_term == 'deletion':
+            variant['POS'] = variant['start'] - 1
             if variant['genomicReferenceSequence'] == '':
                 logger.warn('No reference sequence for variant Id: %r', variant['ID'])
                 return None
             if variant['genomicVariantSequence'] == '':
                 self._add_padded_base_to_variant(variant, 'deletion')
         elif so_term == 'insertion':
+            variant['POS'] = variant['start']
             if variant['genomicReferenceSequence'] != '':
                 logger.warn('Insertion Variant reference sequence is populated'
                              'when it should not be in '
@@ -163,14 +160,20 @@ class VcfFileGenerator:
                              variant['globalId'])
                 return None
             if variant['genomicVariantSequence'] == '':
-                return None
-            self._add_padded_base_to_variant(variant, 'insertion')
-        elif so_term == 'point_mutation':
+                variant['genomicVariantSequence'] = '.'
+            else:
+                self._add_padded_base_to_variant(variant, 'insertion')
+        elif so_term in ['point_mutation', 'MNV']:
             variant['POS'] = variant['start']
-        elif so_term == 'MNV' or so_term == 'delins':
-            variant['POS'] = variant['end']
-            if variant['POS'] is None:
-                return None
+        elif so_term == 'delins':
+            if variant['genomicVariantSequence'] == '':
+                variant['genomicVariantSequence'] = '.'
+                variant['POS'] = variant['start']
+            elif len(variant['genomicVariantSequence']) == len(variant['genomicReferenceSequence']):
+                variant['POS'] = variant['start']
+            else:
+                variant['POS'] = variant['start'] - 1
+                self._add_padded_base_to_variant(variant, 'delins')
         else:
             logger.fatal('New SoTerm that We need to add logic for: %r', so_term)
             return None
