@@ -160,16 +160,15 @@ class VcfFileGenerator:
                 return None
             if variant['genomicVariantSequence'] == '':
                 variant['genomicVariantSequence'] = '.'
-                variant['POS'] = variant['start']
-            else:
-                variant['POS'] = variant['start'] - 1
-                self._add_padded_base_to_variant(variant, 'insertion')
+            variant['POS'] = variant['start'] - 1
+            self._add_padded_base_to_variant(variant, 'insertion')
         elif so_term in ['point_mutation', 'MNV']:
             variant['POS'] = variant['start']
         elif so_term == 'delins':
             if variant['genomicVariantSequence'] == '':
                 variant['genomicVariantSequence'] = '.'
-                variant['POS'] = variant['start']
+                variant['POS'] = variant['start'] - 1
+                self._add_padded_base_to_variant(variant, 'delins')
             elif len(variant['genomicVariantSequence']) == len(variant['genomicReferenceSequence']):
                 variant['POS'] = variant['start']
             else:
