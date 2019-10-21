@@ -154,7 +154,6 @@ class VcfFileGenerator:
             if variant['genomicVariantSequence'] == '':
                 self._add_padded_base_to_variant(variant, 'deletion')
         elif so_term == 'insertion':
-            variant['POS'] = variant['start']
             if variant['genomicReferenceSequence'] != '':
                 logger.warn('Insertion Variant reference sequence is populated'
                              'when it should not be in '
@@ -163,7 +162,7 @@ class VcfFileGenerator:
                 return None
             if variant['genomicVariantSequence'] == '':
                 variant['genomicVariantSequence'] = '.'
-            variant['POS'] = variant['start'] - 1
+            variant['POS'] = variant['start']
             self._add_padded_base_to_variant(variant, 'insertion')
         elif so_term in ['point_mutation', 'MNV']:
             variant['POS'] = variant['start']
