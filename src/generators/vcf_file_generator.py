@@ -23,6 +23,7 @@ class VcfFileGenerator:
 ##INFO=<ID=geneLevelConsequence,Number=.,Type=String,Description="VEP consequence of the variant">
 ##INFO=<ID=impact,Type=String,Number=1,Description="Variant impact scale">
 ##INFO=<ID=symbol,Type=String,Number=1,Description="The human readable name of the allele">
+##INFO=<ID=soTerm,Type=String,Number=1,Description="The Sequence Ontology term for the variant">
 ##INFO=<ID=alleles,Type=String,Number=.,Description="The alleles of the variant">
 ##INFO=<ID=allele_of_genes,Number=.,Type=String,Number=0,Description="The genes that the Allele is located on">
 ##INFO=<ID=symbol_text,Number=1,Type=String,Description="Another human readable representation of the allele">
@@ -84,6 +85,7 @@ class VcfFileGenerator:
         else:
             info_map['impact'] = cls._variant_value_for_file(variant, 'impact')
         info_map['symbol'] = cls._variant_value_for_file(variant, 'symbol')
+        info_map['soTerm'] = cls._variant_value_for_file(variant, 'soTerm')
         info_map['globalId'] = variant['globalId']
         info_map['alleles'] = cls._variant_value_for_file(variant,'alleles',transform=', '.join)
         # info_map['allele_of_genes'] = cls._variant_value_for_file(variant,'alleleOfGenes',transform=', '.join)
