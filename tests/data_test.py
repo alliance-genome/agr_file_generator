@@ -10,15 +10,13 @@ import tempfile
 
 import pytest
 import sys
+sys.path.append('../src')
 import app
 
 
 logger = logging.getLogger(name=__package__)
-
 VCF_DATA = OrderedDict()
-
 _temp_folders = set()
-
 _line_split_regex = re.compile(r'\W+')
 
 
