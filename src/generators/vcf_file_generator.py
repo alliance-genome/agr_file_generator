@@ -77,19 +77,19 @@ class VcfFileGenerator:
         info_map = OrderedDict()
         info_map['hgvs_nomenclature'] = cls._variant_value_for_file(variant, 'hgvsNomenclature')
         if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
-            info_map['geneLevelConsequence'] = ' '.join(cls._variant_value_for_file(variant, 'geneLevelConsequence'))
+            info_map['geneLevelConsequence'] = ','.join(cls._variant_value_for_file(variant, 'geneLevelConsequence'))
         else:
             info_map['geneLevelConsequence'] = cls._variant_value_for_file(variant, 'geneLevelConsequence')
         if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
-            info_map['impact'] = ' '.join(cls._variant_value_for_file(variant, 'impact'))
+            info_map['impact'] = ','.join(cls._variant_value_for_file(variant, 'impact'))
         else:
             info_map['impact'] = cls._variant_value_for_file(variant, 'impact')
         info_map['symbol'] = cls._variant_value_for_file(variant, 'symbol')
         info_map['soTerm'] = cls._variant_value_for_file(variant, 'soTerm')
         info_map['globalId'] = variant['globalId']
-        info_map['alleles'] = cls._variant_value_for_file(variant,'alleles',transform=', '.join)
+        info_map['alleles'] = cls._variant_value_for_file(variant,'alleles',transform=','.join)
         # info_map['allele_of_genes'] = cls._variant_value_for_file(variant,'alleleOfGenes',transform=', '.join)
-        info_map['allele_of_genes'] = cls._variant_value_for_file(variant, 'geneSymbol', transform=', '.join)
+        info_map['allele_of_genes'] = cls._variant_value_for_file(variant, 'geneSymbol', transform=','.join)
         info_map['symbol_text'] = cls._variant_value_for_file(variant, 'symbolText')
         if any(info_map.values()):
             info = ';'.join('{}="{}"'.format(k, v)
