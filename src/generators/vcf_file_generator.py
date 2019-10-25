@@ -40,10 +40,7 @@ class VcfFileGenerator:
     def _add_padded_base_to_variant(cls, variant, so_term):
         padded_base = variant['paddingLeft']
         variant['genomicReferenceSequence'] = padded_base + variant['genomicReferenceSequence']
-        if so_term is 'deletion':
-            variant['genomicVariantSequence'] = '.'
-        else:
-            variant['genomicVariantSequence'] = padded_base + variant['genomicVariantSequence']
+        variant['genomicVariantSequence'] = padded_base + variant['genomicVariantSequence']
 
     @classmethod
     def _write_vcf_header(cls, vcf_file, assembly, species, config_info):
