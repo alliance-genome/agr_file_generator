@@ -53,7 +53,6 @@ def main(vcf, orthology, disease, expression, all_filetypes, upload, tab,
     start_time = time.time()
     click.echo(start_time)
 
-
     if not os.path.exists(generated_files_folder):
         os.makedirs(generated_files_folder)
 
@@ -78,8 +77,9 @@ def main(vcf, orthology, disease, expression, all_filetypes, upload, tab,
     elapsed_time = end_time - start_time
     click.echo('File Generator finished. Elapsed time: %s' % time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
 
+
 def get_neo_uri(context_info):
-    if  context_info.config['NEO4J_HOST']:
+    if context_info.config['NEO4J_HOST']:
         uri = "bolt://" + context_info.config['NEO4J_HOST'] + ":" + str(port)
         logger.info("Using db URI: {}".format(uri))
         return uri

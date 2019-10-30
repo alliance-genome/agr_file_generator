@@ -1,6 +1,6 @@
 from collections import OrderedDict
-from itertools import groupby
 from operator import itemgetter
+from itertools import groupby
 import atexit
 import logging
 import os
@@ -8,17 +8,19 @@ import re
 import shutil
 import tempfile
 
+import glob
 import pytest
+import click
+from click.testing import CliRunner
 import sys
+
+sys.path.append('../src')
 import app
 
 
 logger = logging.getLogger(name=__package__)
-
 VCF_DATA = OrderedDict()
-
 _temp_folders = set()
-
 _line_split_regex = re.compile(r'\W+')
 
 
@@ -30,14 +32,14 @@ def cleanup_temp_folders():
 # Mapping from generated file name to a set of example data that should
 # appear in the generated file for each mod.
 EXAMPLE_CASES = {
-    'GRCm38-2.0.0.vcf': [{'CHROMO': '13',
-                         'POS': '50540171',
-                         'ID': 'ZFIN:ZDB-ALT-160601-8105',
+    'GRCm38-2.3.0.vcf': [{'CHROMO': '13',
+                          'POS': '50540171',
+                          'ID': 'ZFIN:ZDB-ALT-160601-8105',
                          'REF': 'C',
-                         'ALT': 'T',
-                         'QUAL': '',
-                         'FILTER': '',
-                         'INFO': ''},
+                          'ALT': 'T',
+                          'QUAL': '',
+                          'FILTER': '',
+                          'INFO': ''},
                          {'CHROMO': '5',
                           'POS': '72118556',
                           'ID': 'ZFIN:ZDB-ALT-170321-11',
@@ -61,15 +63,15 @@ def parse_vcf_file(path):
     headers = []
     with open(path, 'rt') as fp:
         for line in fp:
-           if line.startswith('##'):
-               continue
-           if line.startswith('#'):
-               cols = line[1:].split('\t')
-               headers.extend(cols)
-               continue
-           else:
-               cols = line.split('\t')
-           data.append(OrderedDict(zip(headers, cols)))
+            if line.startswith('##'):
+                continue
+            if line.startswith('#'):
+                cols = line[1:].split('\t')
+                headers.extend(cols)
+                continue
+            else:
+                cols = line.split('\t')
+            data.append(OrderedDict(zip(headers, cols)))
     return data
 
 
@@ -79,18 +81,17 @@ def parse_generated_file(path, assembly):
 
 def make_gen_files_fixture(asm_cached=False):
     global VCF_DATA
-    tempdir = tempfile.mkdtemp()
-    _temp_folders.add(tempdir)
-    gf_folder_path = os.path.join(tempdir, 'agr_generated_files')
-    if asm_cached:
-        fasta_sequences_folder = 'sequences'
-    else:
-        fasta_sequences_folder = os.path.join(tempdir, 'sequences')
+
+    gf_folder_path = ('../output/')
+
+    runner = CliRunner()
+    result = runner.invoke(app.main, ['--vcf'])
+    assert result.exit_code == 0
+
     logger.debug('FOLDER PATH:', gf_folder_path)
-    os.makedirs(gf_folder_path)
-    app.main(generated_files_folder=gf_folder_path,
-                 fasta_sequences_folder=fasta_sequences_folder)
-    for gf in os.listdir(gf_folder_path):
+
+    for gf in glob.glob(gf_folder_path + '/*.vcf'):
+        print(gf)
         logger.debug(gf)
         path = os.path.join(gf_folder_path, gf)
         VCF_DATA[path] = parse_vcf_file(path)
@@ -109,7 +110,7 @@ def check_files_generated(fixture):
         assert path.endswith('.vcf')
 
 
-def test_files_generated_asm_cached(run_generate_files):
+def test_files_generated(run_generate_files):
     """Run the code to genreate files, assumes the assembly sequence FASTA files
     have been pre-downloaded.
 
@@ -117,6 +118,25 @@ def test_files_generated_asm_cached(run_generate_files):
     to run.
     """
     check_files_generated(run_generate_files)
+
+
+
+# # def parse_generated_file(path, assembly):
+# #     return parse_vcf_file(path)
+
+# # def main(vcf, orthology, disease, expression, all_filetypes, upload, tab, 
+# #          generated_files_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output',
+# #          fasta_sequences_folder='sequences',
+# #          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):
+
+
+# # @click.option('--vcf', is_flag=True, help='Generates VCF files')
+# # @click.option('--orthology', is_flag=True, help='Generates orthology files')
+# # @click.option('--disease', is_flag=True, help='Generates DAF files')
+# # @click.option('--expression', is_flag=True, help='Generates expression files')
+# # @click.option('--all-filetypes', is_flag=True, help='Generates all filetypes')
+# # @click.option('--tab', is_flag=True, help='Generates tab delimited files with VCF info columns contents')
+# # @click.option('--upload', is_flag=True, help='Submits generated files to File Management System (FMS)')
 
 
 def test_ids_unique_in_files(run_generate_files):
@@ -140,7 +160,7 @@ def test_example_expectations(run_generate_files):
         filename = os.path.basename(path)
         examples = EXAMPLE_CASES.get(filename)
         if not examples:
-            logger.info('No examples for ', filename, ', skipping..')
+            logger.info('No examples for ', filename, ', skipping ...')
             continue
         parsed_vcf = vcf_data.get(filename)
         if parsed_vcf is None:
