@@ -59,4 +59,4 @@ class DbSummaryFileGenerator:
         if upload_flag:
             logger.info("Submitting to FMS")
             process_name = "1"
-            upload.upload_process(process_name, filename, self.generated_files_folder, 'DBSUMMARY', config_info.config['RELEASE_VERSION'], self.config_info)
+            upload.upload_process(process_name, filename, self.generated_files_folder, 'DB-SUMMARY', config_info.config['RELEASE_VERSION'], self.config_info)
