@@ -75,7 +75,7 @@ def main(vcf, orthology, disease, expression, db_summary, all_filetypes, upload,
     if expression is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Expression file')
         generate_expression_file(generated_files_folder, context_info, upload)
-    if db_summary is True:# or all_filetypes is True:
+    if db_summary is True or all_filetypes is True:
         click.echo('INFO:\tGenerating DB summary file')
         generate_db_summary_file(generated_files_folder, context_info, upload)
 
