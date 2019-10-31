@@ -32,10 +32,11 @@ class DbSummaryFileGenerator:
                     entities[entityTypes[1]][entityTypes[0]] = frequency
                 else:
                     entities[entityTypes[1]] = {entityTypes[0]: frequency}
-                if entityTypes[0] in entities:
-                    entities[entityTypes[0]][entityTypes[1]] = frequency
-                else:
-                    entities[entityTypes[0]] = {entityTypes[1]: frequency}
+                if (entityTypes[0] not in entities) or (entityTypes[0] in entities and isinstance(entities[entityTypes[0]], dict)):
+                    if entityTypes[0] in entities:
+                        entities[entityTypes[0]][entityTypes[1]] = frequency
+                    else:
+                        entities[entityTypes[0]] = {entityTypes[1]: frequency}
 
          
 
