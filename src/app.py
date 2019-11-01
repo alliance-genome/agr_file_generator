@@ -12,6 +12,7 @@ from generators import vcf_file_generator
 from generators import orthology_file_generator
 from generators import daf_file_generator
 from generators import expression_file_generator
+from generators import db_summary_file_generator
 from data_source import DataSource
 from common import ContextInfo
 
@@ -42,10 +43,11 @@ logger = logging.getLogger(__name__)
 @click.option('--orthology', is_flag=True, help='Generates orthology files')
 @click.option('--disease', is_flag=True, help='Generates DAF files')
 @click.option('--expression', is_flag=True, help='Generates expression files')
+@click.option('--db-summary', is_flag=True, help='Generates summary of database contents')
 @click.option('--all-filetypes', is_flag=True, help='Generates all filetypes')
 @click.option('--tab', is_flag=True, help='Generates tab delimited files with VCF info columns contents')
 @click.option('--upload', is_flag=True, help='Submits generated files to File Management System (FMS)')
-def main(vcf, orthology, disease, expression, all_filetypes, upload, tab, 
+def main(vcf, orthology, disease, expression, db_summary, all_filetypes, upload, tab,
          generated_files_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output',
          fasta_sequences_folder='sequences',
          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):
@@ -72,6 +74,10 @@ def main(vcf, orthology, disease, expression, all_filetypes, upload, tab,
     if expression is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Expression file')
         generate_expression_file(generated_files_folder, context_info, upload)
+    if db_summary is True or all_filetypes is True:
+        click.echo('INFO:\tGenerating DB summary file')
+        generate_db_summary_file(generated_files_folder, context_info, upload)
+
 
     end_time = time.time()
     elapsed_time = end_time - start_time
@@ -199,6 +205,17 @@ def generate_expression_file(generated_files_folder, context_info, upload_flag):
                                                                    generated_files_folder,
                                                                    context_info)
     expression.generate_file(upload_flag=upload_flag)
+
+def generate_db_summary_file(generated_files_folder, context_info, upload_flag):
+    db_summary_query = '''MATCH (entity)
+                          WITH labels(entity) AS entityTypes
+                          RETURN count(entityTypes) AS frequency,
+                          entityTypes'''
+    data_source = DataSource(get_neo_uri(context_info), db_summary_query)
+    db_summary = db_summary_file_generator.DbSummaryFileGenerator(data_source,
+                                                                  generated_files_folder,
+                                                                  context_info)
+    db_summary.generate_file(upload_flag=upload_flag)
 
 
 if __name__ == '__main__':

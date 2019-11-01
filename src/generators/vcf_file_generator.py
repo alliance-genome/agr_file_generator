@@ -21,10 +21,11 @@ class VcfFileGenerator:
 ##fileformat=VCFv4.2
 ##INFO=<ID=hgvs_nomenclature,Number=1,Type=String,Description="the HGVS name of the allele">
 ##INFO=<ID=geneLevelConsequence,Number=.,Type=String,Description="VEP consequence of the variant">
-##INFO=<ID=impact,Type=String,Number=1,Description="Variant impact scale">
-##INFO=<ID=symbol,Type=String,Number=1,Description="The human readable name of the allele">
-##INFO=<ID=alleles,Type=String,Number=.,Description="The alleles of the variant">
-##INFO=<ID=allele_of_genes,Number=.,Type=String,Number=0,Description="The genes that the Allele is located on">
+##INFO=<ID=impact,Number=1,Type=String,Description="Variant impact scale">
+##INFO=<ID=symbol,Number=1,Type=String,Description="The human readable name of the allele">
+##INFO=<ID=soTerm,Number=1,Type=String,Description="The Sequence Ontology term for the variant">
+##INFO=<ID=alleles,Number=.,Type=String,Description="The alleles of the variant">
+##INFO=<ID=allele_of_genes,Number=.,Type=String,Number=1,Description="The genes that the Allele is located on">
 ##INFO=<ID=symbol_text,Number=1,Type=String,Description="Another human readable representation of the allele">
 ##phasing=partial
 ##source=AGR VCF File generator"""
@@ -76,18 +77,19 @@ class VcfFileGenerator:
         info_map = OrderedDict()
         info_map['hgvs_nomenclature'] = cls._variant_value_for_file(variant, 'hgvsNomenclature')
         if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
-            info_map['geneLevelConsequence'] = ' '.join(cls._variant_value_for_file(variant, 'geneLevelConsequence'))
+            info_map['geneLevelConsequence'] = ','.join(cls._variant_value_for_file(variant, 'geneLevelConsequence'))
         else:
             info_map['geneLevelConsequence'] = cls._variant_value_for_file(variant, 'geneLevelConsequence')
         if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
-            info_map['impact'] = ' '.join(cls._variant_value_for_file(variant, 'impact'))
+            info_map['impact'] = ','.join(cls._variant_value_for_file(variant, 'impact'))
         else:
             info_map['impact'] = cls._variant_value_for_file(variant, 'impact')
         info_map['symbol'] = cls._variant_value_for_file(variant, 'symbol')
+        info_map['soTerm'] = cls._variant_value_for_file(variant, 'soTerm')
         info_map['globalId'] = variant['globalId']
-        info_map['alleles'] = cls._variant_value_for_file(variant,'alleles',transform=', '.join)
+        info_map['alleles'] = cls._variant_value_for_file(variant,'alleles',transform=','.join)
         # info_map['allele_of_genes'] = cls._variant_value_for_file(variant,'alleleOfGenes',transform=', '.join)
-        info_map['allele_of_genes'] = cls._variant_value_for_file(variant, 'geneSymbol', transform=', '.join)
+        info_map['allele_of_genes'] = cls._variant_value_for_file(variant, 'geneSymbol', transform=','.join)
         info_map['symbol_text'] = cls._variant_value_for_file(variant, 'symbolText')
         if any(info_map.values()):
             info = ';'.join('{}="{}"'.format(k, v)
@@ -152,7 +154,6 @@ class VcfFileGenerator:
             if variant['genomicVariantSequence'] == '':
                 self._add_padded_base_to_variant(variant, 'deletion')
         elif so_term == 'insertion':
-            variant['POS'] = variant['start']
             if variant['genomicReferenceSequence'] != '':
                 logger.warn('Insertion Variant reference sequence is populated'
                              'when it should not be in '
@@ -161,14 +162,15 @@ class VcfFileGenerator:
                 return None
             if variant['genomicVariantSequence'] == '':
                 variant['genomicVariantSequence'] = '.'
-            else:
-                self._add_padded_base_to_variant(variant, 'insertion')
+            variant['POS'] = variant['start']
+            self._add_padded_base_to_variant(variant, 'insertion')
         elif so_term in ['point_mutation', 'MNV']:
             variant['POS'] = variant['start']
         elif so_term == 'delins':
             if variant['genomicVariantSequence'] == '':
                 variant['genomicVariantSequence'] = '.'
-                variant['POS'] = variant['start']
+                variant['POS'] = variant['start'] - 1
+                self._add_padded_base_to_variant(variant, 'delins')
             elif len(variant['genomicVariantSequence']) == len(variant['genomicReferenceSequence']):
                 variant['POS'] = variant['start']
             else:
