@@ -33,5 +33,5 @@ def upload_process(worker, filename, save_path, data_type, data_sub_type, config
     upload_file_prefix = '{}_{}_{}'.format(config_info.config['RELEASE_VERSION'], data_type, data_sub_type)
 
     # Attempt to grab MD5 for the latest version of the file.
-    logger.debug(config_info.config['FMS_API_URL'] + '/api/datafile/by/{}/{}?latest=true'.format(data_type, data_sub_type))
+    logger.info(config_info.config['FMS_API_URL'] + '/api/datafile/by/{}/{}?latest=true'.format(data_type, data_sub_type))
     upload_file(worker, filename, save_path, upload_file_prefix, config_info)
