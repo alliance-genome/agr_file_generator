@@ -13,7 +13,7 @@ services:
     environment:
       - NET=production
       - RELEASE_VERSION=3.0.0
-      - NEO4J_HOST=stage.alliancegenome.org
+      - NEO4J_HOST=build.alliancegenome.org
       - FMS_API_URL=https://fmsdev.alliancegenome.org
       - API_KEY=${API_KEY}
       - DEBUG=True
@@ -33,7 +33,7 @@ services:
     environment:
       - NET=production
       - RELEASE_VERSION=3.0.0
-      - NEO4J_HOST=stage.alliancegenome.org
+      - NEO4J_HOST=build.alliancegenome.org
       - FMS_API_URL=https://fmsdev.alliancegenome.org
       - API_KEY=${API_KEY}
       - DEBUG=True
