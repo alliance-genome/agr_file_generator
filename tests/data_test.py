@@ -119,8 +119,6 @@ def test_files_generated(run_generate_files):
     """
     check_files_generated(run_generate_files)
 
-
-
 # # def parse_generated_file(path, assembly):
 # #     return parse_vcf_file(path)
 
@@ -137,7 +135,6 @@ def test_files_generated(run_generate_files):
 # # @click.option('--all-filetypes', is_flag=True, help='Generates all filetypes')
 # # @click.option('--tab', is_flag=True, help='Generates tab delimited files with VCF info columns contents')
 # # @click.option('--upload', is_flag=True, help='Submits generated files to File Management System (FMS)')
-
 
 def test_ids_unique_in_files(run_generate_files):
     for (path, records) in VCF_DATA.items():
