@@ -5,6 +5,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 # Common configuration variables used throughout the script.
 class ContextInfo(object):
 
