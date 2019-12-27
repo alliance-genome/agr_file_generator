@@ -1,21 +1,22 @@
-from collections import OrderedDict
-from operator import itemgetter
-from itertools import groupby
+
 import atexit
+import glob
 import logging
 import os
 import re
 import shutil
-import tempfile
-
-import glob
-import pytest
-import click
-from click.testing import CliRunner
 import sys
+import tempfile
+from collections import OrderedDict
+from itertools import groupby
+from operator import itemgetter
 
 sys.path.append('../src')
+
 import app
+import click
+import pytest
+from click.testing import CliRunner
 
 
 logger = logging.getLogger(name=__package__)
@@ -111,7 +112,8 @@ def check_files_generated(fixture):
 
 
 def test_files_generated(run_generate_files):
-    """Run the code to genreate files, assumes the assembly sequence FASTA files
+    """
+    Run the code to genreate files, assumes the assembly sequence FASTA files
     have been pre-downloaded.
 
     If they have not, this test should still pass but the test will take a lot longer
@@ -157,7 +159,8 @@ def test_example_expectations(run_generate_files):
         filename = os.path.basename(path)
         examples = EXAMPLE_CASES.get(filename)
         if not examples:
-            logger.info('No examples for ', filename, ', skipping ...')
+            print('No examples for ', filename, ', skipping ...')
+            # logger.info('No examples for ', filename, ', skipping ...')
             continue
         parsed_vcf = vcf_data.get(filename)
         if parsed_vcf is None:

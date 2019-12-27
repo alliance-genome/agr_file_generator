@@ -22,10 +22,10 @@ def upload_file(worker, filename, save_path, upload_file_prefix, config_info):
         logger.debug('{}: Attempting upload of data file: {}'.format(worker, os.path.join(save_path, filename)))
         logger.debug('{}: Attempting upload with header: {}'.format(worker, headers))
         logger.info("{}: Uploading data to {}) ...".format(worker, config_info.config['FMS_API_URL']+'/api/data/submit/'))
-    
+
         response = requests.post(config_info.config['FMS_API_URL']+'/api/data/submit/', files=file_to_upload, headers=headers)
         logger.info(response.text)
-    
+
 
 @retry(tries=5, delay=5, logger=logger)
 def upload_process(worker, filename, save_path, data_type, data_sub_type, config_info):
