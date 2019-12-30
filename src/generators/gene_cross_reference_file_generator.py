@@ -1,6 +1,7 @@
 import os
 import logging
 import csv
+import json
 from time import gmtime, strftime
 
 from upload import upload
@@ -31,11 +32,12 @@ class GeneCrossReferenceFileGenerator:
                                                databaseVersion=config_info.config['RELEASE_VERSION'])
 
     def generate_file(self, upload_flag=False):
-        filename = 'agr-gene-cross-references-' + self.config_info.config['RELEASE_VERSION'] + '.tsv'
-        output_filepath = os.path.join(self.generated_files_folder, filename)
-        gene_cross_reference_file = open(output_filepath,'w')
+        TSVfilename = 'agr-gene-cross-references-' + self.config_info.config['RELEASE_VERSION'] + '.tsv'
+        JSONfilename = 'agr-gene-cross-references-json-' + self.config_info.config['RELEASE_VERSION'] + '.json'
+        output_filepath = os.path.join(self.generated_files_folder, TSVfilename)
+        output_filepath_json = os.path.join(self.generated_files_folder, JSONfilename)
+        gene_cross_reference_file = open(output_filepath, 'w')
         gene_cross_reference_file.write(self._generate_header(self.config_info))
-
         columns = ['GeneID',
                    'GlobalCrossReferenceID',
                    'CrossReferenceCompleteURL',
@@ -51,8 +53,12 @@ class GeneCrossReferenceFileGenerator:
             row['ResourceDescriptorPage'] = data['ResourceDescriptorPage']
             tsv_writer.writerows([row])
         gene_cross_reference_file.close()
+
+        with open(output_filepath_json, 'w') as outfile:
+            json.dump(data, outfile)
+
         if upload_flag:
             logger.info("Submitting to FMS")
             process_name = "1"
-            upload.upload_process(process_name, filename, self.generated_files_folder, 'GENECROSSREFERENCE',
+            upload.upload_process(process_name, TSVfilename, self.generated_files_folder, 'GENECROSSREFERENCE',
                                   'COMBINED', self.config_info)
