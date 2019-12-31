@@ -23,6 +23,7 @@ services:
       - src/app.py
       - --vcf
       - --gene-cross-reference
+      - --upload
   agr_file_generator_test:
     image: agrdocker/agr_file_generator:latest
     volumes:
