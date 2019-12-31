@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 def upload_file(worker, filename, save_path, upload_file_prefix, config_info):
     with open(os.path.join(save_path, filename), 'rb') as fp:
         file_to_upload = {upload_file_prefix: fp}
-
+        logger.info(file_to_upload)
         if config_info.config['API_KEY']:
             headers = {
                 'Authorization': 'Bearer {}'.format(config_info.config['API_KEY'])

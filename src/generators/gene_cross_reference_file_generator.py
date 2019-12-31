@@ -57,11 +57,12 @@ class GeneCrossReferenceFileGenerator:
         with open(output_filepath_json, 'w') as outfile:
             for data in self.gene_cross_references:
                 json.dump(data, outfile)
+        outfile.close()
 
         if upload_flag:
             logger.info("Submitting to FMS")
             process_name = "1"
-            upload.upload_process(process_name, TSVfilename, self.generated_files_folder, 'GENECROSSREFERENCE',
-                                  'COMBINED', self.config_info)
+            # upload.upload_process(process_name, TSVfilename, self.generated_files_folder, 'GENECROSSREFERENCE',
+            #                       'COMBINED', self.config_info)
             upload.upload_process(process_name, JSONfilename, self.generated_files_folder, 'GENECROSSREFERENCEJSON',
                                   'COMBINED', self.config_info)
