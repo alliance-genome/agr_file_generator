@@ -14,7 +14,7 @@ services:
       - NET=production
       - RELEASE_VERSION=3.0.0
       - NEO4J_HOST=build.alliancegenome.org
-      - FMS_API_URL=https://fms.alliancegenome.org
+      - FMS_API_URL=https://fmsdev.alliancegenome.org
       - API_KEY=${API_KEY}
       - DEBUG=True
     entrypoint:
@@ -22,7 +22,6 @@ services:
       - -u 
       - src/app.py
       - --gene-cross-reference
-      - --upload
   agr_file_generator_test:
     image: agrdocker/agr_file_generator:latest
     volumes:
@@ -35,7 +34,7 @@ services:
       - NET=production
       - RELEASE_VERSION=3.0.0
       - NEO4J_HOST=build.alliancegenome.org
-      - FMS_API_URL=https://fms.alliancegenome.org
+      - FMS_API_URL=https://fmsdev.alliancegenome.org
       - API_KEY=${API_KEY}
       - DEBUG=True
     entrypoint:
