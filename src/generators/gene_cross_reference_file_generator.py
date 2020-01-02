@@ -64,7 +64,9 @@ class GeneCrossReferenceFileGenerator:
         if upload_flag:
             logger.info("Submitting to FMS")
             process_name = "1"
-            # upload.upload_process(process_name, TSVfilename, self.generated_files_folder, 'GENECROSSREFERENCE',
-            #                       'COMBINED', self.config_info)
+            logger.info("uploading TSV version of the gene cross references file.")
+            upload.upload_process(process_name, TSVfilename, self.generated_files_folder, 'GENECROSSREFERENCE',
+                                  'COMBINED', self.config_info)
+            logger.info("uploading JSON version of the gene cross references file.")
             upload.upload_process(process_name, JSONfilename, self.generated_files_folder, 'GENECROSSREFERENCEJSON',
                                   'COMBINED', self.config_info)
