@@ -21,7 +21,7 @@ services:
       - python3
       - -u 
       - src/app.py
-      - --vcf
+      - --gene-cross-reference
   agr_file_generator_test:
     image: agrdocker/agr_file_generator:latest
     volumes:

@@ -1,6 +1,7 @@
 import os
 import logging
 import csv
+import json
 from time import gmtime, strftime
 
 from upload import upload
@@ -31,11 +32,12 @@ class GeneCrossReferenceFileGenerator:
                                                databaseVersion=config_info.config['RELEASE_VERSION'])
 
     def generate_file(self, upload_flag=False):
-        filename = 'agr-gene-cross-references-' + self.config_info.config['RELEASE_VERSION'] + '.tsv'
-        output_filepath = os.path.join(self.generated_files_folder, filename)
-        gene_cross_reference_file = open(output_filepath,'w')
+        TSVfilename = 'agr-gene-cross-references-' + self.config_info.config['RELEASE_VERSION'] + '.tsv'
+        JSONfilename = 'agr-gene-cross-references-json-' + self.config_info.config['RELEASE_VERSION'] + '.json'
+        output_filepath = os.path.join(self.generated_files_folder, TSVfilename)
+        output_filepath_json = os.path.join(self.generated_files_folder, JSONfilename)
+        gene_cross_reference_file = open(output_filepath, 'w')
         gene_cross_reference_file.write(self._generate_header(self.config_info))
-
         columns = ['GeneID',
                    'GlobalCrossReferenceID',
                    'CrossReferenceCompleteURL',
@@ -43,16 +45,28 @@ class GeneCrossReferenceFileGenerator:
 
         tsv_writer = csv.DictWriter(gene_cross_reference_file, delimiter='\t', fieldnames=columns, lineterminator="\n")
         tsv_writer.writeheader()
+        listofxrefs = []
         for data in self.gene_cross_references:
+            listofxrefs.append(data)
             row = dict(zip(columns, [None] * len(columns)))
             row['GeneID'] = data['GeneID']
             row['GlobalCrossReferenceID'] = data['GlobalCrossReferenceID']
             row['CrossReferenceCompleteURL'] = data['CrossReferenceCompleteURL']
             row['ResourceDescriptorPage'] = data['ResourceDescriptorPage']
             tsv_writer.writerows([row])
+
         gene_cross_reference_file.close()
+
+        with open(output_filepath_json, 'w') as outfile:
+            json.dump(listofxrefs, outfile)
+        outfile.close()
+
         if upload_flag:
             logger.info("Submitting to FMS")
             process_name = "1"
-            upload.upload_process(process_name, filename, self.generated_files_folder, 'GENECROSSREFERENCE',
+            logger.info("uploading TSV version of the gene cross references file.")
+            upload.upload_process(process_name, TSVfilename, self.generated_files_folder, 'GENECROSSREFERENCE',
+                                  'COMBINED', self.config_info)
+            logger.info("uploading JSON version of the gene cross references file.")
+            upload.upload_process(process_name, JSONfilename, self.generated_files_folder, 'GENECROSSREFERENCEJSON',
                                   'COMBINED', self.config_info)
