@@ -45,18 +45,20 @@ class GeneCrossReferenceFileGenerator:
 
         tsv_writer = csv.DictWriter(gene_cross_reference_file, delimiter='\t', fieldnames=columns, lineterminator="\n")
         tsv_writer.writeheader()
+        listofxrefs = []
         for data in self.gene_cross_references:
+            listofxrefs.append(data)
             row = dict(zip(columns, [None] * len(columns)))
             row['GeneID'] = data['GeneID']
             row['GlobalCrossReferenceID'] = data['GlobalCrossReferenceID']
             row['CrossReferenceCompleteURL'] = data['CrossReferenceCompleteURL']
             row['ResourceDescriptorPage'] = data['ResourceDescriptorPage']
             tsv_writer.writerows([row])
+
         gene_cross_reference_file.close()
 
         with open(output_filepath_json, 'w') as outfile:
-            for data in self.gene_cross_references:
-                json.dump(data, outfile)
+            json.dump(listofxrefs, outfile)
         outfile.close()
 
         if upload_flag:
