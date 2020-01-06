@@ -41,7 +41,8 @@ class GeneCrossReferenceFileGenerator:
         columns = ['GeneID',
                    'GlobalCrossReferenceID',
                    'CrossReferenceCompleteURL',
-                   'ResourceDescriptorPage']
+                   'ResourceDescriptorPage',
+                   'TaxonID']
 
         tsv_writer = csv.DictWriter(gene_cross_reference_file, delimiter='\t', fieldnames=columns, lineterminator="\n")
         tsv_writer.writeheader()
