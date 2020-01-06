@@ -53,6 +53,7 @@ class GeneCrossReferenceFileGenerator:
             row['GlobalCrossReferenceID'] = data['GlobalCrossReferenceID']
             row['CrossReferenceCompleteURL'] = data['CrossReferenceCompleteURL']
             row['ResourceDescriptorPage'] = data['ResourceDescriptorPage']
+            row['TaxonID'] = data['TaxonID']
             tsv_writer.writerows([row])
 
         gene_cross_reference_file.close()
