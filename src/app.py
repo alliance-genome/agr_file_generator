@@ -236,7 +236,8 @@ def generate_gene_cross_reference_file(generated_files_folder, context_info, upl
                           RETURN g.primaryKey as GeneID, 
                                  cr.globalCrossRefId as GlobalCrossReferenceID, 
                                  cr.crossRefCompleteUrl as CrossReferenceCompleteURL, 
-                                 cr.page as ResourceDescriptorPage'''
+                                 cr.page as ResourceDescriptorPage,
+                                 g.taxonId as TaxonID'''
     data_source = DataSource(get_neo_uri(context_info), gene_cross_reference_query)
     gene_cross_reference = gene_cross_reference_file_generator.GeneCrossReferenceFileGenerator(data_source,
                                                                   generated_files_folder,
