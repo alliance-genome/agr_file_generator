@@ -105,7 +105,7 @@ def run_generate_files():
 
 
 def check_files_generated(fixture):
-    assert VCF_DATA, 'VCF files not generated'
+    assert VCF_DATA, 'VCF files not generated. Please generate files and re-run tests'
     for (path, records) in VCF_DATA.items():
         assert os.path.isfile(path)
         assert path.endswith('.vcf')

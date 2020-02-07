@@ -1,24 +1,22 @@
 
-import os
-
-import coloredlogs
-import click
-import urllib3
-import requests
 import logging
+import os
 import time
 
-from generators import vcf_file_generator
-from generators import orthology_file_generator
-from generators import daf_file_generator
-from generators import expression_file_generator
-from generators import db_summary_file_generator
-from generators import gene_cross_reference_file_generator
-from data_source import DataSource
+import click
+import coloredlogs
+import requests
+import urllib3
 from common import ContextInfo
+from data_source import DataSource
+from generators import (daf_file_generator, db_summary_file_generator,
+                        expression_file_generator,
+                        gene_cross_reference_file_generator,
+                        orthology_file_generator, vcf_file_generator)
 
 port = int(os.environ.get('NEO4J_PORT', 7687))
 alliance_db_version = os.environ.get('ALLIANCE_RELEASE')
+NEO4J_HOST = os.environ.get('NEO4J_HOST')
 
 context_info = ContextInfo()
 debug_level = logging.DEBUG if context_info.config["DEBUG"] else logging.INFO
