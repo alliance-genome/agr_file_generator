@@ -12,7 +12,9 @@ from data_source import DataSource
 from generators import (daf_file_generator, db_summary_file_generator,
                         expression_file_generator,
                         gene_cross_reference_file_generator,
-                        orthology_file_generator, vcf_file_generator)
+                        orthology_file_generator, vcf_file_generator,
+                        uniprot_cross_reference_generator)
+
 
 port = int(os.environ.get('NEO4J_PORT', 7687))
 alliance_db_version = os.environ.get('ALLIANCE_RELEASE')
@@ -46,6 +48,7 @@ logger = logging.getLogger(__name__)
 @click.option('--gene-cross-reference', is_flag=True, help='Generates a file of cross references for gene objects')
 @click.option('--all-filetypes', is_flag=True, help='Generates all filetypes')
 @click.option('--tab', is_flag=True, help='Generates tab delimited files with VCF info columns contents')
+@click.option('--uniprot', is_flag=True, help='Generates a file of gene and uniprot cross references')
 @click.option('--upload', is_flag=True, help='Submits generated files to File Management System (FMS)')
 def main(vcf,
          orthology,
@@ -56,7 +59,9 @@ def main(vcf,
          all_filetypes,
          upload,
          tab,
+         uniprot,
          generated_files_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output',
+         input_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir )) + '/input',
          fasta_sequences_folder='sequences',
          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):
 
@@ -88,6 +93,8 @@ def main(vcf,
     if gene_cross_reference is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Gene Cross Reference file')
         generate_gene_cross_reference_file(generated_files_folder, context_info, upload)
+    if uniprot is True or all_filetypes is True:
+        generate_uniprot_cross_reference(generated_files_folder, input_folder, context_info, upload)
 
     end_time = time.time()
     elapsed_time = end_time - start_time
@@ -240,6 +247,12 @@ def generate_gene_cross_reference_file(generated_files_folder, context_info, upl
                                                                   generated_files_folder,
                                                                   context_info)
     gene_cross_reference.generate_file(upload_flag=upload_flag)
+
+def generate_uniprot_cross_reference(generated_files_folder, input_folder, context_info, upload_flag):
+
+    print(generated_files_folder, input_folder, context_info, upload_flag)
+    ucf = uniprot_cross_reference_generator.UniProtGenerator(context_info, input_folder, generated_files_folder)
+    ucf.generate_file(upload_flag=upload_flag)
 
 
 if __name__ == '__main__':
