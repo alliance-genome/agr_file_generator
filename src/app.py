@@ -251,7 +251,7 @@ def generate_gene_cross_reference_file(generated_files_folder, context_info, upl
 def generate_uniprot_cross_reference(generated_files_folder, input_folder, context_info, upload_flag):
 
     print(generated_files_folder, input_folder, context_info, upload_flag)
-    ucf = uniprot_cross_reference_generator.UniProtGenerator(context_info, input_folder, generated_files_folder)
+    ucf = uniprot_cross_reference_generator.UniProtGenerator(context_info, generated_files_folder, input_folder)
     ucf.generate_file(upload_flag=upload_flag)
 
 
