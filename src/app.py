@@ -249,9 +249,12 @@ def generate_gene_cross_reference_file(generated_files_folder, context_info, upl
     gene_cross_reference.generate_file(upload_flag=upload_flag)
 
 def generate_uniprot_cross_reference(generated_files_folder, input_folder, context_info, upload_flag):
-
-    print(generated_files_folder, input_folder, context_info, upload_flag)
-    ucf = uniprot_cross_reference_generator.UniProtGenerator(context_info, generated_files_folder, input_folder)
+    uniprot_cross_reference_query = '''MATCH (g:Gene)--(cr:CrossReference)
+                                WHERE cr.prefix = "UniProtKB"
+                                RETURN g.primaryKey as GeneID, 
+                                    cr.globalCrossRefId as GlobalCrossReferenceID'''
+    data_source = DataSource(get_neo_uri(context_info), uniprot_cross_reference_query)
+    ucf = uniprot_cross_reference_generator.UniProtGenerator(data_source, context_info, generated_files_folder)
     ucf.generate_file(upload_flag=upload_flag)
 
 
