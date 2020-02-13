@@ -38,13 +38,13 @@ logging.getLogger("urllib3").setLevel(debug_level)
 logging.getLogger("neobolt").setLevel(neo_debug_level)
 logger = logging.getLogger(__name__)
 
-taxon_id_fms_subtype_map = {"NCBITaxon:10116": "RGD",
-                            "NCBITaxon:9606": "HUMAN",
-                            "NCBITaxon:7227": "FB",
-                            "NCBITaxon:6239": "WB",
-                            "NCBITaxon:7955": "ZFIN",
-                            "NCBITaxon:10090": "MGI",
-                            "NCBITaxon:559292": "SGD"}
+taxon_id_fms_subtype_map = {"NCBI:txid10116": "RGD",
+                            "NCBI:txid9606": "HUMAN",
+                            "NCBI:txid7227": "FB",
+                            "NCBI:txid6239": "WB",
+                            "NCBI:txid7955": "ZFIN",
+                            "NCBI:txid10090": "MGI",
+                            "NCBI:txid559292": "SGD"}
 
 @click.command()
 @click.option('--vcf', is_flag=True, help='Generates VCF files')
