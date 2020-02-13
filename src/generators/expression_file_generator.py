@@ -173,7 +173,7 @@ class ExpressionFileGenerator:
             for taxon_id in associations:
                 for file_extension in ['json', 'tsv']:
                     filename = file_basename + "." + taxon_id + '.' + file_extension
-                    datatype = "Expression-ALLIANCE"
+                    datatype = "EXPRESSION-ALLIANCE"
                     if file_extension is "json":
                         datatype += "-JSON"
                     upload.upload_process(process_name, filename, self.generated_files_folder, datatype, self.taxon_id_fms_subtype_map[taxon_id], self.config_info)
