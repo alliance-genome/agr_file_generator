@@ -38,6 +38,13 @@ logging.getLogger("urllib3").setLevel(debug_level)
 logging.getLogger("neobolt").setLevel(neo_debug_level)
 logger = logging.getLogger(__name__)
 
+taxon_id_fms_subtype_map = {"NCBITaxon:10116": "RGD",
+                            "NCBITaxon:9606": "HUMAN",
+                            "NCBITaxon:7227": "FB",
+                            "NCBITaxon:6239": "WB",
+                            "NCBITaxon:7955": "ZFIN",
+                            "NCBITaxon:10090": "MGI",
+                            "NCBITaxon:559292": "SGD"}
 
 @click.command()
 @click.option('--vcf', is_flag=True, help='Generates VCF files')
@@ -79,11 +86,11 @@ def main(vcf,
         click.echo('INFO:\tGenerating Orthology file')
         generate_orthology_file(generated_files_folder, context_info, upload)
     if disease is True or all_filetypes is True:
-        click.echo('INFO:\tGenerating Disease file')
-        generate_daf_file(generated_files_folder, context_info, upload)
+        click.echo('INFO:\tGenerating Disease files')
+        generate_daf_file(generated_files_folder, context_info, taxon_id_fms_subtype_map, upload)
     if expression is True or all_filetypes is True:
-        click.echo('INFO:\tGenerating Expression file')
-        generate_expression_file(generated_files_folder, context_info, upload)
+        click.echo('INFO:\tGenerating Expression files')
+        generate_expression_file(generated_files_folder, context_info, taxon_id_fms_subtype_map, upload)
     if db_summary is True or all_filetypes is True:
         click.echo('INFO:\tGenerating DB summary file')
         generate_db_summary_file(generated_files_folder, context_info, upload)
@@ -168,7 +175,7 @@ def generate_orthology_file(generated_files_folder, context_info, upload_flag):
     of.generate_file(upload_flag=upload_flag)
 
 
-def generate_daf_file(generated_files_folder, context_info, upload_flag):
+def generate_daf_file(generated_files_folder, context_info, taxon_id_fms_subtype_map, upload_flag):
     daf_query = '''MATCH (dej:Association:DiseaseEntityJoin)-[:ASSOCIATION]-(object)-[da:IS_MARKER_FOR|:IS_IMPLICATED_IN|:IMPLICATED_VIA_ORTHOLOGY|:BIOMARKER_VIA_ORTHOLOGY]->(disease:DOTerm)
                    WHERE (object:Gene OR object:Allele)
                    AND da.uuid = dej.primaryKey
@@ -196,11 +203,12 @@ def generate_daf_file(generated_files_folder, context_info, upload_flag):
     data_source = DataSource(get_neo_uri(context_info), daf_query)
     daf = daf_file_generator.DafFileGenerator(data_source,
                                               generated_files_folder,
-                                              context_info)
+                                              context_info,
+                                              taxon_id_fms_subtype_map)
     daf.generate_file(upload_flag=upload_flag)
 
 
-def generate_expression_file(generated_files_folder, context_info, upload_flag):
+def generate_expression_file(generated_files_folder, context_info, taxon_id_fms_subtype_map, upload_flag):
     expression_query = '''MATCH (speciesObj:Species)<-[:FROM_SPECIES]-(geneObj:Gene)-[:ASSOCIATION]->(begej:BioEntityGeneExpressionJoin)--(term)
                           WITH {primaryKey: speciesObj.primaryKey, name: speciesObj.name} AS species,
                                {primaryKey: geneObj.primaryKey, symbol: geneObj.symbol} AS  gene,
@@ -215,7 +223,8 @@ def generate_expression_file(generated_files_folder, context_info, upload_flag):
     data_source = DataSource(get_neo_uri(context_info), expression_query)
     expression = expression_file_generator.ExpressionFileGenerator(data_source,
                                                                    generated_files_folder,
-                                                                   context_info)
+                                                                   context_info,
+                                                                   taxon_id_fms_subtype_map)
     expression.generate_file(upload_flag=upload_flag)
 
 
