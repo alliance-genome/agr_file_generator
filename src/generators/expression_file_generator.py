@@ -123,7 +123,7 @@ class ExpressionFileGenerator:
                     if association['AnatomyTermQualifierTermNames']:
                         association['AnatomyTermQualifierTermNames'].append(ontology_path['name'])
                     else:
-                        association['AnatomyTermQualifierTermNames'].append(ontology_path['name'])
+                        association['AnatomyTermQualifierTermNames'] = [ontology_path['name']]
                 taxon_id = association['SpeciesID']
                 if taxon_id in associations:
                     associations[taxon_id].append(association)
