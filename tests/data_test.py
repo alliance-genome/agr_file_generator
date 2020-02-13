@@ -10,6 +10,7 @@ import tempfile
 from collections import OrderedDict
 from itertools import groupby
 from operator import itemgetter
+from common import ContextInfo
 
 sys.path.append('../src')
 
@@ -30,10 +31,13 @@ def cleanup_temp_folders():
     for fldr in  _temp_folders:
         shutil.rmtree(fldr)
 
+
+EXAMPLE_FILE = 'GRCm38-' + os.environ.get('RELEASE_VERSION')
+
 # Mapping from generated file name to a set of example data that should
 # appear in the generated file for each mod.
 EXAMPLE_CASES = {
-    'GRCm38-2.3.0.vcf': [{'CHROMO': '13',
+    EXAMPLE_FILE: [{'CHROMO': '13',
                           'POS': '50540171',
                           'ID': 'ZFIN:ZDB-ALT-160601-8105',
                          'REF': 'C',
