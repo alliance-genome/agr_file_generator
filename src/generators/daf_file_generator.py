@@ -97,7 +97,7 @@ class DafFileGenerator:
                 date_str = disease_association["dateAssigned"]
 
             taxon_id = disease_association["taxonId"]
-            taxon_id = taxon_id.replace("NCBITaxonId", "NCBI:txid")
+            taxon_id = taxon_id.replace("NCBITaxon:", "NCBI:txid")
             processed_association = dict(zip(fields, [taxon_id,
                                                       disease_association["speciesName"],
                                                       db_object_type,

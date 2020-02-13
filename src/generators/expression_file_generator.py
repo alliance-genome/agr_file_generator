@@ -64,7 +64,7 @@ class ExpressionFileGenerator:
             association = dict(zip(fields, [None] * len(fields)))
             association['Species'] = expression['species']['name']
             association['SpeciesID'] = expression['species']['primaryKey']
-            association['SpeciesID'] = association['SpeciesID'].replace("NCBITaxonId", "NCBI:txid")
+            association['SpeciesID'] = association['SpeciesID'].replace("NCBITaxon:", "NCBI:txid")
             association['GeneID'] = expression['gene']['primaryKey']
             association['GeneSymbol'] = expression['gene']['symbol']
             association['Location'] = expression['location']
@@ -149,7 +149,7 @@ class ExpressionFileGenerator:
             with open(taxon_filepath_json, 'w') as f:
                 json.dump(associations[taxon_id], f)
 
-        for taxon_id in associations:
+            logger.info(taxon_id)
             for association in associations[taxon_id]:
                 for key in association:
                     if isinstance(association[key], list):
