@@ -125,7 +125,7 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
                               (v:Variant)-[:VARIATION_TYPE]-(st:SOTerm),
                               (v:Variant)-[:ASSOCIATION]-(p:GenomicLocation)
                      OPTIONAL MATCH (a:Allele)-[:IS_ALLELE_OF]-(g:Gene)
-                     OPTIONAL MATCH (v:Variant)-[:ASSOCATION]-(m:GeneLevelConsequence)
+                     OPTIONAL MATCH (v:Variant)-[:ASSOCIATION]-(m:GeneLevelConsequence)
                      RETURN c.primaryKey AS chromosome,
                             v.globalId AS globalId,
                             right(v.paddingLeft,1) AS paddingLeft,
@@ -181,15 +181,15 @@ def generate_orthology_file(generated_files_folder, context_info, upload_flag):
 
 
 def generate_daf_file(generated_files_folder, context_info, taxon_id_fms_subtype_map, upload_flag):
-    daf_query = '''MATCH (dej:Association:DiseaseEntityJoin)-[:ASSOCIATION]-(object)-[da:IS_MARKER_FOR|:IS_IMPLICATED_IN|:IMPLICATED_VIA_ORTHOLOGY|:BIOMARKER_VIA_ORTHOLOGY]->(disease:DOTerm)
+    daf_query = '''MATCH (dej:Association:DiseaseEntityJoin)-[:ASSOCIATION]-(object)-[da:IS_MARKER_FOR|IS_IMPLICATED_IN|IMPLICATED_VIA_ORTHOLOGY|BIOMARKER_VIA_ORTHOLOGY]->(disease:DOTerm)
                    WHERE (object:Gene OR object:Allele)
                    AND da.uuid = dej.primaryKey
                    MATCH (object)-[FROM_SPECIES]->(species:Species)
-                   OPTIONAL MATCH (ec:Ontology:ECOTerm)-[:ASSOCIATION]-(:PublicationEvidenceCodeJoin)-[:EVIDENCE]-(dej:Association:DiseaseEntityJoin)
-                   OPTIONAL MATCH (p:Publication)-[:ASSOCIATION]-(:PublicationEvidenceCodeJoin)-[:EVIDENCE]-(dej:Association:DiseaseEntityJoin)
+                   OPTIONAL MATCH (ec:Ontology:ECOTerm)-[:ASSOCIATION]-(:PublicationJoin)-[:EVIDENCE]-(dej:Association:DiseaseEntityJoin)
+                   OPTIONAL MATCH (p:Publication)-[:ASSOCIATION]-(:PublicationJoin)-[:EVIDENCE]-(dej:Association:DiseaseEntityJoin)
                    OPTIONAL MATCH (object)-[o:ORTHOLOGOUS]-(oGene:Gene)
                    WHERE o.strictFilter AND (ec.primaryKey = "ECO:0000250" OR ec.primaryKey = "ECO:0000266") // ISS and ISO respectively
-                   OPTIONAL MATCH (object)-[IS_ALLELE_OF]->(gene:Gene)
+                   //OPTIONAL MATCH (object)-[IS_ALLELE_OF]->(gene:Gene)
                    RETURN  object.taxonId AS taxonId,
                            species.name AS speciesName,
                            collect(DISTINCT oGene.primaryKey) AS withOrthologs,
@@ -199,7 +199,7 @@ def generate_daf_file(generated_files_folder, context_info, taxon_id_fms_subtype
                            p.pubMedId AS pubMedID,
                            p.pubModId As pubModID,
                            type(da) AS associationType,
-                           collect(DISTINCT gene.primaryKey) AS inferredGeneAssociation,
+                           //collect(DISTINCT gene.primaryKey) AS inferredGeneAssociation,
                            disease.doId AS DOID,
                            disease.name as DOname,
                            ec.primaryKey AS evidenceCode,
