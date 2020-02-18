@@ -50,7 +50,7 @@ class DafFileGenerator:
                   #"Qualifier",
                   "DOID",
                   "DOname",
-                  "withOrthologs",
+                  "WithOrthologs",
                   #"Modifier-AssociationType",
                   #"Modifier-Qualifier",
                   #"Modifier-Genetic",
@@ -71,11 +71,11 @@ class DafFileGenerator:
 
             with_orthologs = "|".join(set(disease_association["withOrthologs"])) if disease_association["withOrthologs"] else ""
             do_name = disease_association["DOname"] if disease_association["DOname"] else ""
-            inferred_gene_association = ""
-            if db_object_type == "gene":
-                inferred_gene_association = disease_association["dbObjectID"]
-            elif db_object_type == "allele":
-                inferred_gene_association = ",".join(disease_association["inferredGeneAssociation"])
+            #inferred_gene_association = ""
+            #if db_object_type == "gene":
+            #    inferred_gene_association = disease_association["dbObjectID"]
+            #elif db_object_type == "allele":
+            #    inferred_gene_association = ",".join(disease_association["inferredGeneAssociation"])
 
             if disease_association["evidenceCode"] is not None:
                 evidence_code = disease_association["evidenceCode"]
@@ -122,7 +122,11 @@ class DafFileGenerator:
                                                       datetime.strptime(date_str[:10], "%Y-%m-%d").strftime("%Y%m%d"),
                                                       disease_association["dataProvider"]]))
             processed_association_tsv = processed_association.copy()
-            processed_association_tsv["withOrthologs"] = with_orthologs
+            if len(with_orthologs) > 0:
+               processed_association_tsv["withOrthologs"] = with_orthologs
+            else:
+               processed_association_tsv["withOrthologs"] = ''
+
             if taxon_id in processed_disease_associations:
                 processed_disease_associations_tsv[taxon_id].append(processed_association_tsv)
                 processed_disease_associations[taxon_id].append(processed_association)
