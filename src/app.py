@@ -187,7 +187,7 @@ def generate_daf_file(generated_files_folder, context_info, taxon_id_fms_subtype
                    MATCH (object)-[FROM_SPECIES]->(species:Species)
                    OPTIONAL MATCH (ec:Ontology:ECOTerm)-[:ASSOCIATION]-(:PublicationJoin)-[:EVIDENCE]-(dej:Association:DiseaseEntityJoin)
                    OPTIONAL MATCH (p:Publication)-[:ASSOCIATION]-(:PublicationJoin)-[:EVIDENCE]-(dej:Association:DiseaseEntityJoin)
-                   OPTIONAL MATCH (object)-[o:ORTHOLOGOUS]-(oGene:Gene)
+                   OPTIONAL MATCH (dej)-[o:FROM_ORTHOLOGOUS_GENE]-(oGene:Gene)
                    WHERE o.strictFilter AND (ec.primaryKey = "ECO:0000250" OR ec.primaryKey = "ECO:0000266") // ISS and ISO respectively
                    //OPTIONAL MATCH (object)-[IS_ALLELE_OF]->(gene:Gene)
                    RETURN  object.taxonId AS taxonId,
