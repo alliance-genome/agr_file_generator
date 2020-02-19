@@ -123,9 +123,9 @@ class DafFileGenerator:
                                                       disease_association["dataProvider"]]))
             processed_association_tsv = processed_association.copy()
             if len(with_orthologs) > 0:
-               processed_association_tsv["withOrthologs"] = with_orthologs
+               processed_association_tsv["WithOrthologs"] = with_orthologs
             else:
-               processed_association_tsv["withOrthologs"] = ''
+               processed_association_tsv["WithOrthologs"] = ''
 
             if taxon_id in processed_disease_associations:
                 processed_disease_associations_tsv[taxon_id].append(processed_association_tsv)
