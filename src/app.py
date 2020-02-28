@@ -139,7 +139,6 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
                             a.symbolText as symbolText,
                             p.assembly AS assembly,
                             collect(a.primaryKey) AS alleles,
-                            collect(g.primaryKey) AS geneSymbol,
                             CASE WHEN g IS NOT NULL THEN collect(g.primaryKey) ELSE [] END AS alleleOfGenes,
                             CASE WHEN m IS NOT NULL THEN collect(m.geneLevelConsequence) ELSE [] END AS geneLevelConsequence,
                             CASE WHEN m IS NOT NULL THEN collect(m.impact) ELSE '' END AS impact,
@@ -183,30 +182,36 @@ def generate_orthology_file(generated_files_folder, context_info, upload_flag):
 
 
 def generate_daf_file(generated_files_folder, context_info, taxon_id_fms_subtype_map, upload_flag):
-    daf_query = '''MATCH (dej:Association:DiseaseEntityJoin)-[:ASSOCIATION]-(object)-[da:IS_MARKER_FOR|IS_IMPLICATED_IN|IMPLICATED_VIA_ORTHOLOGY|BIOMARKER_VIA_ORTHOLOGY]->(disease:DOTerm)
+    daf_query = '''MATCH (disease:DOTerm)-[:ASSOCIATION]-(dej:Association:DiseaseEntityJoin)-[:ASSOCIATION]-(object)
                    WHERE (object:Gene OR object:Allele)
-                   AND da.uuid = dej.primaryKey
-                   MATCH (object)-[FROM_SPECIES]->(species:Species)
-                   OPTIONAL MATCH (ec:Ontology:ECOTerm)-[:ASSOCIATION]-(:PublicationJoin)-[:EVIDENCE]-(dej:Association:DiseaseEntityJoin)
-                   OPTIONAL MATCH (p:Publication)-[:ASSOCIATION]-(:PublicationJoin)-[:EVIDENCE]-(dej:Association:DiseaseEntityJoin)
-                   OPTIONAL MATCH (dej)-[o:FROM_ORTHOLOGOUS_GENE]-(oGene:Gene)
-                   WHERE o.strictFilter AND (ec.primaryKey = "ECO:0000250" OR ec.primaryKey = "ECO:0000266") // ISS and ISO respectively
+                         AND dej.joinType IN ["IS_MARKER_FOR", // need to remove when removed from database
+                                              "IS_IMPLICATED_IN", // need to remove when removed from database
+                                              "is_implicated_in",
+                                              "is_biomarker_for",
+                                              "implicated_via_orthology",
+                                              "biomarker_via_orthology"]
+                   MATCH (object)-[FROM_SPECIES]->(species:Species),
+                         (dej:Association:DiseaseEntityJoin)-[:EVIDENCE]->(pj:PublicationJoin),
+                         (p:Publication)-[:ASSOCIATION]->(pj:PublicationJoin)-[:ASSOCIATION]->(ec:Ontology:ECOTerm)
+                   OPTIONAL MATCH (dej:Association:DiseaseEntityJoin)-[:FROM_ORTHOLOGOUS_GENE]-(oGene:Gene),
+                                  (gene:Gene)-[o:ORTHOLOGOUS]->(oGene:Gene)
+                   WHERE o.strictFilter AND ec.primaryKey IN ["ECO:0000250", "ECO:0000266", "ECO:0000501"] // ISS, ISO, and IEA respectively
                    //OPTIONAL MATCH (object)-[IS_ALLELE_OF]->(gene:Gene)
-                   RETURN  object.taxonId AS taxonId,
-                           species.name AS speciesName,
-                           collect(DISTINCT oGene.primaryKey) AS withOrthologs,
-                           labels(object) AS objectType,
-                           object.primaryKey AS dbObjectID,
-                           object.symbol AS dbObjectSymbol,
-                           p.pubMedId AS pubMedID,
-                           p.pubModId As pubModID,
-                           type(da) AS associationType,
-                           //collect(DISTINCT gene.primaryKey) AS inferredGeneAssociation,
-                           disease.doId AS DOID,
-                           disease.name as DOname,
-                           ec.primaryKey AS evidenceCode,
-                           dej.dateAssigned AS dateAssigned,
-                           da.dataProvider AS dataProvider'''
+                   RETURN DISTINCT
+                          object.taxonId AS taxonId,
+                          species.name AS speciesName,
+                          collect(DISTINCT oGene.primaryKey) AS withOrthologs,
+                          labels(object) AS objectType,
+                          object.primaryKey AS dbObjectID,
+                          object.symbol AS dbObjectSymbol,
+                          dej.joinType AS associationType,
+                          //collect(DISTINCT gene.primaryKey) AS inferredGeneAssociation,
+                          disease.doId AS DOID,
+                          disease.name as DOname,
+                          collect(DISTINCT {pubModID: p.pubModId, pubMedID: p.pubMedId, evidenceCode:ec.primaryKey}) as evidence,
+                          left(pj.dateAssigned, 10) AS dateAssigned,
+                          dej.dataProvider AS dataProvider'''
+
     data_source = DataSource(get_neo_uri(context_info), daf_query)
     daf = daf_file_generator.DafFileGenerator(data_source,
                                               generated_files_folder,
