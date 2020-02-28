@@ -98,7 +98,7 @@ class DafFileGenerator:
                 
                 if disease_association["dateAssigned"] is None and disease_association["associationType"] in ["implicated_via_orthology",
                                                                                                               "biomarker_via_orthology"]:
-                    date_str = strftime("%Y-%m-%dT%H:%M:%S", gmtime())
+                    date_str = strftime("%Y-%m-%d", gmtime())
                 else:
                     date_str = disease_association["dateAssigned"]
 
@@ -125,7 +125,7 @@ class DafFileGenerator:
                                                           evidence_code,
                                                           #genetic_sex,
                                                           pub_id,
-                                                          datetime.strptime(date_str[:10], "%Y-%m-%d").strftime("%Y%m%d"),
+                                                          datetime.strptime(date_str, "%Y-%m-%d").strftime("%Y%m%d"),
                                                           disease_association["dataProvider"]]))
                 processed_association_tsv = processed_association.copy()
                 if len(disease_association["withOrthologs"]) > 0:
