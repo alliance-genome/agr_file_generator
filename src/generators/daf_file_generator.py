@@ -14,12 +14,12 @@ class DafFileGenerator:
 
     file_header_template = """#########################################################################
 #
-# Disease Association Format (DAF)
-# Source: Alliance of Genome Resources (Alliance)
-# Orthology Filter: Stringent
-# TaxonIDs: {taxonIDs}
-# Datebase Version: {databaseVersion}
-# Date: {datetimeNow}
+#  Disease Association Format (DAF)
+#  Source: Alliance of Genome Resources (Alliance)
+#  Orthology Filter: Stringent
+#  TaxonIDs: {taxonIDs}
+#  Datebase Version: {databaseVersion}
+#  Date: {datetimeNow}
 #
 #########################################################################
 """
@@ -166,9 +166,9 @@ class DafFileGenerator:
             upload.upload_process(process_name, combined_filepath_tsv, self.generated_files_folder, 'DISEASE-ALLIANCE', 'COMBINED', self.config_info)
             upload.upload_process(process_name, combined_filepath_json, self.generated_files_folder, 'DISEASE-ALLIANCE-JSON', 'COMBINED', self.config_info)
             for taxon_id in processed_disease_associations:
-                 for file_extension in ['json', 'tsv']:
-                     filename = file_basename + "." + taxon_id + '.' + file_extension
-                     datatype = "DISEASE-ALLIANCE"
-                     if file_extension == "json":
-                          datatype += "-JSON"
-                     upload.upload_process(process_name, filename, self.generated_files_folder, datatype, self.taxon_id_fms_subtype_map[taxon_id], self.config_info)
+                for file_extension in ['json', 'tsv']:
+                    filename = file_basename + "." + taxon_id + '.' + file_extension
+                    datatype = "DISEASE-ALLIANCE"
+                    if file_extension == "json":
+                        datatype += "-JSON"
+                    upload.upload_process(process_name, filename, self.generated_files_folder, datatype, self.taxon_id_fms_subtype_map[taxon_id], self.config_info)

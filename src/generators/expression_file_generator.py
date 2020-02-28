@@ -34,13 +34,13 @@ class ExpressionFileGenerator:
                                                datetimeNow=strftime("%Y-%m-%d %H:%M:%S", gmtime()),
                                                databaseVersion=config_info.config['RELEASE_VERSION'])
 
+    # 'StageID', currently don't have stage IDs in the database
     def generate_file(self, upload_flag=False):
         fields = ['Species',
                   'SpeciesID',
                   'GeneID',
                   'GeneSymbol',
                   'Location',
-                 # 'StageID', currently don't have stage IDs in the database
                   'StageTerm',
                   'AssayID',
                   'AssayTermName',
@@ -71,7 +71,7 @@ class ExpressionFileGenerator:
             for term in expression['terms']:
                 if 'CrossReference' in term.labels:
                     if association['Source']:
-                        association['Source'].append(term['crossRefCompleteUrl']) # according to spec should use globalCrossRefId
+                        association['Source'].append(term['crossRefCompleteUrl'])  # according to spec should use globalCrossRefId
                     else:
                         association['Source'] = [term['crossRefCompleteUrl']]
                 elif 'Publication' in term.labels:
@@ -174,6 +174,6 @@ class ExpressionFileGenerator:
                 for file_extension in ['json', 'tsv']:
                     filename = file_basename + "." + taxon_id + '.' + file_extension
                     datatype = "EXPRESSION-ALLIANCE"
-                    if file_extension is "json":
+                    if file_extension == "json":
                         datatype += "-JSON"
                     upload.upload_process(process_name, filename, self.generated_files_folder, datatype, self.taxon_id_fms_subtype_map[taxon_id], self.config_info)

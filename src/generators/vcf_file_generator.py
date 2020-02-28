@@ -87,7 +87,7 @@ class VcfFileGenerator:
         info_map['symbol'] = cls._variant_value_for_file(variant, 'symbol')
         info_map['soTerm'] = cls._variant_value_for_file(variant, 'soTerm')
         info_map['globalId'] = variant['globalId']
-        info_map['alleles'] = cls._variant_value_for_file(variant,'alleles',transform=','.join)
+        info_map['alleles'] = cls._variant_value_for_file(variant, 'alleles', transform=','.join)
         # info_map['allele_of_genes'] = cls._variant_value_for_file(variant,'alleleOfGenes',transform=', '.join)
         info_map['allele_of_genes'] = cls._variant_value_for_file(variant, 'geneSymbol', transform=','.join)
         info_map['symbol_text'] = cls._variant_value_for_file(variant, 'symbolText')
@@ -122,7 +122,7 @@ class VcfFileGenerator:
 
         info_map['symbol'] = cls._variant_value_for_file(variant, 'symbol')
         info_map['globalId'] = variant['globalId']
-        info_map['alleles'] = cls._variant_value_for_file(variant,'alleles',transform=', '.join)
+        info_map['alleles'] = cls._variant_value_for_file(variant, 'alleles', transform=', '.join)
         info_map['allele_of_genes'] = cls._variant_value_for_file(variant, 'geneSymbol', transform=', '.join)
         info_map['symbol_text'] = cls._variant_value_for_file(variant, 'symbolText')
         if any(info_map.values()):
@@ -144,7 +144,7 @@ class VcfFileGenerator:
 
     def _adjust_variant(self, variant):
         so_term = variant['soTerm']
-        if variant['start'] == None:
+        if variant['start'] is None:
             return None
         if so_term == 'deletion':
             variant['POS'] = variant['start'] - 1
@@ -156,9 +156,9 @@ class VcfFileGenerator:
         elif so_term == 'insertion':
             if variant['genomicReferenceSequence'] != '':
                 logger.warn('Insertion Variant reference sequence is populated'
-                             'when it should not be in '
-                             'variant ID: %r',
-                             variant['globalId'])
+                            'when it should not be in '
+                            'variant ID: %r',
+                            variant['globalId'])
                 return None
             if variant['genomicVariantSequence'] == '':
                 variant['genomicVariantSequence'] = '.'
@@ -206,7 +206,7 @@ class VcfFileGenerator:
             else:
                 logger.info('Generating TAB delimited File for assembly %r', assembly)
                 with open(filepath_tab, 'w') as tab_delimited_file:
-                    self._write_tab_delimited_header(tab_delimited_file, assembly, 
+                    self._write_tab_delimited_header(tab_delimited_file, assembly,
                                                      assembly_species[assembly],
                                                      self.config_info)
                     for (chromosome, variants) in sorted(chromo_variants.items(), key=itemgetter(0)):

@@ -1,5 +1,5 @@
 import os
-import time
+# import time
 import json
 import logging
 
@@ -17,7 +17,6 @@ class DbSummaryFileGenerator:
         self.entitites = entities
         self.config_info = config_info
         self.generated_files_folder = generated_files_folder
-
 
     def generate_file(self, upload_flag=False):
         entities = dict()
@@ -38,8 +37,6 @@ class DbSummaryFileGenerator:
                     else:
                         entities[entityTypes[0]] = {entityTypes[1]: frequency}
 
-         
-
         entityKeys = list(entities.keys()).copy()
         for key in entityKeys:
             if not isinstance(entities[key], int):
@@ -47,10 +44,10 @@ class DbSummaryFileGenerator:
                     subKey = list(entities[key].keys())[0]
                     if subKey in entities:
                         del entities[key]
-    
-        summary = { "overview": entities }
 
-        filename =  'db-summary-' + self.config_info.config['RELEASE_VERSION'] + '.json'
+        summary = {"overview": entities}
+
+        filename = 'db-summary-' + self.config_info.config['RELEASE_VERSION'] + '.json'
         filepath = os.path.join(self.generated_files_folder, filename)
         print(filepath)
         with open(filepath, 'w') as json_file:
