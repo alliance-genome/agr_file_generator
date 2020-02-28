@@ -1,3 +1,12 @@
+"""
+.. module:: daf_file_generators
+    :platform: any
+    :synopsis: Module that generates the Disease Association Format files for AGR data
+.. moduleauthor:: AGR consortium
+
+"""
+
+
 import os
 import logging
 from datetime import datetime
@@ -11,6 +20,9 @@ logger = logging.getLogger(name=__name__)
 
 
 class DafFileGenerator:
+    """
+    TBA
+    """
 
     file_header_template = """#########################################################################
 #
@@ -25,6 +37,13 @@ class DafFileGenerator:
 """
 
     def __init__(self, disease_associations, generated_files_folder, config_info, taxon_id_fms_subtype_map):
+        """
+
+        :param disease_associations:
+        :param generated_files_folder:
+        :param config_info:
+        :param taxon_id_fms_subtype_map:
+        """
         self.disease_associations = disease_associations
         self.config_info = config_info
         self.taxon_id_fms_subtype_map = taxon_id_fms_subtype_map
@@ -32,11 +51,23 @@ class DafFileGenerator:
 
     @classmethod
     def _generate_header(cls, config_info, taxon_ids):
+        """
+        TBA
+
+        :param config_info:
+        :param taxon_ids:
+        :return:
+        """
         return cls.file_header_template.format(taxonIDs=",".join(taxon_ids),
                                                datetimeNow=strftime("%Y-%m-%d %H:%M:%S", gmtime()),
                                                databaseVersion=config_info.config['RELEASE_VERSION'])
 
     def generate_file(self, upload_flag=False):
+        """
+
+        :param upload_flag:
+        :return:
+        """
         fields = ["Taxon",
                   "SpeciesName",
                   "DBobjectType",

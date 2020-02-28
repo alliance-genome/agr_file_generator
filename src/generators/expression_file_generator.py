@@ -1,3 +1,11 @@
+"""
+.. module:: expression_file_generators
+    :platform: any
+    :synopsis: Module that generates the Expression files
+.. moduleauthor:: AGR consrotium
+
+"""
+
 import os
 import logging
 import json
@@ -10,6 +18,9 @@ logger = logging.getLogger(name=__name__)
 
 
 class ExpressionFileGenerator:
+    """
+    TBA
+    """
 
     file_header_template = """#########################################################################
 #
@@ -23,6 +34,13 @@ class ExpressionFileGenerator:
 """
 
     def __init__(self, expressions, generated_files_folder, config_info, taxon_id_fms_subtype_map):
+        """
+
+        :param expressions:
+        :param generated_files_folder:
+        :param config_info:
+        :param taxon_id_fms_subtype_map:
+        """
         self.expressions = expressions
         self.config_info = config_info
         self.taxon_id_fms_subtype_map = taxon_id_fms_subtype_map
@@ -30,12 +48,23 @@ class ExpressionFileGenerator:
 
     @classmethod
     def _generate_header(cls, config_info, taxon_ids):
+        """
+
+        :param config_info:
+        :param taxon_ids:
+        :return:
+        """
         return cls.file_header_template.format(taxonIDs=",".join(taxon_ids),
                                                datetimeNow=strftime("%Y-%m-%d %H:%M:%S", gmtime()),
                                                databaseVersion=config_info.config['RELEASE_VERSION'])
 
     # 'StageID', currently don't have stage IDs in the database
     def generate_file(self, upload_flag=False):
+        """
+
+        :param upload_flag:
+        :return:
+        """
         fields = ['Species',
                   'SpeciesID',
                   'GeneID',

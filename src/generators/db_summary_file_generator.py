@@ -1,3 +1,11 @@
+"""
+.. module:: db_summary_file_generator
+    :platform: any
+    :synopsis: Module that generates a summary of the DB entities
+.. moduleauthor:: AGR consortium
+
+"""
+
 import os
 # import time
 import json
@@ -10,15 +18,29 @@ logger = logging.getLogger(name=__name__)
 
 
 class DbSummaryFileGenerator:
+    """
+    TBA
+    """
 
     empty_value_marker = '.'
 
     def __init__(self, entities, generated_files_folder, config_info):
+        """
+
+        :param entities:
+        :param generated_files_folder:
+        :param config_info:
+        """
         self.entitites = entities
         self.config_info = config_info
         self.generated_files_folder = generated_files_folder
 
     def generate_file(self, upload_flag=False):
+        """
+
+        :param upload_flag:
+        :return:
+        """
         entities = dict()
         for record in self.entitites:
 
