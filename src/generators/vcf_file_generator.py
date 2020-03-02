@@ -40,8 +40,9 @@ class VcfFileGenerator:
     @classmethod
     def _add_padded_base_to_variant(cls, variant, so_term):
         padded_base = variant['paddingLeft']
-        variant['genomicReferenceSequence'] = padded_base + variant['genomicReferenceSequence']
-        variant['genomicVariantSequence'] = padded_base + variant['genomicVariantSequence']
+        if not ("," in variant['genomicReferenceSequence'] or "," in variant['genomicVariantSequence']):
+            variant['genomicReferenceSequence'] = padded_base + variant['genomicReferenceSequence']
+            variant['genomicVariantSequence'] = padded_base + variant['genomicVariantSequence']
 
     @classmethod
     def _write_vcf_header(cls, vcf_file, assembly, species, config_info):
@@ -141,7 +142,7 @@ class VcfFileGenerator:
         info_map['symbol'] = cls._variant_value_for_file(variant, 'symbol')
         info_map['globalId'] = variant['globalId']
         info_map['alleles'] = cls._variant_value_for_file(variant,'alleles',transform=', '.join)
-        info_map['allele_of_genes'] = cls._variant_value_for_file(variant, 'geneSymbol', transform=', '.join)
+        info_map['allele_of_genes'] = cls._variant_value_for_file(variant, 'alleleOfGenes', transform=', '.join)
         info_map['symbol_text'] = cls._variant_value_for_file(variant, 'symbolText')
         if any(info_map.values()):
             info = '\t'.join(v for (k, v) in info_map.items() if v)
@@ -160,10 +161,37 @@ class VcfFileGenerator:
             assembly_species[assembly] = variant['species']
         return (assembly_chr_variants, assembly_species)
 
+
+    def _find_replace(self, string, dictionary):
+        # is the item in the dict?
+        for item in string:
+            # iterate by keys
+            if item in dictionary.keys():
+                # look up and replace
+                string = string.replace(item, dictionary[item])
+                # return updated string
+        return string
+
     def _adjust_variant(self, variant):
         so_term = variant['soTerm']
         if variant['start'] == None:
             return None
+
+        #from https://www.bioinformatics.org/sms/iupac.html
+        iupac_to_vcf_ref_codes = {"R": "A,G",
+                                  "Y": "C,T",
+                                  "S": "G,C",
+                                  "W": "A,T",
+                                  "K": "G,T",
+                                  "M": "A,C",
+                                  "B": "C,G,T",
+                                  "D": "A,G,T",
+                                  "H": "A,C,T",
+                                  "V": "A,C,G"}
+
+        variant['genomicVariantSequence'] = self._find_replace(variant['genomicVariantSequence'],
+                                                         iupac_to_vcf_ref_codes)
+
         if so_term == 'deletion':
             variant['POS'] = variant['start'] - 1
             if variant['genomicReferenceSequence'] == '':
