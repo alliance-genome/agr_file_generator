@@ -56,6 +56,7 @@ class ExpressionFileGenerator:
                   'AnatomyTermName',
                   'AnatomyTermQualifierIDs',
                   'AnatomyTermQualifierTermNames',
+                  'SourceURL',
                   'Source',
                   'Reference']
 
@@ -63,6 +64,7 @@ class ExpressionFileGenerator:
         for expression in self.expressions:
             association = dict(zip(fields, [None] * len(fields)))
             association['Species'] = expression['species']['name']
+            association['Source'] = expression['gene']['dataProvider']
             association['SpeciesID'] = expression['species']['primaryKey']
             association['SpeciesID'] = association['SpeciesID'].replace("NCBITaxon:", "NCBI:txid")
             association['GeneID'] = expression['gene']['primaryKey']
@@ -70,10 +72,10 @@ class ExpressionFileGenerator:
             association['Location'] = expression['location']
             for term in expression['terms']:
                 if 'CrossReference' in term.labels:
-                    if association['Source']:
-                        association['Source'].append(term['crossRefCompleteUrl']) # according to spec should use globalCrossRefId
+                    if association['SourceURL']:
+                        association['SourceURL'].append(term['crossRefCompleteUrl']) # according to spec should use globalCrossRefId
                     else:
-                        association['Source'] = [term['crossRefCompleteUrl']]
+                        association['SourceURL'] = [term['crossRefCompleteUrl']]
                 elif 'Publication' in term.labels:
                     publication = term['pubMedId'] or term['pubModId']
                     # reference = association['Reference']
