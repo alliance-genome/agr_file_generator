@@ -76,10 +76,29 @@ class VcfFileGenerator:
     def _add_variant_to_vcf_file(cls, vcf_file, variant):
         info_map = OrderedDict()
         info_map['hgvs_nomenclature'] = cls._variant_value_for_file(variant, 'hgvsNomenclature')
+
+        variant['geneLevelConsequence'] = []
+        variant['impact'] = []
+        variant['geneSymbol'] = []
+        for geneConsequence in variant['geneConsequences']:
+            if geneConsequence['consequence'] is not None:
+                variant['geneLevelConsequence'].append(geneConsequence['consequence'])
+            else:
+                variant['geneLevelConsequence'].append('')
+            if geneConsequence['impact'] is not None:
+                variant['impact'].append(geneConsequence['impact'])
+            else:
+                variant['impact'].append('')
+            if geneConsequence['gene'] is not None:
+                  variant['geneSymbol'].append(geneConsequence['gene'])
+            else:
+                  variant['geenSymbol'].append('')
+
         if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
             info_map['geneLevelConsequence'] = ','.join(cls._variant_value_for_file(variant, 'geneLevelConsequence'))
         else:
             info_map['geneLevelConsequence'] = cls._variant_value_for_file(variant, 'geneLevelConsequence')
+
         if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
             info_map['impact'] = ','.join(cls._variant_value_for_file(variant, 'impact'))
         else:
@@ -87,8 +106,7 @@ class VcfFileGenerator:
         info_map['symbol'] = cls._variant_value_for_file(variant, 'symbol')
         info_map['soTerm'] = cls._variant_value_for_file(variant, 'soTerm')
         info_map['globalId'] = variant['globalId']
-        info_map['alleles'] = cls._variant_value_for_file(variant,'alleles',transform=','.join)
-        # info_map['allele_of_genes'] = cls._variant_value_for_file(variant,'alleleOfGenes',transform=', '.join)
+        info_map['alleles'] = variant['alleles']#cls._variant_value_for_file(variant,'alleles',transform=','.join)
         info_map['allele_of_genes'] = cls._variant_value_for_file(variant, 'geneSymbol', transform=','.join)
         info_map['symbol_text'] = cls._variant_value_for_file(variant, 'symbolText')
         if any(info_map.values()):

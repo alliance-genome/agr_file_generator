@@ -136,13 +136,8 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
                             a.symbol AS symbol,
                             a.symbolText as symbolText,
                             p.assembly AS assembly,
-                            collect(DISTINCT a.primaryKey) AS alleles,
-                            collect(g.primaryKey) AS geneSymbol,
-                            //CASE WHEN g IS NOT NULL THEN 
-                            collect(DISTINCT {gene: g.primaryKey, consequence: m.geneLevelConsequence, impact: m.impact}) //ELSE [] END
-                            AS alleleOfGenes,
-                            //CASE WHEN m IS NOT NULL THEN collect(m.geneLevelConsequence) ELSE [] END AS geneLevelConsequence,
-                            //CASE WHEN m IS NOT NULL THEN collect(m.impact) ELSE '' END AS impact,
+                            a.primaryKey AS alleles,
+                            collect(DISTINCT {gene: g.primaryKey, consequence: m.geneLevelConsequence, impact: m.impact}) AS geneConsequences,
                             p.start AS start,
                             p.end AS end,
                             s.name AS species,
