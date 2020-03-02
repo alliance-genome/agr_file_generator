@@ -19,6 +19,16 @@ class VcfFileGenerator:
     file_header = """##contig=<ID=,length=,assembly={assembly},md5=,species="{species}",taxonomy=x>
 ##fileDate={datetime}
 ##fileformat=VCFv4.2
+##ALT=<ID=R,Description="IUPAC code R = A/G">
+##ALT=<ID=Y,Description="IUPAC code Y = C/T">
+##ALT=<ID=S,Description="IUPAC code S = C/G">
+##ALT=<ID=W,Description="IUPAC code W = A/T">
+##ALT=<ID=M,Description="IUPAC code M = A/C">
+##ALT=<ID=K,Description="IUPAC code K = T/G">
+##ALT=<ID=B,Description="IUPAC code B = C/G/T">
+##ALT=<ID=D,Description="IUPAC code D = A/G/T">
+##ALT=<ID=H,Description="IUPAC code H = A/C/T">
+##ALT=<ID=V,Description="IUPAC code V = A/C/G">
 ##INFO=<ID=hgvs_nomenclature,Number=1,Type=String,Description="the HGVS name of the allele">
 ##INFO=<ID=geneLevelConsequence,Number=.,Type=String,Description="VEP consequence of the variant">
 ##INFO=<ID=impact,Number=1,Type=String,Description="Variant impact scale">
@@ -162,13 +172,13 @@ class VcfFileGenerator:
         return (assembly_chr_variants, assembly_species)
 
 
-    def _find_replace(self, string, dictionary):
+    def _find_replace(self, string, iupac_codes):
         # is the item in the dict?
         for item in string:
             # iterate by keys
-            if item in dictionary.keys():
+            if item in iupac_codes:
                 # look up and replace
-                string = string.replace(item, dictionary[item])
+                string = string.replace(item, "<" + item +">")
                 # return updated string
         return string
 
@@ -178,16 +188,7 @@ class VcfFileGenerator:
             return None
 
         #from https://www.bioinformatics.org/sms/iupac.html
-        iupac_to_vcf_ref_codes = {"R": "A,G",
-                                  "Y": "C,T",
-                                  "S": "G,C",
-                                  "W": "A,T",
-                                  "K": "G,T",
-                                  "M": "A,C",
-                                  "B": "C,G,T",
-                                  "D": "A,G,T",
-                                  "H": "A,C,T",
-                                  "V": "A,C,G"}
+        iupac_to_vcf_ref_codes = {"R", "Y", "S", "W", "K", "M", "B", "D", "T", "H", "V"}
 
         variant['genomicVariantSequence'] = self._find_replace(variant['genomicVariantSequence'],
                                                          iupac_to_vcf_ref_codes)
