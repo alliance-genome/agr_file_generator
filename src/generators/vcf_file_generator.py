@@ -188,7 +188,7 @@ class VcfFileGenerator:
             return None
 
         #from https://www.bioinformatics.org/sms/iupac.html
-        iupac_to_vcf_ref_codes = {"R", "Y", "S", "W", "K", "M", "B", "D", "T", "H", "V"}
+        iupac_to_vcf_ref_codes = {"R", "Y", "S", "W", "K", "M", "B", "D", "H", "V"}
 
         variant['genomicVariantSequence'] = self._find_replace(variant['genomicVariantSequence'],
                                                          iupac_to_vcf_ref_codes)
