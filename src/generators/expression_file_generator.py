@@ -22,10 +22,9 @@ class ExpressionFileGenerator:
 #########################################################################
 """
 
-    def __init__(self, expressions, generated_files_folder, config_info, taxon_id_fms_subtype_map):
+    def __init__(self, expressions, generated_files_folder, config_info):
         self.expressions = expressions
         self.config_info = config_info
-        self.taxon_id_fms_subtype_map = taxon_id_fms_subtype_map
         self.generated_files_folder = generated_files_folder
 
     @classmethod
@@ -66,7 +65,7 @@ class ExpressionFileGenerator:
             association['Species'] = expression['species']['name']
             association['Source'] = expression['gene']['dataProvider']
             association['SpeciesID'] = expression['species']['primaryKey']
-            association['SpeciesID'] = association['SpeciesID'].replace("NCBITaxon:", "NCBI:txid")
+            association['SpeciesID'] = association['SpeciesID']
             association['GeneID'] = expression['gene']['primaryKey']
             association['GeneSymbol'] = expression['gene']['symbol']
             association['Location'] = expression['location']
@@ -178,4 +177,4 @@ class ExpressionFileGenerator:
                     datatype = "EXPRESSION-ALLIANCE"
                     if file_extension is "json":
                         datatype += "-JSON"
-                    upload.upload_process(process_name, filename, self.generated_files_folder, datatype, self.taxon_id_fms_subtype_map[taxon_id], self.config_info)
+                    upload.upload_process(process_name, filename, self.generated_files_folder, datatype, taxon_id, self.config_info)

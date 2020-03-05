@@ -38,14 +38,6 @@ logging.getLogger("urllib3").setLevel(debug_level)
 logging.getLogger("neobolt").setLevel(neo_debug_level)
 logger = logging.getLogger(__name__)
 
-taxon_id_fms_subtype_map = {"NCBI:txid10116": "RGD",
-                            "NCBI:txid9606": "HUMAN",
-                            "NCBI:txid7227": "FB",
-                            "NCBI:txid6239": "WB",
-                            "NCBI:txid7955": "ZFIN",
-                            "NCBI:txid10090": "MGI",
-                            "NCBI:txid559292": "SGD"}
-
 @click.command()
 @click.option('--vcf', is_flag=True, help='Generates VCF files')
 @click.option('--orthology', is_flag=True, help='Generates orthology files')
@@ -68,7 +60,7 @@ def main(vcf,
          tab,
          uniprot,
          generated_files_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output',
-         input_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir )) + '/input',
+         input_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/input',
          fasta_sequences_folder='sequences',
          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):
 
@@ -90,10 +82,10 @@ def main(vcf,
         generate_orthology_file(generated_files_folder, context_info, upload)
     if disease is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Disease files')
-        generate_daf_file(generated_files_folder, context_info, taxon_id_fms_subtype_map, upload)
+        generate_daf_file(generated_files_folder, context_info, upload)
     if expression is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Expression files')
-        generate_expression_file(generated_files_folder, context_info, taxon_id_fms_subtype_map, upload)
+        generate_expression_file(generated_files_folder, context_info, upload)
     if db_summary is True or all_filetypes is True:
         click.echo('INFO:\tGenerating DB summary file')
         generate_db_summary_file(generated_files_folder, context_info, upload)
@@ -179,24 +171,26 @@ def generate_orthology_file(generated_files_folder, context_info, upload_flag):
     of.generate_file(upload_flag=upload_flag)
 
 
-def generate_daf_file(generated_files_folder, context_info, taxon_id_fms_subtype_map, upload_flag):
-    daf_query = '''MATCH (disease:DOTerm)-[:ASSOCIATION]-(dej:Association:DiseaseEntityJoin)-[:ASSOCIATION]-(object)
-                   WHERE (object:Gene OR object:Allele)
+def generate_daf_file(generated_files_folder, context_info, upload_flag):
+    daf_query = '''MATCH (disease:DOTerm)-[:ASSOCIATION]-(dej:Association:DiseaseEntityJoin)-[:ASSOCIATION]-(object)-[:FROM_SPECIES]-(species:Species)
+                   WHERE (object:Gene OR object:Allele OR object:AffectedGenomicModel)
                          AND dej.joinType IN ["IS_MARKER_FOR", // need to remove when removed from database
                                               "IS_IMPLICATED_IN", // need to remove when removed from database
+                                              "IS_MODEL_OF",
+                                              "is_model_of",
                                               "is_implicated_in",
                                               "is_biomarker_for",
                                               "implicated_via_orthology",
                                               "biomarker_via_orthology"]
-                   MATCH (object)-[FROM_SPECIES]->(species:Species),
-                         (dej:Association:DiseaseEntityJoin)-[:EVIDENCE]->(pj:PublicationJoin),
+                   MATCH (dej:Association:DiseaseEntityJoin)-[:EVIDENCE]->(pj:PublicationJoin),
                          (p:Publication)-[:ASSOCIATION]->(pj:PublicationJoin)-[:ASSOCIATION]->(ec:Ontology:ECOTerm)
+                   OPTIONAL MATCH (pj:PublicationJoin)-[:MODEL_COMPONENT|PRIMARY_GENETIC_ENTITY]-(inferredFrom)
                    OPTIONAL MATCH (dej:Association:DiseaseEntityJoin)-[:FROM_ORTHOLOGOUS_GENE]-(oGene:Gene),
                                   (gene:Gene)-[o:ORTHOLOGOUS]->(oGene:Gene)
                    WHERE o.strictFilter AND ec.primaryKey IN ["ECO:0000250", "ECO:0000266", "ECO:0000501"] // ISS, ISO, and IEA respectively
                    //OPTIONAL MATCH (object)-[IS_ALLELE_OF]->(gene:Gene)
                    RETURN DISTINCT
-                          object.taxonId AS taxonId,
+                          species.primaryKey AS taxonId,
                           species.name AS speciesName,
                           collect(DISTINCT oGene.primaryKey) AS withOrthologs,
                           labels(object) AS objectType,
@@ -205,20 +199,20 @@ def generate_daf_file(generated_files_folder, context_info, taxon_id_fms_subtype
                           dej.joinType AS associationType,
                           //collect(DISTINCT gene.primaryKey) AS inferredGeneAssociation,
                           disease.doId AS DOID,
-                          disease.name as DOname,
-                          collect(DISTINCT {pubModID: p.pubModId, pubMedID: p.pubMedId, evidenceCode:ec.primaryKey}) as evidence,
-                          left(pj.dateAssigned, 10) AS dateAssigned,
+                          disease.name as DOtermName,
+                          collect(DISTINCT inferredFrom) AS inferredFromEntities,
+                          collect(DISTINCT {pubModID: p.pubModId, pubMedID: p.pubMedId, evidenceCode:ec.primaryKey, evidenceCodeName: ec.name}) as evidence,
+                          REDUCE(t = "1900-01-01", c IN collect(left(pj.dateAssigned, 10)) | CASE WHEN c > t THEN c ELSE t END) AS dateAssigned, //takes most recent date
                           dej.dataProvider AS dataProvider'''
 
     data_source = DataSource(get_neo_uri(context_info), daf_query)
     daf = daf_file_generator.DafFileGenerator(data_source,
                                               generated_files_folder,
-                                              context_info,
-                                              taxon_id_fms_subtype_map)
+                                              context_info)
     daf.generate_file(upload_flag=upload_flag)
 
 
-def generate_expression_file(generated_files_folder, context_info, taxon_id_fms_subtype_map, upload_flag):
+def generate_expression_file(generated_files_folder, context_info, upload_flag):
     expression_query = '''MATCH (speciesObj:Species)<-[:FROM_SPECIES]-(geneObj:Gene)-[:ASSOCIATION]->(begej:BioEntityGeneExpressionJoin)--(term)
                           //WHERE geneObj.primaryKey = 'ZFIN:ZDB-GENE-110411-206'
                           WITH {primaryKey: speciesObj.primaryKey, name: speciesObj.name} AS species,
@@ -238,8 +232,7 @@ def generate_expression_file(generated_files_folder, context_info, taxon_id_fms_
     data_source = DataSource(get_neo_uri(context_info), expression_query)
     expression = expression_file_generator.ExpressionFileGenerator(data_source,
                                                                    generated_files_folder,
-                                                                   context_info,
-                                                                   taxon_id_fms_subtype_map)
+                                                                   context_info)
     expression.generate_file(upload_flag=upload_flag)
 
 
