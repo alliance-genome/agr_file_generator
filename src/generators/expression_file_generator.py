@@ -66,7 +66,7 @@ class ExpressionFileGenerator:
             association['Species'] = expression['species']['name']
             association['Source'] = expression['gene']['dataProvider']
             association['SpeciesID'] = expression['species']['primaryKey']
-            association['SpeciesID'] = association['SpeciesID'].replace("NCBITaxon:", "NCBI:txid")
+            association['SpeciesID'] = association['SpeciesID']
             association['GeneID'] = expression['gene']['primaryKey']
             association['GeneSymbol'] = expression['gene']['symbol']
             association['Location'] = expression['location']
