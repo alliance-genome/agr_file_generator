@@ -202,8 +202,8 @@ class DafFileGenerator:
         if upload_flag:
             logger.info("Submitting disease files to FMS")
             process_name = "1"
-            #upload.upload_process(process_name, combined_filepath_tsv, self.generated_files_folder, 'DISEASE-ALLIANCE', 'COMBINED', self.config_info)
-            #upload.upload_process(process_name, combined_filepath_json, self.generated_files_folder, 'DISEASE-ALLIANCE-JSON', 'COMBINED', self.config_info)
+            upload.upload_process(process_name, combined_filepath_tsv, self.generated_files_folder, 'DISEASE-ALLIANCE', 'COMBINED', self.config_info)
+            upload.upload_process(process_name, combined_filepath_json, self.generated_files_folder, 'DISEASE-ALLIANCE-JSON', 'COMBINED', self.config_info)
             for taxon_id in processed_disease_associations:
                  for file_extension in ['json', 'tsv']:
                      filename = file_basename + "." + taxon_id + '.' + file_extension
