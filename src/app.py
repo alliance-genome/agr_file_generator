@@ -204,6 +204,7 @@ def generate_daf_file(generated_files_folder, context_info, taxon_id_fms_subtype
                           labels(object) AS objectType,
                           object.primaryKey AS dbObjectID,
                           object.symbol AS dbObjectSymbol,
+                          object.name AS dbObjectName,
                           dej.joinType AS associationType,
                           //collect(DISTINCT gene.primaryKey) AS inferredGeneAssociation,
                           disease.doId AS DOID,

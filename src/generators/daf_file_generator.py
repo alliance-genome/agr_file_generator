@@ -134,7 +134,7 @@ class DafFileGenerator:
                                                           disease_association["speciesName"],
                                                           db_object_type,
                                                           disease_association["dbObjectID"],
-                                                          disease_association["dbObjectSymbol"],
+                                                          disease_association["dbObjectSymbol"] if disease_association["dbObjectSymbol"]  else disease_association["dbObjectName"],
                                                           #inferred_gene_association,
                                                           #gene_product_form_id,
                                                           #additional_genetic_component,
