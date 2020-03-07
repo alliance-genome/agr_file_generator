@@ -68,6 +68,9 @@ class DafFileGenerator:
         processed_disease_associations_tsv = {}
         for disease_association in self.disease_associations:
             for evidence in disease_association["evidence"]:
+                if evidence["otherAssociatedEntityID"]:
+                    continue
+
                 if disease_association["objectType"][0] == "Feature":
                     db_object_type = "allele"
                 elif disease_association["objectType"][0] == "AffectedGenomicModel":
@@ -118,16 +121,16 @@ class DafFileGenerator:
                 else:
                     date_str = disease_association["dateAssigned"]
 
-                inferred_from_ids = []
-                inferred_from_symbols = []
-                for entity in disease_association["inferredFromEntities"]:
-                    inferred_from_ids.append(entity["primaryKey"])
-                    if "symbol" in entity:
-                        inferred_from_symbols.append(entity["symbol"])
-                    elif "name" in entity:
-                        inferred_from_symbols.append(entity["name"])
+                inferred_from_id = ""
+                inferred_from_symbol = ""
+                if evidence["inferredFromEntity"]:
+                    inferred_from_id = evidence["inferredFromEntity"]["primaryKey"]
+                    if "symbol" in evidence["inferredFromEntity"]:
+                        inferred_from_symbol = evidence["inferredFromEntity"]["symbol"]
+                    elif "name" in evidence["inferredFromEntity"]:
+                        inferred_from_symbol = evidence["inferredFromEntity"]["name"]
                     else:
-                        logger.info("infferred from node not handled" + entity["primaryKey"])
+                        logger.info("infferred from node not handled" + evidence["inferredFromEntity"]["primaryKey"])
 
                 taxon_id = disease_association["taxonId"]
                 processed_association = dict(zip(fields, [taxon_id,
@@ -144,8 +147,8 @@ class DafFileGenerator:
                                                           disease_association["DOID"],
                                                           do_name,
                                                           disease_association["withOrthologs"],
-                                                          inferred_from_ids,
-                                                          inferred_from_symbols,
+                                                          inferred_from_id,
+                                                          inferred_from_symbol,
                                                           #modifier_association_type,
                                                           #modifier_qualifier,
                                                           #modifier_genetic,
@@ -159,8 +162,6 @@ class DafFileGenerator:
                 processed_association_tsv = processed_association.copy()
 
                 processed_association_tsv["WithOrthologs"] = "|".join(set(disease_association["withOrthologs"])) if len(disease_association["withOrthologs"]) > 0 else ""
-                processed_association_tsv["InferredFromID"] = "|".join(set(processed_association_tsv["InferredFromID"])) if len(processed_association_tsv["InferredFromID"]) > 0 else ""
-                processed_association_tsv["InferredFromSymbol"] = "|".join(set(processed_association_tsv["InferredFromSymbol"])) if len(processed_association_tsv["InferredFromSymbol"]) > 0 else ""
 
                 if taxon_id in processed_disease_associations:
                     processed_disease_associations_tsv[taxon_id].append(processed_association_tsv)

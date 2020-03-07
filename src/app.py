@@ -192,7 +192,8 @@ def generate_daf_file(generated_files_folder, context_info, taxon_id_fms_subtype
                                               "biomarker_via_orthology"]
                    MATCH (dej:Association:DiseaseEntityJoin)-[:EVIDENCE]->(pj:PublicationJoin),
                          (p:Publication)-[:ASSOCIATION]->(pj:PublicationJoin)-[:ASSOCIATION]->(ec:Ontology:ECOTerm)
-                   OPTIONAL MATCH (pj:PublicationJoin)-[:MODEL_COMPONENT|PRIMARY_GENETIC_ENTITY]-(inferredFrom)
+                   OPTIONAL MATCH (object:Gene)-[:ASSOCIATION]->(dej:Association:DiseaseEntityJoin)<-[:ASSOCIATION]-(otherAssociatedEntity)
+                   OPTIONAL MATCH (pj:PublicationJoin)-[:MODEL_COMPONENT|PRIMARY_GENETIC_ENTITY]-(inferredFromEntity)
                    OPTIONAL MATCH (dej:Association:DiseaseEntityJoin)-[:FROM_ORTHOLOGOUS_GENE]-(oGene:Gene),
                                   (gene:Gene)-[o:ORTHOLOGOUS]->(oGene:Gene)
                    WHERE o.strictFilter AND ec.primaryKey IN ["ECO:0000250", "ECO:0000266", "ECO:0000501"] // ISS, ISO, and IEA respectively
@@ -205,12 +206,16 @@ def generate_daf_file(generated_files_folder, context_info, taxon_id_fms_subtype
                           object.primaryKey AS dbObjectID,
                           object.symbol AS dbObjectSymbol,
                           object.name AS dbObjectName,
-                          dej.joinType AS associationType,
+                          toLower(dej.joinType) AS associationType,
                           //collect(DISTINCT gene.primaryKey) AS inferredGeneAssociation,
                           disease.doId AS DOID,
                           disease.name as DOtermName,
-                          collect(DISTINCT inferredFrom) AS inferredFromEntities,
-                          collect(DISTINCT {pubModID: p.pubModId, pubMedID: p.pubMedId, evidenceCode:ec.primaryKey, evidenceCodeName: ec.name}) as evidence,
+                          collect(DISTINCT {pubModID: p.pubModId,
+                                            pubMedID: p.pubMedId,
+                                            evidenceCode:ec.primaryKey,
+                                            evidenceCodeName: ec.name,
+                                            inferredFromEntity: inferredFromEntity,
+                                            otherAssociatedEntityID: otherAssociatedEntity.primaryKey}) as evidence,
                           REDUCE(t = "1900-01-01", c IN collect(left(pj.dateAssigned, 10)) | CASE WHEN c > t THEN c ELSE t END) AS dateAssigned, //takes most recent date
                           dej.dataProvider AS dataProvider'''
 
