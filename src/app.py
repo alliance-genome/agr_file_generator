@@ -227,7 +227,7 @@ def generate_daf_file(generated_files_folder, context_info, taxon_id_fms_subtype
     daf.generate_file(upload_flag=upload_flag)
 
 
-def generate_expression_file(generated_files_folder, context_info, upload_flag):
+def generate_expression_file(generated_files_folder, context_info, taxon_id_fms_subtype_map, upload_flag):
     expression_query = '''MATCH (speciesObj:Species)<-[:FROM_SPECIES]-(geneObj:Gene)-[:ASSOCIATION]->(begej:BioEntityGeneExpressionJoin)--(term)
                           //WHERE geneObj.primaryKey = 'ZFIN:ZDB-GENE-110411-206'
                           WITH {primaryKey: speciesObj.primaryKey, name: speciesObj.name} AS species,
