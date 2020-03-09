@@ -7,9 +7,13 @@ This tool creates files from Alliance resources. The tool is build and testsed w
 ## Current File Types
 
 - VCF
-- DAF
+- Disease
 - Orthology
 - Expression
+- Cross References
+- UNIPROT ID map
+- Gene Cross Reference
+- DB Summary
 
 ## Running Tool Example command
 
