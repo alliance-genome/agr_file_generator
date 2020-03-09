@@ -15,6 +15,10 @@ This tool creates files from Alliance resources. The tool is build and testsed w
 - Gene Cross Reference
 - DB Summary
 
+## FMS
+
+Use fmsdev.alliancegenome.org when testing upload
+
 ## Running Tool Example command
 
 You will want to customize your run by setting these two env variable in the docker-compose.yaml file
