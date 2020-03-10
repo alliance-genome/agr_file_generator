@@ -194,11 +194,12 @@ def generate_daf_file(generated_files_folder, context_info, taxon_id_fms_subtype
                          (p:Publication)-[:ASSOCIATION]->(pj:PublicationJoin)-[:ASSOCIATION]->(ec:Ontology:ECOTerm)
                    OPTIONAL MATCH (object:Gene)-[:ASSOCIATION]->(dej:Association:DiseaseEntityJoin)<-[:ASSOCIATION]-(otherAssociatedEntity)
                    OPTIONAL MATCH (pj:PublicationJoin)-[:MODEL_COMPONENT|PRIMARY_GENETIC_ENTITY]-(inferredFromEntity)
-                   OPTIONAL MATCH (dej:Association:DiseaseEntityJoin)-[:FROM_ORTHOLOGOUS_GENE]-(oGene:Gene),
+                   OPTIONAL MATCH (dej:Association:DiseaseEntityJoin)-[:FROM_ORTHOLOGOUS_GENE]->(oGene:Gene),
                                   (gene:Gene)-[o:ORTHOLOGOUS]->(oGene:Gene)
                    WHERE o.strictFilter AND ec.primaryKey IN ["ECO:0000250", "ECO:0000266", "ECO:0000501"] // ISS, ISO, and IEA respectively
                    //OPTIONAL MATCH (object)-[IS_ALLELE_OF]->(gene:Gene)
                    RETURN DISTINCT
+                          dej.primaryKey as dejID,
                           species.primaryKey AS taxonId,
                           species.name AS speciesName,
                           collect(DISTINCT oGene.primaryKey) AS withOrthologs,
