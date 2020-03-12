@@ -18,11 +18,16 @@ from generators import (daf_file_generator, db_summary_file_generator,
 
 port = int(os.environ.get('NEO4J_PORT', 7687))
 alliance_db_version = os.environ.get('ALLIANCE_RELEASE')
-NEO4J_HOST = os.environ.get('NEO4J_HOST')
+
 
 context_info = ContextInfo()
 debug_level = logging.DEBUG if context_info.config["DEBUG"] else logging.INFO
 neo_debug_level = logging.DEBUG if context_info.config["NEO_DEBUG"] else logging.INFO
+
+if context_info.config["GENERATED_FILES_FOLDER"]:
+    generated_files_folder = context_info.config["GENERATED_FILES_FOLDER"]
+else:
+    generated_files_folder = os.path.join("/tmp", "agr_generated_files")
 
 coloredlogs.install(level=debug_level,
                     fmt='%(asctime)s %(levelname)s: %(name)s:%(lineno)d: %(message)s',
@@ -67,7 +72,6 @@ def main(vcf,
          upload,
          tab,
          uniprot,
-         generated_files_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output',
          input_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir )) + '/input',
          fasta_sequences_folder='sequences',
          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):

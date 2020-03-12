@@ -217,7 +217,15 @@ class VcfFileGenerator:
                         adjusted_variants = filter(None, map(adjust_varient, variants))
                         for variant in sorted(adjusted_variants, key=itemgetter('POS')):
                             self._add_variant_to_tab_file(tab_delimited_file, variant)
+
+
+            exit_code = os.system("bgzip -c " + filepath + " > " + filepath + ".gz")
+            if exit_code:
+                logger.error("unable to bgzip " + filepath + " (return code: " + str(exit_code) + ")")
+                exit()
+
             if upload_flag:
                 logger.info("Submitting to FMS")
                 process_name = "1"
                 upload.upload_process(process_name, filename, self.generated_files_folder, 'VCF', assembly, self.config_info)
+                upload.upload_process(process_name, filename + ".gz", self.generated_files_folder, 'VCF-GZ', assembly, self.config_info)
