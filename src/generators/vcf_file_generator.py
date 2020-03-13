@@ -1,13 +1,16 @@
 import os
 import time
-
+import sys
 from collections import defaultdict, OrderedDict
 from functools import partial
 from operator import itemgetter
 import logging
-
+from subprocess import Popen, PIPE
 import upload
 
+sys.path.append('../')
+
+from common import compress
 
 logger = logging.getLogger(name=__name__)
 
@@ -218,12 +221,7 @@ class VcfFileGenerator:
                         for variant in sorted(adjusted_variants, key=itemgetter('POS')):
                             self._add_variant_to_tab_file(tab_delimited_file, variant)
 
-
-            exit_code = os.system("bgzip -c " + filepath + " > " + filepath + ".gz")
-            if exit_code:
-                logger.error("unable to bgzip " + filepath + " (return code: " + str(exit_code) + ")")
-                exit()
-
+            compress('bgzip -c ' + filepath + ' > ' + filepath + '.gz')
             if upload_flag:
                 logger.info("Submitting to FMS")
                 process_name = "1"

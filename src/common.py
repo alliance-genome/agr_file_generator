@@ -2,6 +2,8 @@ import os
 
 import yaml
 import logging
+import subprocess
+
 
 logger = logging.getLogger(__name__)
 
@@ -26,3 +28,14 @@ class ContextInfo(object):
                 pass  # If we don't find an ENV variable, keep the value from the config file.
 
         logger.debug('Initialized with config values: {}'.format(self.config))
+
+
+def compress(cmd):
+
+    logger.info('Running ' + cmd)
+    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    process.wait()
+    stdout, stderr = process.communicate()
+
+
+    return process.returncode, stdout, stderr
