@@ -5,7 +5,6 @@ from collections import defaultdict, OrderedDict
 from functools import partial
 from operator import itemgetter
 import logging
-from subprocess import Popen, PIPE
 import upload
 
 sys.path.append('../')
@@ -221,7 +220,11 @@ class VcfFileGenerator:
                         for variant in sorted(adjusted_variants, key=itemgetter('POS')):
                             self._add_variant_to_tab_file(tab_delimited_file, variant)
 
-            compress('bgzip -c ' + filepath + ' > ' + filepath + '.gz')
+            stdout, stderr, return_code = compress('bgzip -c ' + filepath + ' > ' + filepath + '.gz')
+            if return_code == 0:
+                logger.info(filepath + ' compressed successfully')
+            else:
+                logger.error(filepath + ' could not be compressed, please check')
             if upload_flag:
                 logger.info("Submitting to FMS")
                 process_name = "1"

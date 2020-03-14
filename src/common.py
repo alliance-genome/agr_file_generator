@@ -38,4 +38,4 @@ def compress(cmd):
     stdout, stderr = process.communicate()
 
 
-    return process.returncode, stdout, stderr
+    return stdout, stderr, process.returncode

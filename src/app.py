@@ -2,7 +2,6 @@
 import logging
 import os
 import time
-
 import click
 import coloredlogs
 import requests
@@ -23,6 +22,7 @@ alliance_db_version = os.environ.get('ALLIANCE_RELEASE')
 context_info = ContextInfo()
 debug_level = logging.DEBUG if context_info.config["DEBUG"] else logging.INFO
 neo_debug_level = logging.DEBUG if context_info.config["NEO_DEBUG"] else logging.INFO
+
 
 if context_info.config["GENERATED_FILES_FOLDER"]:
     generated_files_folder = context_info.config["GENERATED_FILES_FOLDER"]
