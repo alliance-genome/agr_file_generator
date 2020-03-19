@@ -9,8 +9,7 @@ class DataSource:
         self.query = query
 
     def __repr__(self):
-        s =  '\n'.join(['<' + self.__class__.__qualname__ + '({uri},',
-                        '{query})'])
+        s = '\n'.join(['<' + self.__class__.__qualname__ + '({uri},', '{query})'])
         return s.format(**dict((k, repr(v)) for (k, v) in vars(self).items()))
 
     def __iter__(self):

@@ -1,13 +1,15 @@
 import os
 import time
-
+import sys
 from collections import defaultdict, OrderedDict
 from functools import partial
 from operator import itemgetter
 import logging
-
 import upload
 
+sys.path.append('../')
+
+from common import compress
 
 logger = logging.getLogger(name=__name__)
 
@@ -184,7 +186,7 @@ class VcfFileGenerator:
 
     def _adjust_variant(self, variant):
         so_term = variant['soTerm']
-        if variant['start'] == None:
+        if variant['start'] is None:
             return None
 
         #from https://www.bioinformatics.org/sms/iupac.html
@@ -203,9 +205,9 @@ class VcfFileGenerator:
         elif so_term == 'insertion':
             if variant['genomicReferenceSequence'] != '':
                 logger.warn('Insertion Variant reference sequence is populated'
-                             'when it should not be in '
-                             'variant ID: %r',
-                             variant['globalId'])
+                            'when it should not be in '
+                            'variant ID: %r',
+                            variant['globalId'])
                 return None
             if variant['genomicVariantSequence'] == '':
                 variant['genomicVariantSequence'] = '.'
@@ -253,7 +255,7 @@ class VcfFileGenerator:
             else:
                 logger.info('Generating TAB delimited File for assembly %r', assembly)
                 with open(filepath_tab, 'w') as tab_delimited_file:
-                    self._write_tab_delimited_header(tab_delimited_file, assembly, 
+                    self._write_tab_delimited_header(tab_delimited_file, assembly,
                                                      assembly_species[assembly],
                                                      self.config_info)
                     for (chromosome, variants) in sorted(chromo_variants.items(), key=itemgetter(0)):
@@ -264,7 +266,14 @@ class VcfFileGenerator:
                         adjusted_variants = filter(None, map(adjust_varient, variants))
                         for variant in sorted(adjusted_variants, key=itemgetter('POS')):
                             self._add_variant_to_tab_file(tab_delimited_file, variant)
+
+            stdout, stderr, return_code = compress('bgzip -c ' + filepath + ' > ' + filepath + '.gz')
+            if return_code == 0:
+                logger.info(filepath + ' compressed successfully')
+            else:
+                logger.error(filepath + ' could not be compressed, please check')
             if upload_flag:
                 logger.info("Submitting to FMS")
                 process_name = "1"
                 upload.upload_process(process_name, filename, self.generated_files_folder, 'VCF', assembly, self.config_info)
+                upload.upload_process(process_name, filename + ".gz", self.generated_files_folder, 'VCF-GZ', assembly, self.config_info)

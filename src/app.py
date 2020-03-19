@@ -2,11 +2,10 @@
 import logging
 import os
 import time
-
 import click
 import coloredlogs
-import requests
-import urllib3
+# import requests
+# import urllib3
 from common import ContextInfo
 from data_source import DataSource
 from generators import (daf_file_generator, db_summary_file_generator,
@@ -18,21 +17,25 @@ from generators import (daf_file_generator, db_summary_file_generator,
 
 port = int(os.environ.get('NEO4J_PORT', 7687))
 alliance_db_version = os.environ.get('ALLIANCE_RELEASE')
-NEO4J_HOST = os.environ.get('NEO4J_HOST')
+
 
 context_info = ContextInfo()
 debug_level = logging.DEBUG if context_info.config["DEBUG"] else logging.INFO
 neo_debug_level = logging.DEBUG if context_info.config["NEO_DEBUG"] else logging.INFO
 
+
+if context_info.config["GENERATED_FILES_FOLDER"]:
+    generated_files_folder = context_info.config["GENERATED_FILES_FOLDER"]
+else:
+    generated_files_folder = os.path.join("/tmp", "agr_generated_files")
+
 coloredlogs.install(level=debug_level,
                     fmt='%(asctime)s %(levelname)s: %(name)s:%(lineno)d: %(message)s',
-                    field_styles={
-                            'asctime': {'color': 'green'},
-                            'hostname': {'color': 'magenta'},
-                            'levelname': {'color': 'white', 'bold': True},
-                            'name': {'color': 'blue'},
-                            'programname': {'color': 'cyan'}
-                    })
+                    field_styles={'asctime': {'color': 'green'},
+                                  'hostname': {'color': 'magenta'},
+                                  'levelname': {'color': 'white', 'bold': True},
+                                  'name': {'color': 'blue'},
+                                  'programname': {'color': 'cyan'}})
 
 logging.getLogger("urllib3").setLevel(debug_level)
 logging.getLogger("neobolt").setLevel(neo_debug_level)
@@ -45,6 +48,7 @@ taxon_id_fms_subtype_map = {"NCBITaxon:10116": "RGD",
                             "NCBITaxon:7955": "ZFIN",
                             "NCBITaxon:10090": "MGI",
                             "NCBITaxon:559292": "SGD"}
+
 
 @click.command()
 @click.option('--vcf', is_flag=True, help='Generates VCF files')
@@ -267,21 +271,22 @@ def generate_db_summary_file(generated_files_folder, context_info, upload_flag):
 
 def generate_gene_cross_reference_file(generated_files_folder, context_info, upload_flag):
     gene_cross_reference_query = '''MATCH (g:Gene)--(cr:CrossReference)
-                          RETURN g.primaryKey as GeneID, 
-                                 cr.globalCrossRefId as GlobalCrossReferenceID, 
-                                 cr.crossRefCompleteUrl as CrossReferenceCompleteURL, 
+                          RETURN g.primaryKey as GeneID,
+                                 cr.globalCrossRefId as GlobalCrossReferenceID,
+                                 cr.crossRefCompleteUrl as CrossReferenceCompleteURL,
                                  cr.page as ResourceDescriptorPage,
                                  g.taxonId as TaxonID'''
     data_source = DataSource(get_neo_uri(context_info), gene_cross_reference_query)
     gene_cross_reference = gene_cross_reference_file_generator.GeneCrossReferenceFileGenerator(data_source,
-                                                                  generated_files_folder,
-                                                                  context_info)
+                                                                                               generated_files_folder,
+                                                                                               context_info)
     gene_cross_reference.generate_file(upload_flag=upload_flag)
+
 
 def generate_uniprot_cross_reference(generated_files_folder, input_folder, context_info, upload_flag):
     uniprot_cross_reference_query = '''MATCH (g:Gene)--(cr:CrossReference)
                                 WHERE cr.prefix = "UniProtKB"
-                                RETURN g.primaryKey as GeneID, 
+                                RETURN g.primaryKey as GeneID,
                                     cr.globalCrossRefId as GlobalCrossReferenceID'''
     data_source = DataSource(get_neo_uri(context_info), uniprot_cross_reference_query)
     ucf = uniprot_cross_reference_generator.UniProtGenerator(data_source, context_info, generated_files_folder)

@@ -40,6 +40,7 @@ class OrthologyFileGenerator:
                                                databaseVersion=config_info.config['RELEASE_VERSION'])
 
     def generate_file(self, upload_flag=False):
+
         file_basename = "agr_orthologs-" + self.config_info.config['RELEASE_VERSION']
         fields = ["Gene1ID",
                    "Gene1Symbol",
