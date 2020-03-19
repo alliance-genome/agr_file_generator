@@ -39,7 +39,7 @@ class OrthologyFileGenerator:
     def generate_file(self, upload_flag=False):
         filename = "agr_orthologs-" + self.config_info.config['RELEASE_VERSION'] + ".tsv"
         outputFilepath = os.path.join(self.generated_files_folder, filename)
-        orthology_file = open(outputFilepath,'w')
+        orthology_file = open(outputFilepath, 'w')
         orthology_file.write(self._generate_header(self.config_info))
         columns = ["Gene1ID",
                    "Gene1Symbol",

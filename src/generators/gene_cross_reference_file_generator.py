@@ -1,3 +1,11 @@
+"""
+.. module:: gene_cross_reference_file_generators
+    :platform: any
+    :synopsis: Module that generates the Gene Cross Reference files
+.. moduleauthor:: AGR consrotium
+
+"""
+
 import os
 import logging
 import csv
@@ -10,6 +18,9 @@ logger = logging.getLogger(name=__name__)
 
 
 class GeneCrossReferenceFileGenerator:
+    """
+    TBA
+    """
 
     file_header_template = """#########################################################################
 #
@@ -22,16 +33,32 @@ class GeneCrossReferenceFileGenerator:
 """
 
     def __init__(self, gene_cross_references, generated_files_folder, config_info):
+        """
+
+        :param gene_cross_references:
+        :param generated_files_folder:
+        :param config_info:
+        """
         self.gene_cross_references = gene_cross_references
         self.config_info = config_info
         self.generated_files_folder = generated_files_folder
 
     @classmethod
     def _generate_header(cls, config_info):
+        """
+
+        :param config_info:
+        :return:
+        """
         return cls.file_header_template.format(datetimeNow=strftime("%Y-%m-%d %H:%M:%S", gmtime()),
                                                databaseVersion=config_info.config['RELEASE_VERSION'])
 
     def generate_file(self, upload_flag=False):
+        """
+
+        :param upload_flag:
+        :return:
+        """
         TSVfilename = 'agr-gene-cross-references-' + self.config_info.config['RELEASE_VERSION'] + '.tsv'
         JSONfilename = 'agr-gene-cross-references-json-' + self.config_info.config['RELEASE_VERSION'] + '.json'
         output_filepath = os.path.join(self.generated_files_folder, TSVfilename)
