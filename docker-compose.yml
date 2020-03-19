@@ -7,22 +7,21 @@ services:
     volumes:
       - type: volume
         source: agr_generated_files
-        target: /usr/src/tmp
+        target: /tmp/agr_generated_files
         volume:
           nocopy: true
     environment:
       - NET=production
-      - RELEASE_VERSION=2.3.0
-      - NEO4J_HOST=localhost
-      - FMS_API_URL=https://dev.alliancegenome.org
+      - RELEASE_VERSION=3.1.0
+      - NEO4J_HOST=build.alliancegenome.org
+      - FMS_API_URL=https://fmsdev.alliancegenome.org
       - API_KEY=${API_KEY}
       - DEBUG=True
     entrypoint:
       - python3
       - -u 
       - src/app.py
-      - --upload
-      - --all-filetypes
+      - --gene-cross-reference
   agr_file_generator_test:
     image: agrdocker/agr_file_generator:latest
     volumes:
@@ -32,9 +31,8 @@ services:
         volume:
           nocopy: true
     environment:
-      - PYTHONPATH=/usr/src/app/src
       - NET=production
-      - RELEASE_VERSION=2.3.0
+      - RELEASE_VERSION=3.1.0
       - NEO4J_HOST=build.alliancegenome.org
       - FMS_API_URL=https://fmsdev.alliancegenome.org
       - API_KEY=${API_KEY}
