@@ -1,13 +1,15 @@
 import os
 import time
-
+import sys
 from collections import defaultdict, OrderedDict
 from functools import partial
 from operator import itemgetter
 import logging
-
 import upload
 
+sys.path.append('../')
+
+from common import compress
 
 logger = logging.getLogger(name=__name__)
 
@@ -217,7 +219,14 @@ class VcfFileGenerator:
                         adjusted_variants = filter(None, map(adjust_varient, variants))
                         for variant in sorted(adjusted_variants, key=itemgetter('POS')):
                             self._add_variant_to_tab_file(tab_delimited_file, variant)
+
+            stdout, stderr, return_code = compress('bgzip -c ' + filepath + ' > ' + filepath + '.gz')
+            if return_code == 0:
+                logger.info(filepath + ' compressed successfully')
+            else:
+                logger.error(filepath + ' could not be compressed, please check')
             if upload_flag:
                 logger.info("Submitting to FMS")
                 process_name = "1"
                 upload.upload_process(process_name, filename, self.generated_files_folder, 'VCF', assembly, self.config_info)
+                upload.upload_process(process_name, filename + ".gz", self.generated_files_folder, 'VCF-GZ', assembly, self.config_info)
