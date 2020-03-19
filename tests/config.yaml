@@ -4,7 +4,7 @@ threads: 1
 # Default environmental variables.
 API_KEY: # Defaults to "None" if it cannot be found in the environment.
 FMS_API_URL: 
-RELEASE_VERSION: 2.3.0
+RELEASE_VERSION: 3.0.0
 NEO4J_HOST: 
 DEBUG: False
 NEO_DEBUG: False

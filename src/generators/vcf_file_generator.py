@@ -1,13 +1,15 @@
 import os
 import time
-
+import sys
 from collections import defaultdict, OrderedDict
 from functools import partial
 from operator import itemgetter
 import logging
-
 import upload
 
+sys.path.append('../')
+
+from common import compress
 
 logger = logging.getLogger(name=__name__)
 
@@ -21,10 +23,11 @@ class VcfFileGenerator:
 ##fileformat=VCFv4.2
 ##INFO=<ID=hgvs_nomenclature,Number=1,Type=String,Description="the HGVS name of the allele">
 ##INFO=<ID=geneLevelConsequence,Number=.,Type=String,Description="VEP consequence of the variant">
-##INFO=<ID=impact,Type=String,Number=1,Description="Variant impact scale">
-##INFO=<ID=symbol,Type=String,Number=1,Description="The human readable name of the allele">
-##INFO=<ID=alleles,Type=String,Number=.,Description="The alleles of the variant">
-##INFO=<ID=allele_of_genes,Number=.,Type=String,Number=0,Description="The genes that the Allele is located on">
+##INFO=<ID=impact,Number=1,Type=String,Description="Variant impact scale">
+##INFO=<ID=symbol,Number=1,Type=String,Description="The human readable name of the allele">
+##INFO=<ID=soTerm,Number=1,Type=String,Description="The Sequence Ontology term for the variant">
+##INFO=<ID=alleles,Number=.,Type=String,Description="The alleles of the variant">
+##INFO=<ID=allele_of_genes,Number=.,Type=String,Number=1,Description="The genes that the Allele is located on">
 ##INFO=<ID=symbol_text,Number=1,Type=String,Description="Another human readable representation of the allele">
 ##phasing=partial
 ##source=AGR VCF File generator"""
@@ -76,18 +79,19 @@ class VcfFileGenerator:
         info_map = OrderedDict()
         info_map['hgvs_nomenclature'] = cls._variant_value_for_file(variant, 'hgvsNomenclature')
         if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
-            info_map['geneLevelConsequence'] = ' '.join(cls._variant_value_for_file(variant, 'geneLevelConsequence'))
+            info_map['geneLevelConsequence'] = ','.join(cls._variant_value_for_file(variant, 'geneLevelConsequence'))
         else:
             info_map['geneLevelConsequence'] = cls._variant_value_for_file(variant, 'geneLevelConsequence')
         if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
-            info_map['impact'] = ' '.join(cls._variant_value_for_file(variant, 'impact'))
+            info_map['impact'] = ','.join(cls._variant_value_for_file(variant, 'impact'))
         else:
             info_map['impact'] = cls._variant_value_for_file(variant, 'impact')
         info_map['symbol'] = cls._variant_value_for_file(variant, 'symbol')
+        info_map['soTerm'] = cls._variant_value_for_file(variant, 'soTerm')
         info_map['globalId'] = variant['globalId']
-        info_map['alleles'] = cls._variant_value_for_file(variant,'alleles',transform=', '.join)
+        info_map['alleles'] = cls._variant_value_for_file(variant, 'alleles', transform=','.join)
         # info_map['allele_of_genes'] = cls._variant_value_for_file(variant,'alleleOfGenes',transform=', '.join)
-        info_map['allele_of_genes'] = cls._variant_value_for_file(variant, 'geneSymbol', transform=', '.join)
+        info_map['allele_of_genes'] = cls._variant_value_for_file(variant, 'geneSymbol', transform=','.join)
         info_map['symbol_text'] = cls._variant_value_for_file(variant, 'symbolText')
         if any(info_map.values()):
             info = ';'.join('{}="{}"'.format(k, v)
@@ -120,7 +124,7 @@ class VcfFileGenerator:
 
         info_map['symbol'] = cls._variant_value_for_file(variant, 'symbol')
         info_map['globalId'] = variant['globalId']
-        info_map['alleles'] = cls._variant_value_for_file(variant,'alleles',transform=', '.join)
+        info_map['alleles'] = cls._variant_value_for_file(variant, 'alleles', transform=', '.join)
         info_map['allele_of_genes'] = cls._variant_value_for_file(variant, 'geneSymbol', transform=', '.join)
         info_map['symbol_text'] = cls._variant_value_for_file(variant, 'symbolText')
         if any(info_map.values()):
@@ -142,14 +146,10 @@ class VcfFileGenerator:
 
     def _adjust_variant(self, variant):
         so_term = variant['soTerm']
-        start_pos = variant['start']
-        if start_pos == None:
+        if variant['start'] is None:
             return None
-        if so_term in ['deletion', 'insertion']:
-            variant['POS'] = start_pos - 1
-        else:
-            variant['POS'] = start_pos
         if so_term == 'deletion':
+            variant['POS'] = variant['start'] - 1
             if variant['genomicReferenceSequence'] == '':
                 logger.warn('No reference sequence for variant Id: %r', variant['ID'])
                 return None
@@ -158,19 +158,26 @@ class VcfFileGenerator:
         elif so_term == 'insertion':
             if variant['genomicReferenceSequence'] != '':
                 logger.warn('Insertion Variant reference sequence is populated'
-                             'when it should not be in '
-                             'variant ID: %r',
-                             variant['globalId'])
+                            'when it should not be in '
+                            'variant ID: %r',
+                            variant['globalId'])
                 return None
             if variant['genomicVariantSequence'] == '':
-                return None
-            self._add_padded_base_to_variant(variant, 'insertion')
-        elif so_term == 'point_mutation':
+                variant['genomicVariantSequence'] = '.'
             variant['POS'] = variant['start']
-        elif so_term == 'MNV' or so_term == 'delins':
-            variant['POS'] = variant['end']
-            if variant['POS'] is None:
-                return None
+            self._add_padded_base_to_variant(variant, 'insertion')
+        elif so_term in ['point_mutation', 'MNV']:
+            variant['POS'] = variant['start']
+        elif so_term == 'delins':
+            if variant['genomicVariantSequence'] == '':
+                variant['genomicVariantSequence'] = '.'
+                variant['POS'] = variant['start'] - 1
+                self._add_padded_base_to_variant(variant, 'delins')
+            elif len(variant['genomicVariantSequence']) == len(variant['genomicReferenceSequence']):
+                variant['POS'] = variant['start']
+            else:
+                variant['POS'] = variant['start'] - 1
+                self._add_padded_base_to_variant(variant, 'delins')
         else:
             logger.fatal('New SoTerm that We need to add logic for: %r', so_term)
             return None
@@ -201,7 +208,7 @@ class VcfFileGenerator:
             else:
                 logger.info('Generating TAB delimited File for assembly %r', assembly)
                 with open(filepath_tab, 'w') as tab_delimited_file:
-                    self._write_tab_delimited_header(tab_delimited_file, assembly, 
+                    self._write_tab_delimited_header(tab_delimited_file, assembly,
                                                      assembly_species[assembly],
                                                      self.config_info)
                     for (chromosome, variants) in sorted(chromo_variants.items(), key=itemgetter(0)):
@@ -212,7 +219,14 @@ class VcfFileGenerator:
                         adjusted_variants = filter(None, map(adjust_varient, variants))
                         for variant in sorted(adjusted_variants, key=itemgetter('POS')):
                             self._add_variant_to_tab_file(tab_delimited_file, variant)
+
+            stdout, stderr, return_code = compress('bgzip -c ' + filepath + ' > ' + filepath + '.gz')
+            if return_code == 0:
+                logger.info(filepath + ' compressed successfully')
+            else:
+                logger.error(filepath + ' could not be compressed, please check')
             if upload_flag:
                 logger.info("Submitting to FMS")
                 process_name = "1"
                 upload.upload_process(process_name, filename, self.generated_files_folder, 'VCF', assembly, self.config_info)
+                upload.upload_process(process_name, filename + ".gz", self.generated_files_folder, 'VCF-GZ', assembly, self.config_info)

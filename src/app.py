@@ -1,40 +1,53 @@
 
-import os
-
-import coloredlogs
-import click
-import urllib3
-import requests
 import logging
+import os
 import time
-
-from generators import vcf_file_generator
-from generators import orthology_file_generator
-from generators import daf_file_generator
-from generators import expression_file_generator
-from data_source import DataSource
+import click
+import coloredlogs
+# import requests
+# import urllib3
 from common import ContextInfo
+from data_source import DataSource
+from generators import (daf_file_generator, db_summary_file_generator,
+                        expression_file_generator,
+                        gene_cross_reference_file_generator,
+                        orthology_file_generator, vcf_file_generator,
+                        uniprot_cross_reference_generator)
+
 
 port = int(os.environ.get('NEO4J_PORT', 7687))
-alliance_db_version = os.environ.get('ALLIANCE_RELEASE', '2.3.0')
+alliance_db_version = os.environ.get('ALLIANCE_RELEASE')
+
 
 context_info = ContextInfo()
 debug_level = logging.DEBUG if context_info.config["DEBUG"] else logging.INFO
 neo_debug_level = logging.DEBUG if context_info.config["NEO_DEBUG"] else logging.INFO
 
+
+if context_info.config["GENERATED_FILES_FOLDER"]:
+    generated_files_folder = context_info.config["GENERATED_FILES_FOLDER"]
+else:
+    generated_files_folder = os.path.join("/tmp", "agr_generated_files")
+
 coloredlogs.install(level=debug_level,
                     fmt='%(asctime)s %(levelname)s: %(name)s:%(lineno)d: %(message)s',
-                    field_styles={
-                            'asctime': {'color': 'green'},
-                            'hostname': {'color': 'magenta'},
-                            'levelname': {'color': 'white', 'bold': True},
-                            'name': {'color': 'blue'},
-                            'programname': {'color': 'cyan'}
-                    })
+                    field_styles={'asctime': {'color': 'green'},
+                                  'hostname': {'color': 'magenta'},
+                                  'levelname': {'color': 'white', 'bold': True},
+                                  'name': {'color': 'blue'},
+                                  'programname': {'color': 'cyan'}})
 
 logging.getLogger("urllib3").setLevel(debug_level)
 logging.getLogger("neobolt").setLevel(neo_debug_level)
 logger = logging.getLogger(__name__)
+
+taxon_id_fms_subtype_map = {"NCBI:txid10116": "RGD",
+                            "NCBI:txid9606": "HUMAN",
+                            "NCBI:txid7227": "FB",
+                            "NCBI:txid6239": "WB",
+                            "NCBI:txid7955": "ZFIN",
+                            "NCBI:txid10090": "MGI",
+                            "NCBI:txid559292": "SGD"}
 
 
 @click.command()
@@ -42,11 +55,23 @@ logger = logging.getLogger(__name__)
 @click.option('--orthology', is_flag=True, help='Generates orthology files')
 @click.option('--disease', is_flag=True, help='Generates DAF files')
 @click.option('--expression', is_flag=True, help='Generates expression files')
+@click.option('--db-summary', is_flag=True, help='Generates summary of database contents')
+@click.option('--gene-cross-reference', is_flag=True, help='Generates a file of cross references for gene objects')
 @click.option('--all-filetypes', is_flag=True, help='Generates all filetypes')
 @click.option('--tab', is_flag=True, help='Generates tab delimited files with VCF info columns contents')
+@click.option('--uniprot', is_flag=True, help='Generates a file of gene and uniprot cross references')
 @click.option('--upload', is_flag=True, help='Submits generated files to File Management System (FMS)')
-def main(vcf, orthology, disease, expression, all_filetypes, upload, tab, 
-         generated_files_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output',
+def main(vcf,
+         orthology,
+         disease,
+         expression,
+         db_summary,
+         gene_cross_reference,
+         all_filetypes,
+         upload,
+         tab,
+         uniprot,
+         input_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir )) + '/input',
          fasta_sequences_folder='sequences',
          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):
 
@@ -67,11 +92,19 @@ def main(vcf, orthology, disease, expression, all_filetypes, upload, tab,
         click.echo('INFO:\tGenerating Orthology file')
         generate_orthology_file(generated_files_folder, context_info, upload)
     if disease is True or all_filetypes is True:
-        click.echo('INFO:\tGenerating Disease file')
-        generate_daf_file(generated_files_folder, context_info, upload)
+        click.echo('INFO:\tGenerating Disease files')
+        generate_daf_file(generated_files_folder, context_info, taxon_id_fms_subtype_map, upload)
     if expression is True or all_filetypes is True:
-        click.echo('INFO:\tGenerating Expression file')
-        generate_expression_file(generated_files_folder, context_info, upload)
+        click.echo('INFO:\tGenerating Expression files')
+        generate_expression_file(generated_files_folder, context_info, taxon_id_fms_subtype_map, upload)
+    if db_summary is True or all_filetypes is True:
+        click.echo('INFO:\tGenerating DB summary file')
+        generate_db_summary_file(generated_files_folder, context_info, upload)
+    if gene_cross_reference is True or all_filetypes is True:
+        click.echo('INFO:\tGenerating Gene Cross Reference file')
+        generate_gene_cross_reference_file(generated_files_folder, context_info, upload)
+    if uniprot is True or all_filetypes is True:
+        generate_uniprot_cross_reference(generated_files_folder, input_folder, context_info, upload)
 
     end_time = time.time()
     elapsed_time = end_time - start_time
@@ -150,7 +183,7 @@ def generate_orthology_file(generated_files_folder, context_info, upload_flag):
     of.generate_file(upload_flag=upload_flag)
 
 
-def generate_daf_file(generated_files_folder, context_info, upload_flag):
+def generate_daf_file(generated_files_folder, context_info, taxon_id_fms_subtype_map, upload_flag):
     daf_query = '''MATCH (dej:Association:DiseaseEntityJoin)-[:ASSOCIATION]-(object)-[da:IS_MARKER_FOR|:IS_IMPLICATED_IN|:IMPLICATED_VIA_ORTHOLOGY|:BIOMARKER_VIA_ORTHOLOGY]->(disease:DOTerm)
                    WHERE (object:Gene OR object:Allele)
                    AND da.uuid = dej.primaryKey
@@ -178,11 +211,12 @@ def generate_daf_file(generated_files_folder, context_info, upload_flag):
     data_source = DataSource(get_neo_uri(context_info), daf_query)
     daf = daf_file_generator.DafFileGenerator(data_source,
                                               generated_files_folder,
-                                              context_info)
+                                              context_info,
+                                              taxon_id_fms_subtype_map)
     daf.generate_file(upload_flag=upload_flag)
 
 
-def generate_expression_file(generated_files_folder, context_info, upload_flag):
+def generate_expression_file(generated_files_folder, context_info, taxon_id_fms_subtype_map, upload_flag):
     expression_query = '''MATCH (speciesObj:Species)<-[:FROM_SPECIES]-(geneObj:Gene)-[:ASSOCIATION]->(begej:BioEntityGeneExpressionJoin)--(term)
                           WITH {primaryKey: speciesObj.primaryKey, name: speciesObj.name} AS species,
                                {primaryKey: geneObj.primaryKey, symbol: geneObj.symbol} AS  gene,
@@ -197,8 +231,45 @@ def generate_expression_file(generated_files_folder, context_info, upload_flag):
     data_source = DataSource(get_neo_uri(context_info), expression_query)
     expression = expression_file_generator.ExpressionFileGenerator(data_source,
                                                                    generated_files_folder,
-                                                                   context_info)
+                                                                   context_info,
+                                                                   taxon_id_fms_subtype_map)
     expression.generate_file(upload_flag=upload_flag)
+
+
+def generate_db_summary_file(generated_files_folder, context_info, upload_flag):
+    db_summary_query = '''MATCH (entity)
+                          WITH labels(entity) AS entityTypes
+                          RETURN count(entityTypes) AS frequency,
+                          entityTypes'''
+    data_source = DataSource(get_neo_uri(context_info), db_summary_query)
+    db_summary = db_summary_file_generator.DbSummaryFileGenerator(data_source,
+                                                                  generated_files_folder,
+                                                                  context_info)
+    db_summary.generate_file(upload_flag=upload_flag)
+
+
+def generate_gene_cross_reference_file(generated_files_folder, context_info, upload_flag):
+    gene_cross_reference_query = '''MATCH (g:Gene)--(cr:CrossReference)
+                          RETURN g.primaryKey as GeneID,
+                                 cr.globalCrossRefId as GlobalCrossReferenceID,
+                                 cr.crossRefCompleteUrl as CrossReferenceCompleteURL,
+                                 cr.page as ResourceDescriptorPage,
+                                 g.taxonId as TaxonID'''
+    data_source = DataSource(get_neo_uri(context_info), gene_cross_reference_query)
+    gene_cross_reference = gene_cross_reference_file_generator.GeneCrossReferenceFileGenerator(data_source,
+                                                                                               generated_files_folder,
+                                                                                               context_info)
+    gene_cross_reference.generate_file(upload_flag=upload_flag)
+
+
+def generate_uniprot_cross_reference(generated_files_folder, input_folder, context_info, upload_flag):
+    uniprot_cross_reference_query = '''MATCH (g:Gene)--(cr:CrossReference)
+                                WHERE cr.prefix = "UniProtKB"
+                                RETURN g.primaryKey as GeneID,
+                                    cr.globalCrossRefId as GlobalCrossReferenceID'''
+    data_source = DataSource(get_neo_uri(context_info), uniprot_cross_reference_query)
+    ucf = uniprot_cross_reference_generator.UniProtGenerator(data_source, context_info, generated_files_folder)
+    ucf.generate_file(upload_flag=upload_flag)
 
 
 if __name__ == '__main__':

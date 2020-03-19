@@ -3,15 +3,16 @@ import os
 
 import logging
 import requests
-from requests_toolbelt.utils import dump
+# from requests_toolbelt.utils import dump
 from retry import retry
 
 logger = logging.getLogger(__name__)
 
+
 def upload_file(worker, filename, save_path, upload_file_prefix, config_info):
     with open(os.path.join(save_path, filename), 'rb') as fp:
         file_to_upload = {upload_file_prefix: fp}
-
+        logger.info(file_to_upload)
         if config_info.config['API_KEY']:
             headers = {
                 'Authorization': 'Bearer {}'.format(config_info.config['API_KEY'])
@@ -20,11 +21,11 @@ def upload_file(worker, filename, save_path, upload_file_prefix, config_info):
             headers = {}
         logger.debug('{}: Attempting upload of data file: {}'.format(worker, os.path.join(save_path, filename)))
         logger.debug('{}: Attempting upload with header: {}'.format(worker, headers))
-        logger.info("{}: Uploading data to {}) ...".format(worker, config_info.config['FMS_API_URL']+'/api/data/submit/'))
-    
-        response = requests.post(config_info.config['FMS_API_URL']+'/api/data/submit/', files=file_to_upload, headers=headers)
+        logger.info("{}: Uploading data to {}) ...".format(worker, config_info.config['FMS_API_URL'] + '/api/data/submit/'))
+
+        response = requests.post(config_info.config['FMS_API_URL'] + '/api/data/submit', files=file_to_upload, headers=headers)
         logger.info(response.text)
-    
+
 
 @retry(tries=5, delay=5, logger=logger)
 def upload_process(worker, filename, save_path, data_type, data_sub_type, config_info):
