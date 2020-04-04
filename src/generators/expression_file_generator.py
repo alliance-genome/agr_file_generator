@@ -155,11 +155,11 @@ class ExpressionFileGenerator:
                         association['AnatomyTermQualifierTermNames'].append(ontology_path['name'])
                     else:
                         association['AnatomyTermQualifierTermNames'] = [ontology_path['name']]
-                taxon_id = association['SpeciesID']
-                if taxon_id in associations:
-                    associations[taxon_id].append(association)
-                else:
-                    associations[taxon_id] = [association]
+            taxon_id = association['SpeciesID']
+            if taxon_id in associations:
+                associations[taxon_id].append(association)
+            else:
+                associations[taxon_id] = [association]
 
         file_basename = "agr-expression-" + self.config_info.config['RELEASE_VERSION']
         combined_file_basepath = os.path.join(self.generated_files_folder, file_basename + '.combined')
