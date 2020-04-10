@@ -109,7 +109,6 @@ def run_generate_files():
     return make_gen_files_fixture(asm_cached=True)
 
 
-@pytest.mark.vcf
 def check_files_generated(fixture):
     assert VCF_DATA, 'VCF files not generated. Please generate files and re-run tests'
     for (path, records) in VCF_DATA.items():
@@ -135,15 +134,6 @@ def test_files_generated(run_generate_files):
 # #          generated_files_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output',
 # #          fasta_sequences_folder='sequences',
 # #          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):
-
-
-# # @click.option('--vcf', is_flag=True, help='Generates VCF files')
-# # @click.option('--orthology', is_flag=True, help='Generates orthology files')
-# # @click.option('--disease', is_flag=True, help='Generates DAF files')
-# # @click.option('--expression', is_flag=True, help='Generates expression files')
-# # @click.option('--all-filetypes', is_flag=True, help='Generates all filetypes')
-# # @click.option('--tab', is_flag=True, help='Generates tab delimited files with VCF info columns contents')
-# # @click.option('--upload', is_flag=True, help='Submits generated files to File Management System (FMS)')
 
 def test_ids_unique_in_files(run_generate_files):
     for (path, records) in VCF_DATA.items():

@@ -23,7 +23,6 @@ context_info = ContextInfo()
 debug_level = logging.DEBUG if context_info.config["DEBUG"] else logging.INFO
 neo_debug_level = logging.DEBUG if context_info.config["NEO_DEBUG"] else logging.INFO
 
-
 if context_info.config["GENERATED_FILES_FOLDER"]:
     generated_files_folder = context_info.config["GENERATED_FILES_FOLDER"]
 else:

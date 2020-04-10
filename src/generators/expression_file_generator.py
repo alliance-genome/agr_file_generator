@@ -102,7 +102,7 @@ class ExpressionFileGenerator:
             for term in expression['terms']:
                 if 'CrossReference' in term.labels:
                     if association['SourceURL']:
-                        association['SourceURL'].append(term['crossRefCompleteUrl']) # according to spec should use globalCrossRefId
+                        association['SourceURL'].append(term['crossRefCompleteUrl'])  # according to spec should use globalCrossRefId
                     else:
                         association['SourceURL'] = [term['crossRefCompleteUrl']]
                 elif 'Publication' in term.labels:
@@ -113,7 +113,7 @@ class ExpressionFileGenerator:
                     else:
                         association['Reference'] = [publication]
                 elif 'Stage' in term.labels:
-                    #association['StageID'] = term['primaryKey']
+                    # association['StageID'] = term['primaryKey']
                     association['StageTerm'] = term['name']
                 elif 'MMOTerm' in term.labels:
                     association['AssayID'] = term['primaryKey']

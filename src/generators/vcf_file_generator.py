@@ -103,9 +103,9 @@ class VcfFileGenerator:
             else:
                 variant['impact'].append('')
             if geneConsequence['gene'] is not None:
-                  variant['geneSymbol'].append(geneConsequence['gene'])
+                variant['geneSymbol'].append(geneConsequence['gene'])
             else:
-                  variant['geenSymbol'].append('')
+                variant['geenSymbol'].append('')
 
         if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
             info_map['geneLevelConsequence'] = ','.join(cls._variant_value_for_file(variant, 'geneLevelConsequence'))
@@ -174,14 +174,13 @@ class VcfFileGenerator:
             assembly_species[assembly] = variant['species']
         return (assembly_chr_variants, assembly_species)
 
-
     def _find_replace(self, string, iupac_codes):
         # is the item in the dict?
         for item in string:
             # iterate by keys
             if item in iupac_codes:
                 # look up and replace
-                string = string.replace(item, "<" + item +">")
+                string = string.replace(item, "<" + item + ">")
                 # return updated string
         return string
 
@@ -191,11 +190,11 @@ class VcfFileGenerator:
         if start_pos is None:
             return None
 
-        #from https://www.bioinformatics.org/sms/iupac.html
+        # from https://www.bioinformatics.org/sms/iupac.html
         iupac_to_vcf_ref_codes = {"R", "Y", "S", "W", "K", "M", "B", "D", "H", "V"}
 
         variant['genomicVariantSequence'] = self._find_replace(variant['genomicVariantSequence'],
-                                                         iupac_to_vcf_ref_codes)
+                                                               iupac_to_vcf_ref_codes)
 
         if so_term == 'deletion':
             variant['POS'] = variant['start'] - 1
