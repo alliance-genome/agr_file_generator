@@ -116,7 +116,7 @@ def check_files_generated(fixture):
         assert path.endswith('.vcf')
 
 
-@pytest.mark.vcf
+@pytest.mark.skip
 def test_files_generated(run_generate_files):
     """
     Run the code to generate files, assumes the assembly sequence FASTA files
@@ -134,7 +134,7 @@ def test_files_generated(run_generate_files):
 # #          generated_files_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output',
 # #          fasta_sequences_folder='sequences',
 # #          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):
-
+@pytest.mark.skip
 def test_ids_unique_in_files(run_generate_files):
     for (path, records) in VCF_DATA.items():
         ids = list(rec['ID'] for rec in records)
@@ -149,7 +149,7 @@ def vcf_data_by_filename_and_id():
             data.setdefault(record['ID'], []).append(record)
     return org_data
 
-
+@pytest.mark.skip
 def test_example_expectations(run_generate_files):
     vcf_data = vcf_data_by_filename_and_id()
     for path in vcf_data:
