@@ -29,7 +29,7 @@ def test_generate_json_file():
     runner = CliRunner()
     result = runner.invoke(app.main, ['--orthology'])
     print(result)
-    print('File generated ... or not')
+    print('File generated')
 
     assert result.exit_code == 0
 
@@ -43,7 +43,7 @@ def test_validate_generated_file():
     print('Starting test')
     print('Checking file ' + OUTPUT_DIR + '/' + 'agr_orthologs-' + RELEASE_VERSION + '.json')
 
-    if not os.path.isfile( OUTPUT_DIR + '/' + 'agr_orthologs-' + RELEASE_VERSION + '.json' ):
+    if not os.path.isfile(OUTPUT_DIR + '/' + 'agr_orthologs-' + RELEASE_VERSION + '.json' ):
         assert False
     else:
         with open(SCHEMAS + '/orthology.schema', 'r') as f:
