@@ -1,3 +1,11 @@
+"""
+.. module:: expression_file_generators
+    :platform: any
+    :synopsis: Module that generates the Expression files
+.. moduleauthor:: AGR consrotium
+
+"""
+
 import os
 import logging
 import json
@@ -10,6 +18,9 @@ logger = logging.getLogger(name=__name__)
 
 
 class ExpressionFileGenerator:
+    """
+    TBA
+    """
 
     file_header_template = """#########################################################################
 #
@@ -23,6 +34,13 @@ class ExpressionFileGenerator:
 """
 
     def __init__(self, expressions, generated_files_folder, config_info, taxon_id_fms_subtype_map):
+        """
+
+        :param expressions:
+        :param generated_files_folder:
+        :param config_info:
+        :param taxon_id_fms_subtype_map:
+        """
         self.expressions = expressions
         self.config_info = config_info
         self.taxon_id_fms_subtype_map = taxon_id_fms_subtype_map
@@ -30,17 +48,28 @@ class ExpressionFileGenerator:
 
     @classmethod
     def _generate_header(cls, config_info, taxon_ids):
+        """
+
+        :param config_info:
+        :param taxon_ids:
+        :return:
+        """
         return cls.file_header_template.format(taxonIDs=",".join(taxon_ids),
                                                datetimeNow=strftime("%Y-%m-%d %H:%M:%S", gmtime()),
                                                databaseVersion=config_info.config['RELEASE_VERSION'])
 
+    # 'StageID', currently don't have stage IDs in the database
     def generate_file(self, upload_flag=False):
+        """
+
+        :param upload_flag:
+        :return:
+        """
         fields = ['Species',
                   'SpeciesID',
                   'GeneID',
                   'GeneSymbol',
                   'Location',
-                 # 'StageID', currently don't have stage IDs in the database
                   'StageTerm',
                   'AssayID',
                   'AssayTermName',
@@ -56,6 +85,7 @@ class ExpressionFileGenerator:
                   'AnatomyTermName',
                   'AnatomyTermQualifierIDs',
                   'AnatomyTermQualifierTermNames',
+                  'SourceURL',
                   'Source',
                   'Reference']
 
@@ -63,17 +93,18 @@ class ExpressionFileGenerator:
         for expression in self.expressions:
             association = dict(zip(fields, [None] * len(fields)))
             association['Species'] = expression['species']['name']
+            association['Source'] = expression['gene']['dataProvider']
             association['SpeciesID'] = expression['species']['primaryKey']
-            association['SpeciesID'] = association['SpeciesID'].replace("NCBITaxon:", "NCBI:txid")
+            association['SpeciesID'] = association['SpeciesID']
             association['GeneID'] = expression['gene']['primaryKey']
             association['GeneSymbol'] = expression['gene']['symbol']
             association['Location'] = expression['location']
             for term in expression['terms']:
                 if 'CrossReference' in term.labels:
-                    if association['Source']:
-                        association['Source'].append(term['crossRefCompleteUrl']) # according to spec should use globalCrossRefId
+                    if association['SourceURL']:
+                        association['SourceURL'].append(term['crossRefCompleteUrl']) # according to spec should use globalCrossRefId
                     else:
-                        association['Source'] = [term['crossRefCompleteUrl']]
+                        association['SourceURL'] = [term['crossRefCompleteUrl']]
                 elif 'Publication' in term.labels:
                     publication = term['pubMedId'] or term['pubModId']
                     # reference = association['Reference']
@@ -124,11 +155,11 @@ class ExpressionFileGenerator:
                         association['AnatomyTermQualifierTermNames'].append(ontology_path['name'])
                     else:
                         association['AnatomyTermQualifierTermNames'] = [ontology_path['name']]
-                taxon_id = association['SpeciesID']
-                if taxon_id in associations:
-                    associations[taxon_id].append(association)
-                else:
-                    associations[taxon_id] = [association]
+            taxon_id = association['SpeciesID']
+            if taxon_id in associations:
+                associations[taxon_id].append(association)
+            else:
+                associations[taxon_id] = [association]
 
         file_basename = "agr-expression-" + self.config_info.config['RELEASE_VERSION']
         combined_file_basepath = os.path.join(self.generated_files_folder, file_basename + '.combined')
@@ -174,6 +205,6 @@ class ExpressionFileGenerator:
                 for file_extension in ['json', 'tsv']:
                     filename = file_basename + "." + taxon_id + '.' + file_extension
                     datatype = "EXPRESSION-ALLIANCE"
-                    if file_extension is "json":
+                    if file_extension == "json":
                         datatype += "-JSON"
                     upload.upload_process(process_name, filename, self.generated_files_folder, datatype, self.taxon_id_fms_subtype_map[taxon_id], self.config_info)

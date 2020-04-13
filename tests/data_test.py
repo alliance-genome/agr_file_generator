@@ -10,10 +10,10 @@ import tempfile
 from collections import OrderedDict
 from itertools import groupby
 from operator import itemgetter
-from common import ContextInfo
+
 
 sys.path.append('../src')
-
+from common import ContextInfo
 import app
 import click
 import pytest
@@ -28,7 +28,7 @@ _line_split_regex = re.compile(r'\W+')
 
 @atexit.register
 def cleanup_temp_folders():
-    for fldr in  _temp_folders:
+    for fldr in _temp_folders:
         shutil.rmtree(fldr)
 
 
@@ -104,10 +104,12 @@ def make_gen_files_fixture(asm_cached=False):
 
 
 @pytest.fixture(scope='module')
+@pytest.mark.vcf
 def run_generate_files():
     return make_gen_files_fixture(asm_cached=True)
 
 
+@pytest.mark.vcf
 def check_files_generated(fixture):
     assert VCF_DATA, 'VCF files not generated. Please generate files and re-run tests'
     for (path, records) in VCF_DATA.items():
@@ -115,9 +117,10 @@ def check_files_generated(fixture):
         assert path.endswith('.vcf')
 
 
+@pytest.mark.vcf
 def test_files_generated(run_generate_files):
     """
-    Run the code to genreate files, assumes the assembly sequence FASTA files
+    Run the code to generate files, assumes the assembly sequence FASTA files
     have been pre-downloaded.
 
     If they have not, this test should still pass but the test will take a lot longer

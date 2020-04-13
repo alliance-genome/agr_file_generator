@@ -2,11 +2,10 @@
 import logging
 import os
 import time
-
 import click
 import coloredlogs
-import requests
-import urllib3
+# import requests
+# import urllib3
 from common import ContextInfo
 from data_source import DataSource
 from generators import (daf_file_generator, db_summary_file_generator,
@@ -18,33 +17,38 @@ from generators import (daf_file_generator, db_summary_file_generator,
 
 port = int(os.environ.get('NEO4J_PORT', 7687))
 alliance_db_version = os.environ.get('ALLIANCE_RELEASE')
-NEO4J_HOST = os.environ.get('NEO4J_HOST')
+
 
 context_info = ContextInfo()
 debug_level = logging.DEBUG if context_info.config["DEBUG"] else logging.INFO
 neo_debug_level = logging.DEBUG if context_info.config["NEO_DEBUG"] else logging.INFO
 
+
+if context_info.config["GENERATED_FILES_FOLDER"]:
+    generated_files_folder = context_info.config["GENERATED_FILES_FOLDER"]
+else:
+    generated_files_folder = os.path.join("/tmp", "agr_generated_files")
+
 coloredlogs.install(level=debug_level,
                     fmt='%(asctime)s %(levelname)s: %(name)s:%(lineno)d: %(message)s',
-                    field_styles={
-                            'asctime': {'color': 'green'},
-                            'hostname': {'color': 'magenta'},
-                            'levelname': {'color': 'white', 'bold': True},
-                            'name': {'color': 'blue'},
-                            'programname': {'color': 'cyan'}
-                    })
+                    field_styles={'asctime': {'color': 'green'},
+                                  'hostname': {'color': 'magenta'},
+                                  'levelname': {'color': 'white', 'bold': True},
+                                  'name': {'color': 'blue'},
+                                  'programname': {'color': 'cyan'}})
 
 logging.getLogger("urllib3").setLevel(debug_level)
 logging.getLogger("neobolt").setLevel(neo_debug_level)
 logger = logging.getLogger(__name__)
 
-taxon_id_fms_subtype_map = {"NCBI:txid10116": "RGD",
-                            "NCBI:txid9606": "HUMAN",
-                            "NCBI:txid7227": "FB",
-                            "NCBI:txid6239": "WB",
-                            "NCBI:txid7955": "ZFIN",
-                            "NCBI:txid10090": "MGI",
-                            "NCBI:txid559292": "SGD"}
+taxon_id_fms_subtype_map = {"NCBITaxon:10116": "RGD",
+                            "NCBITaxon:9606": "HUMAN",
+                            "NCBITaxon:7227": "FB",
+                            "NCBITaxon:6239": "WB",
+                            "NCBITaxon:7955": "ZFIN",
+                            "NCBITaxon:10090": "MGI",
+                            "NCBITaxon:559292": "SGD"}
+
 
 @click.command()
 @click.option('--vcf', is_flag=True, help='Generates VCF files')
@@ -68,7 +72,7 @@ def main(vcf,
          tab,
          uniprot,
          generated_files_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output',
-         input_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir )) + '/input',
+         input_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/input',
          fasta_sequences_folder='sequences',
          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):
 
@@ -124,8 +128,10 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
     variants_query = """MATCH (s:Species)-[:FROM_SPECIES]-(a:Allele)-[:VARIATION]-(v:Variant)-[l:LOCATED_ON]-(c:Chromosome),
                               (v:Variant)-[:VARIATION_TYPE]-(st:SOTerm),
                               (v:Variant)-[:ASSOCIATION]-(p:GenomicLocation)
+                     WHERE NOT v.genomicReferenceSequence = v.genomicVariantSequence
+                           OR v.genomicVariantSequence = ""
                      OPTIONAL MATCH (a:Allele)-[:IS_ALLELE_OF]-(g:Gene)
-                     OPTIONAL MATCH (v:Variant)-[:ASSOCATION]-(m:GeneLevelConsequence)
+                     OPTIONAL MATCH (v:Variant)-[:ASSOCIATION]-(m:GeneLevelConsequence)-[:ASSOCIATION]-(g:Gene)
                      RETURN c.primaryKey AS chromosome,
                             v.globalId AS globalId,
                             right(v.paddingLeft,1) AS paddingLeft,
@@ -136,11 +142,8 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
                             a.symbol AS symbol,
                             a.symbolText as symbolText,
                             p.assembly AS assembly,
-                            collect(a.primaryKey) AS alleles,
-                            collect(g.primaryKey) AS geneSymbol,
-                            CASE WHEN g IS NOT NULL THEN collect(g.primaryKey) ELSE [] END AS alleleOfGenes,
-                            CASE WHEN m IS NOT NULL THEN collect(m.geneLevelConsequence) ELSE [] END AS geneLevelConsequence,
-                            CASE WHEN m IS NOT NULL THEN collect(m.impact) ELSE '' END AS impact,
+                            a.primaryKey AS alleles,
+                            collect(DISTINCT {gene: g.primaryKey, consequence: m.geneLevelConsequence, impact: m.impact}) AS geneConsequences,
                             p.start AS start,
                             p.end AS end,
                             s.name AS species,
@@ -181,30 +184,46 @@ def generate_orthology_file(generated_files_folder, context_info, upload_flag):
 
 
 def generate_daf_file(generated_files_folder, context_info, taxon_id_fms_subtype_map, upload_flag):
-    daf_query = '''MATCH (dej:Association:DiseaseEntityJoin)-[:ASSOCIATION]-(object)-[da:IS_MARKER_FOR|:IS_IMPLICATED_IN|:IMPLICATED_VIA_ORTHOLOGY|:BIOMARKER_VIA_ORTHOLOGY]->(disease:DOTerm)
-                   WHERE (object:Gene OR object:Allele)
-                   AND da.uuid = dej.primaryKey
-                   MATCH (object)-[FROM_SPECIES]->(species:Species)
-                   OPTIONAL MATCH (ec:Ontology:ECOTerm)-[:ASSOCIATION]-(:PublicationEvidenceCodeJoin)-[:EVIDENCE]-(dej:Association:DiseaseEntityJoin)
-                   OPTIONAL MATCH (p:Publication)-[:ASSOCIATION]-(:PublicationEvidenceCodeJoin)-[:EVIDENCE]-(dej:Association:DiseaseEntityJoin)
-                   OPTIONAL MATCH (object)-[o:ORTHOLOGOUS]-(oGene:Gene)
-                   WHERE o.strictFilter AND (ec.primaryKey = "ECO:0000250" OR ec.primaryKey = "ECO:0000266") // ISS and ISO respectively
-                   OPTIONAL MATCH (object)-[IS_ALLELE_OF]->(gene:Gene)
-                   RETURN  object.taxonId AS taxonId,
-                           species.name AS speciesName,
-                           collect(DISTINCT oGene.primaryKey) AS withOrthologs,
-                           labels(object) AS objectType,
-                           object.primaryKey AS dbObjectID,
-                           object.symbol AS dbObjectSymbol,
-                           p.pubMedId AS pubMedID,
-                           p.pubModId As pubModID,
-                           type(da) AS associationType,
-                           collect(DISTINCT gene.primaryKey) AS inferredGeneAssociation,
-                           disease.doId AS DOID,
-                           disease.name as DOname,
-                           ec.primaryKey AS evidenceCode,
-                           dej.dateAssigned AS dateAssigned,
-                           da.dataProvider AS dataProvider'''
+    daf_query = '''MATCH (disease:DOTerm)-[:ASSOCIATION]-(dej:Association:DiseaseEntityJoin)-[:ASSOCIATION]-(object)-[:FROM_SPECIES]-(species:Species)
+                   WHERE (object:Gene OR object:Allele OR object:AffectedGenomicModel)
+                         AND dej.joinType IN ["IS_MARKER_FOR", // need to remove when removed from database
+                                              "IS_IMPLICATED_IN", // need to remove when removed from database
+                                              "IS_MODEL_OF",
+                                              "is_model_of",
+                                              "is_implicated_in",
+                                              "is_biomarker_for",
+                                              "implicated_via_orthology",
+                                              "biomarker_via_orthology"]
+                   MATCH (dej:Association:DiseaseEntityJoin)-[:EVIDENCE]->(pj:PublicationJoin),
+                         (p:Publication)-[:ASSOCIATION]->(pj:PublicationJoin)-[:ASSOCIATION]->(ec:Ontology:ECOTerm)
+                   OPTIONAL MATCH (object:Gene)-[:ASSOCIATION]->(dej:Association:DiseaseEntityJoin)<-[:ASSOCIATION]-(otherAssociatedEntity)
+                   OPTIONAL MATCH (pj:PublicationJoin)-[:MODEL_COMPONENT|PRIMARY_GENETIC_ENTITY]-(inferredFromEntity)
+                   OPTIONAL MATCH (dej:Association:DiseaseEntityJoin)-[:FROM_ORTHOLOGOUS_GENE]->(oGene:Gene),
+                                  (gene:Gene)-[o:ORTHOLOGOUS]->(oGene:Gene)
+                   WHERE o.strictFilter AND ec.primaryKey IN ["ECO:0000250", "ECO:0000266", "ECO:0000501"] // ISS, ISO, and IEA respectively
+                   //OPTIONAL MATCH (object)-[IS_ALLELE_OF]->(gene:Gene)
+                   RETURN DISTINCT
+                          dej.primaryKey as dejID,
+                          species.primaryKey AS taxonId,
+                          species.name AS speciesName,
+                          collect(DISTINCT oGene.primaryKey) AS withOrthologs,
+                          labels(object) AS objectType,
+                          object.primaryKey AS dbObjectID,
+                          object.symbol AS dbObjectSymbol,
+                          object.name AS dbObjectName,
+                          toLower(dej.joinType) AS associationType,
+                          //collect(DISTINCT gene.primaryKey) AS inferredGeneAssociation,
+                          disease.doId AS DOID,
+                          disease.name as DOtermName,
+                          collect(DISTINCT {pubModID: p.pubModId,
+                                            pubMedID: p.pubMedId,
+                                            evidenceCode:ec.primaryKey,
+                                            evidenceCodeName: ec.name,
+                                            inferredFromEntity: inferredFromEntity,
+                                            otherAssociatedEntityID: otherAssociatedEntity.primaryKey}) as evidence,
+                          REDUCE(t = "1900-01-01", c IN collect(left(pj.dateAssigned, 10)) | CASE WHEN c > t THEN c ELSE t END) AS dateAssigned, //takes most recent date
+                          dej.dataProvider AS dataProvider'''
+
     data_source = DataSource(get_neo_uri(context_info), daf_query)
     daf = daf_file_generator.DafFileGenerator(data_source,
                                               generated_files_folder,
@@ -216,15 +235,18 @@ def generate_daf_file(generated_files_folder, context_info, taxon_id_fms_subtype
 def generate_expression_file(generated_files_folder, context_info, taxon_id_fms_subtype_map, upload_flag):
     expression_query = '''MATCH (speciesObj:Species)<-[:FROM_SPECIES]-(geneObj:Gene)-[:ASSOCIATION]->(begej:BioEntityGeneExpressionJoin)--(term)
                           WITH {primaryKey: speciesObj.primaryKey, name: speciesObj.name} AS species,
-                               {primaryKey: geneObj.primaryKey, symbol: geneObj.symbol} AS  gene,
+                               {primaryKey: geneObj.primaryKey, symbol: geneObj.symbol, dataProvider: geneObj.dataProvider} AS gene,
                                begej,
                                COLLECT(term) AS terms
                           MATCH (begej:BioEntityGeneExpressionJoin)<-[:ASSOCIATION]-(exp:ExpressionBioEntity)-[a:ANATOMICAL_STRUCTURE|CELLULAR_COMPONENT|ANATOMICAL_SUB_SUBSTRUCTURE|CELLULAR_COMPONENT_QUALIFIER|ANATOMICAL_SUB_STRUCTURE_QUALIFIER|ANATOMICAL_STRUCTURE_QUALIFIER]->(ontology:Ontology)
-                          //WHERE gene.primaryKey = 'ZFIN:ZDB-GENE-110411-206'
-                          RETURN species, gene, terms, begej.primaryKey as begejId, exp.whereExpressedStatement as location,
-                                                       COLLECT({edge: type(a),
-                                                                primaryKey: ontology.primaryKey,
-                                                                name: ontology.name}) as ontologyPaths'''
+                          RETURN species,
+                                 gene,
+                                 terms,
+                                 begej.primaryKey as begejId,
+                                 exp.whereExpressedStatement AS location,
+                                 COLLECT({edge: type(a),
+                                          primaryKey: ontology.primaryKey,
+                                          name: ontology.name}) AS ontologyPaths'''
     data_source = DataSource(get_neo_uri(context_info), expression_query)
     expression = expression_file_generator.ExpressionFileGenerator(data_source,
                                                                    generated_files_folder,
@@ -247,21 +269,22 @@ def generate_db_summary_file(generated_files_folder, context_info, upload_flag):
 
 def generate_gene_cross_reference_file(generated_files_folder, context_info, upload_flag):
     gene_cross_reference_query = '''MATCH (g:Gene)--(cr:CrossReference)
-                          RETURN g.primaryKey as GeneID, 
-                                 cr.globalCrossRefId as GlobalCrossReferenceID, 
-                                 cr.crossRefCompleteUrl as CrossReferenceCompleteURL, 
+                          RETURN g.primaryKey as GeneID,
+                                 cr.globalCrossRefId as GlobalCrossReferenceID,
+                                 cr.crossRefCompleteUrl as CrossReferenceCompleteURL,
                                  cr.page as ResourceDescriptorPage,
                                  g.taxonId as TaxonID'''
     data_source = DataSource(get_neo_uri(context_info), gene_cross_reference_query)
     gene_cross_reference = gene_cross_reference_file_generator.GeneCrossReferenceFileGenerator(data_source,
-                                                                  generated_files_folder,
-                                                                  context_info)
+                                                                                               generated_files_folder,
+                                                                                               context_info)
     gene_cross_reference.generate_file(upload_flag=upload_flag)
+
 
 def generate_uniprot_cross_reference(generated_files_folder, input_folder, context_info, upload_flag):
     uniprot_cross_reference_query = '''MATCH (g:Gene)--(cr:CrossReference)
                                 WHERE cr.prefix = "UniProtKB"
-                                RETURN g.primaryKey as GeneID, 
+                                RETURN g.primaryKey as GeneID,
                                     cr.globalCrossRefId as GlobalCrossReferenceID'''
     data_source = DataSource(get_neo_uri(context_info), uniprot_cross_reference_query)
     ucf = uniprot_cross_reference_generator.UniProtGenerator(data_source, context_info, generated_files_folder)
