@@ -1,5 +1,3 @@
-
-
 import logging
 import os
 import glob
@@ -8,8 +6,8 @@ from collections import OrderedDict
 import pytest
 from operator import itemgetter
 from itertools import groupby
-sys.path.append('../src')
 
+sys.path.append('../src')
 from common import ContextInfo
 import app
 import click
@@ -49,6 +47,12 @@ EXAMPLE_CASES = {
 }
 
 def parse_vcf_file(path):
+    """
+
+    :param path:
+    :return:
+    """
+
     data = []
     headers = []
     with open(path, 'rt') as fp:
@@ -66,6 +70,10 @@ def parse_vcf_file(path):
 
 
 def vcf_data_by_filename_and_id():
+    """
+
+    :return:
+    """
 
     VCF_DATA = get_full_vcf_data()
     org_data = OrderedDict()
@@ -80,6 +88,10 @@ def vcf_data_by_filename_and_id():
 
 
 def get_full_vcf_data():
+    """
+
+    :return:
+    """
 
     vcf_data = OrderedDict()
     for gf in glob.glob(OUTPUT_DIR + '/*.vcf'):
@@ -90,6 +102,10 @@ def get_full_vcf_data():
 
 
 def test_file_generation():
+    """
+
+    :return:
+    """
 
     runner = CliRunner()
     result = runner.invoke(app.main, ['--vcf'])
@@ -97,6 +113,10 @@ def test_file_generation():
 
 
 def test_generated_files():
+    """
+
+    :return:
+    """
 
     get_full_vcf_data()
     for (path, records) in VCF_DATA.items():
@@ -106,6 +126,10 @@ def test_generated_files():
 
 
 def test_example_expectations():
+    """
+
+    :return:
+    """
 
     vcf_data = vcf_data_by_filename_and_id()
     print(len(vcf_data))
@@ -126,6 +150,10 @@ def test_example_expectations():
 
 
 def test_generated_files_sorted_by_chr_and_pos():
+    """
+
+    :return:
+    """
 
     vcf_data = get_full_vcf_data()
     for (path, records) in vcf_data.items():
