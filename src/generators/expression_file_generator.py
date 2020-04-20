@@ -13,6 +13,7 @@ import csv
 from time import gmtime, strftime
 
 import upload
+from .header import create_header
 
 logger = logging.getLogger(name=__name__)
 
@@ -21,17 +22,6 @@ class ExpressionFileGenerator:
     """
     TBA
     """
-
-    file_header_template = """#########################################################################
-#
-# Expression
-# Source: Alliance of Genome Resources (Alliance)
-# TaxonIDs: {taxonIDs}
-# Datebase Version: {databaseVersion}
-# Date: {datetimeNow}
-#
-#########################################################################
-"""
 
     def __init__(self, expressions, generated_files_folder, config_info, taxon_id_fms_subtype_map):
         """
@@ -54,9 +44,16 @@ class ExpressionFileGenerator:
         :param taxon_ids:
         :return:
         """
-        return cls.file_header_template.format(taxonIDs=",".join(taxon_ids),
-                                               datetimeNow=strftime("%Y-%m-%d %H:%M:%S", gmtime()),
-                                               databaseVersion=config_info.config['RELEASE_VERSION'])
+        # return cls.file_header_template.format(taxonIDs=",".join(taxon_ids),
+        #                                        datetimeNow=strftime("%Y-%m-%d %H:%M:%S", gmtime()),
+        #                                        databaseVersion=config_info.config['RELEASE_VERSION'])
+
+        return create_header('Expression', config_info.config['RELEASE_VERSION'],
+                             taxon_ids="# TaxonIDs: " + ",".join(taxon_ids))
+
+
+
+
 
     # 'StageID', currently don't have stage IDs in the database
     def generate_file(self, upload_flag=False):

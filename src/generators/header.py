@@ -1,34 +1,33 @@
+
+import os
 from datetime import datetime
 from string import Template
 
 class HeaderTemplate(Template):
-    """
-    TBA
-    """
 
     delimiter = '%'
 
 
-def create_header(file_type, taxon_ids, database_version):
+def create_header(file_type, database_version, stringency_filter='', taxon_ids=''):
+    """
 
-    gen_time = datetime.now()
+    :param file_type:
+    :param database_version:
+    :param stringency_filter:
+    :param taxon_ids:
+    :return:
+    """
 
-    to_change = {'filetype': file_type, 'taxon_ids': taxon_ids, 'database_version': database_version, 'gen_time':gen_time}
+    if stringency_filter != '':
+        stringency_filter = '# Orthology Filter: ' + stringency_filter
 
-    file_header_template = HeaderTemplate("""#########################################################################
-#                                                                   
-# %filetype                                                         
-# Source: Alliance of Genome Resources (AGR)                        
-# Orthology Filter: Stringent                                       
-# TaxonIDs: %taxon_ids                                              
-# Datebase Version: %database_version                               
-# Date: %gen_time                                                   
-#                                                                   
-#########################################################################
-""")
+    gen_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    to_change = {'filetype': file_type, 'taxon_ids': taxon_ids, 'database_version': database_version,
+                 'gen_time': gen_time, 'stringency_filter': stringency_filter}
+
+    my_path = os.path.abspath(os.path.dirname(__file__))
+    file_header_template = HeaderTemplate(open(my_path + '/template.txt').read())
 
     file_header = file_header_template.substitute(to_change)
-
-    print(file_header)
 
     return file_header

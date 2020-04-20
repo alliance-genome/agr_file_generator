@@ -1,0 +1,10 @@
+#########################################################################
+#
+# %filetype
+# Source: Alliance of Genome Resources (AGR)
+%stringency_filter
+%taxon_ids
+# Datebase Version: %database_version
+# Date: %gen_time
+#
+#########################################################################

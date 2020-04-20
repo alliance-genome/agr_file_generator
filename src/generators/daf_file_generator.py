@@ -11,10 +11,11 @@ import os
 import logging
 from datetime import datetime
 from time import gmtime, strftime
-
 import json
 import csv
+
 import upload
+from .header import create_header
 
 logger = logging.getLogger(name=__name__)
 
@@ -58,9 +59,11 @@ class DafFileGenerator:
         :param taxon_ids:
         :return:
         """
-        return cls.file_header_template.format(taxonIDs=",".join(taxon_ids),
-                                               datetimeNow=strftime("%Y-%m-%d %H:%M:%S", gmtime()),
-                                               databaseVersion=config_info.config['RELEASE_VERSION'])
+
+        return create_header('DAF file',config_info.config['RELEASE_VERSION'],
+                             stringency_filter="Stringent",
+                             taxon_ids="# TaxonIDs: " + ",".join(taxon_ids))
+
 
     def generate_file(self, upload_flag=False):
         """
