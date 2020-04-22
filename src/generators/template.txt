@@ -1,10 +1,15 @@
-#########################################################################
+##########################################################################
 #
-# %filetype
-# Source: Alliance of Genome Resources (AGR)
+# Data type: %filetype
+# Data format: %data_format
+# README: %readme
+# Source: Alliance of Genome Resources (Alliance)
+# Source URL: alliancegenome.org/downloads
+# Help Desk: help@alliancegenome.org
 %stringency_filter
 %taxon_ids
-# Datebase Version: %database_version
+# Species: %species
+# Alliance Database Version: %database_version
 # Date: %gen_time
 #
-#########################################################################
+##########################################################################
