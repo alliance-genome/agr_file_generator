@@ -1,0 +1,23 @@
+##contig=<ID=,length=,assembly={assembly},md5=,species="{species}",taxonomy=x>
+##fileDate={datetime}
+##fileformat=VCFv4.2
+##ALT=<ID=R,Description="IUPAC code R = A/G">
+##ALT=<ID=Y,Description="IUPAC code Y = C/T">
+##ALT=<ID=S,Description="IUPAC code S = C/G">
+##ALT=<ID=W,Description="IUPAC code W = A/T">
+##ALT=<ID=M,Description="IUPAC code M = A/C">
+##ALT=<ID=K,Description="IUPAC code K = T/G">
+##ALT=<ID=B,Description="IUPAC code B = C/G/T">
+##ALT=<ID=D,Description="IUPAC code D = A/G/T">
+##ALT=<ID=H,Description="IUPAC code H = A/C/T">
+##ALT=<ID=V,Description="IUPAC code V = A/C/G">
+##INFO=<ID=hgvs_nomenclature,Number=1,Type=String,Description="the HGVS name of the allele">
+##INFO=<ID=geneLevelConsequence,Number=.,Type=String,Description="VEP consequence of the variant">
+##INFO=<ID=impact,Number=1,Type=String,Description="Variant impact scale">
+##INFO=<ID=symbol,Number=1,Type=String,Description="The human readable name of the allele">
+##INFO=<ID=soTerm,Number=1,Type=String,Description="The Sequence Ontology term for the variant">
+##INFO=<ID=alleles,Number=.,Type=String,Description="The alleles of the variant">
+##INFO=<ID=allele_of_genes,Number=.,Type=String,Number=1,Description="The genes that the Allele is located on">
+##INFO=<ID=symbol_text,Number=1,Type=String,Description="Another human readable representation of the allele">
+##phasing=partial
+##source=AGR VCF File generator

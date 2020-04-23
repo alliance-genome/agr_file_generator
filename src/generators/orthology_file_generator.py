@@ -12,22 +12,6 @@ logger = logging.getLogger(name=__name__)
 
 class OrthologyFileGenerator:
 
-    file_header_template = """#########################################################################
-#
-# Orthology File
-# Source: Alliance of Genome Resources (Alliance)
-# Filter: stringent
-# Filter Details:
-#   Ortholog needs to be called by at least 3 Algorithms
-#        or is being called by either ZFIN or HGNC algorithms
-#        and either is best score or is best reverse score
-#   or ortholog is called by 2 algorithms and is best score and best reverse score
-# Datebase Version: {databaseVersion}
-# Date: {datetimeNow}
-#
-#########################################################################
-"""
-
     def __init__(self, orthologs, generated_files_folder, config_info):
         self.orthologs = orthologs
         self.config_info = config_info
@@ -43,8 +27,7 @@ class OrthologyFileGenerator:
 #"""
 
         return create_header('Orthology File', config_info.config['RELEASE_VERSION'],
-                             stringency_filter=stringency_filter)
-
+                             stringency_filter=stringency_filter, taxon_ids='#')
 
     def generate_file(self, upload_flag=False):
 

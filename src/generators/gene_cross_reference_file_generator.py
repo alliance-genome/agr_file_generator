@@ -41,12 +41,10 @@ class GeneCrossReferenceFileGenerator:
         :param config_info:
         :return:
         """
-        # return cls.file_header_template.format(datetimeNow=strftime("%Y-%m-%d %H:%M:%S", gmtime()),
-        #                                        databaseVersion=config_info.config['RELEASE_VERSION'])
 
         return create_header('Gene Cross Reference', config_info.config['RELEASE_VERSION'],
-                            taxon_ids="# TaxonIDs: " + ",".join(taxon_ids))
-
+                             taxon_ids="# TaxonIDs: " + taxon_ids,
+                             species='')
 
 
     def generate_file(self, upload_flag=False):

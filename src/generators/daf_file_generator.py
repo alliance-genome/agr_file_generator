@@ -39,7 +39,7 @@ class DafFileGenerator:
         self.generated_files_folder = generated_files_folder
 
     @classmethod
-    def _generate_header(cls, config_info, taxon_ids, species=''):
+    def _generate_header(cls, config_info, species):
         """
         TBA
 
@@ -48,10 +48,12 @@ class DafFileGenerator:
         :return:
         """
 
+        species_names = ','.join(list(species.values()))
+        taxon_ids = ', '.join(species.keys())
         return create_header('DAF file', config_info.config['RELEASE_VERSION'],
                              stringency_filter="Stringent",
-                             taxon_ids="# TaxonIDs: " + ",".join(taxon_ids),
-                             species=species)
+                             taxon_ids="# TaxonIDs: " + taxon_ids,
+                             species=species_names)
 
 
     def generate_file(self, upload_flag=False):
@@ -199,8 +201,8 @@ class DafFileGenerator:
 
         combined_filepath_tsv = combined_file_basepath + '.tsv'
         combined_disease_file = open(combined_filepath_tsv, 'w')
-        print(species)
-        combined_disease_file.write(self._generate_header(self.config_info, set(processed_disease_associations_tsv.keys()), species.values()))
+        # combined_disease_file.write(self._generate_header(self.config_info, set(processed_disease_associations_tsv.keys()), species.values()))
+        combined_disease_file.write(self._generate_header(self.config_info, species))
         combined_tsv_writer = csv.DictWriter(combined_disease_file, delimiter='\t', fieldnames=fields, lineterminator="\n")
         combined_tsv_writer.writeheader()
 
@@ -209,6 +211,8 @@ class DafFileGenerator:
             json.dump(sum(processed_disease_associations.values(), []), outfile)
 
         for taxon_id in processed_disease_associations:
+            file_species = species[taxon_id]
+
             combined_tsv_writer.writerows(processed_disease_associations_tsv[taxon_id])
 
             taxon_file_basepath = os.path.join(self.generated_files_folder, file_basename + '.' + taxon_id)
@@ -218,7 +222,7 @@ class DafFileGenerator:
 
             taxon_filename_tsv = taxon_file_basepath + '.tsv'
             with open(taxon_filename_tsv, 'w') as f:
-                f.write(self._generate_header(self.config_info, [taxon_id]))
+                f.write(self._generate_header(self.config_info, {taxon_id: file_species}))
                 tsv_writer = csv.DictWriter(f, delimiter='\t', fieldnames=fields, lineterminator="\n")
                 tsv_writer.writeheader()
                 tsv_writer.writerows(processed_disease_associations_tsv[taxon_id])
