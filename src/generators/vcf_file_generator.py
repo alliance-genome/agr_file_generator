@@ -37,7 +37,8 @@ class VcfFileGenerator:
 ##INFO=<ID=symbol,Number=1,Type=String,Description="The human readable name of the allele">
 ##INFO=<ID=soTerm,Number=1,Type=String,Description="The Sequence Ontology term for the variant">
 ##INFO=<ID=alleles,Number=.,Type=String,Description="The alleles of the variant">
-##INFO=<ID=allele_of_genes,Number=.,Type=String,Number=1,Description="The genes that the Allele is located on">
+##INFO=<ID=allele_of_gene_ids,Number=.,Type=String,Number=1,Description="The gene ids that the Allele is located on">
+##INFO=<ID=allele_of_gene_symbols,Number=.,Type=String,Number=1,Description="The gene names that the Allele is located on">
 ##INFO=<ID=symbol_text,Number=1,Type=String,Description="Another human readable representation of the allele">
 ##phasing=partial
 ##source=AGR VCF File generator"""
