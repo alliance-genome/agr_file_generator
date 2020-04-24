@@ -76,16 +76,15 @@ class DbSummaryFileGenerator:
         overview = []
         for node_label in list(entity_counters.keys()).copy():
             if isinstance(entity_counters[node_label], dict):
-                sub_labels = []
                 counter = 0
                 for sub_label, sub_node_counter in entity_counters[node_label].items():
-                    sub_labels.append({"nodeLabel": sub_label,
-                                       "counter": sub_node_counter})
+                    overview.append({"nodeLabel": sub_label,
+                                     "parentLabel": node_label,
+                                     "counter": sub_node_counter})
                     counter += sub_node_counter
 
                 overview.append({"nodeLabel": node_label,
-                                 "counter": counter,
-                                 "subLabels": sub_labels})
+                                 "counter": counter})
             else:
                 overview.append({"nodeLabel": node_label,
                                  "counter": entity_counters[node_label]})
