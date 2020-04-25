@@ -37,7 +37,8 @@ class VcfFileGenerator:
 ##INFO=<ID=symbol,Number=1,Type=String,Description="The human readable name of the allele">
 ##INFO=<ID=soTerm,Number=1,Type=String,Description="The Sequence Ontology term for the variant">
 ##INFO=<ID=alleles,Number=.,Type=String,Description="The alleles of the variant">
-##INFO=<ID=allele_of_genes,Number=.,Type=String,Number=1,Description="The genes that the Allele is located on">
+##INFO=<ID=allele_of_gene_ids,Number=.,Type=String,Number=1,Description="The gene ids that the Allele is located on">
+##INFO=<ID=allele_of_gene_symbols,Number=.,Type=String,Number=1,Description="The gene names that the Allele is located on">
 ##INFO=<ID=symbol_text,Number=1,Type=String,Description="Another human readable representation of the allele">
 ##phasing=partial
 ##source=AGR VCF File generator"""
@@ -92,7 +93,8 @@ class VcfFileGenerator:
 
         variant['geneLevelConsequence'] = []
         variant['impact'] = []
-        variant['geneSymbol'] = []
+        variant['geneSymbols'] = []
+        variant['geneIDs'] = []
         for geneConsequence in variant['geneConsequences']:
             if geneConsequence['consequence'] is not None:
                 variant['geneLevelConsequence'].append(geneConsequence['consequence'])
@@ -103,9 +105,10 @@ class VcfFileGenerator:
             else:
                 variant['impact'].append('')
             if geneConsequence['gene'] is not None:
-                  variant['geneSymbol'].append(geneConsequence['gene'])
+                  variant['geneIDs'].append(geneConsequence['gene'])
+                  variant['geneSymbols'].append(geneConsequence['geneSymbol'])
             else:
-                  variant['geenSymbol'].append('')
+                  variant['geneSymbols'].append('')
 
         if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
             info_map['geneLevelConsequence'] = ','.join(cls._variant_value_for_file(variant, 'geneLevelConsequence'))
@@ -120,7 +123,8 @@ class VcfFileGenerator:
         info_map['soTerm'] = cls._variant_value_for_file(variant, 'soTerm')
         info_map['globalId'] = variant['globalId']
         info_map['alleles'] = variant['alleles']#cls._variant_value_for_file(variant,'alleles',transform=','.join)
-        info_map['allele_of_genes'] = cls._variant_value_for_file(variant, 'geneSymbol', transform=','.join)
+        info_map['allele_of_gene_ids'] = cls._variant_value_for_file(variant, 'geneIDs', transform=','.join)
+        info_map['allele_of_gene_symbols'] = cls._variant_value_for_file(variant, 'geneSymbols', transform=','.join)
         info_map['symbol_text'] = cls._variant_value_for_file(variant, 'symbolText')
         if any(info_map.values()):
             info = ';'.join('{}="{}"'.format(k, v)
