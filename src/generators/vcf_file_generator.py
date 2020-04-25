@@ -108,7 +108,7 @@ class VcfFileGenerator:
                   variant['geneIDs'].append(geneConsequence['gene'])
                   variant['geneSymbols'].append(geneConsequence['geneSymbol'])
             else:
-                  variant['geenSymbols'].append('')
+                  variant['geneSymbols'].append('')
 
         if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
             info_map['geneLevelConsequence'] = ','.join(cls._variant_value_for_file(variant, 'geneLevelConsequence'))
