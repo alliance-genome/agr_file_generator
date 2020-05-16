@@ -1,6 +1,13 @@
 ##contig=<ID=,length=,assembly={assembly},md5=,species="{species}",taxonomy=x>
 ##fileDate={datetime}
 ##fileformat=VCFv4.2
+##AGR=<SOURCE="Alliance of Genome Resources">
+##AGR=<SOURCE_URL="http://alliancegenome.org/downloads">
+##AGR=<HELP_DESK="help@alliancegenome.org">
+##AGR=<SPECIES="%species">
+##AGR=<TAXONID="%taxon_id">
+##AGR=<VERSION="%database_version>
+##AGR=<FILE_GENERATED_UTC="%gen_time">
 ##ALT=<ID=R,Description="IUPAC code R = A/G">
 ##ALT=<ID=Y,Description="IUPAC code Y = C/T">
 ##ALT=<ID=S,Description="IUPAC code S = C/G">
