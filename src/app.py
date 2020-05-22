@@ -131,7 +131,8 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
                      WHERE NOT v.genomicReferenceSequence = v.genomicVariantSequence
                            OR v.genomicVariantSequence = ""
                      OPTIONAL MATCH (a:Allele)-[:IS_ALLELE_OF]-(g:Gene)
-                     OPTIONAL MATCH (v:Variant)-[:ASSOCIATION]-(m:GeneLevelConsequence)-[:ASSOCIATION]-(g:Gene)
+                     OPTIONAL MATCH (v:Variant)-[:ASSOCIATION]-(glc:GeneLevelConsequence)-[:ASSOCIATION]-(g:Gene)
+                     OPTIONAL MATCH (v:Variant)-[:ASSOCIATION]-(tlc:TranscriptLevelConsequence)-[:ASSOCIATION]-(t:Transcript)
                      RETURN c.primaryKey AS chromosome,
                             v.globalId AS globalId,
                             right(v.paddingLeft,1) AS paddingLeft,
@@ -145,8 +146,12 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
                             a.primaryKey AS alleles,
                             collect(DISTINCT {gene: g.primaryKey,
                                               geneSymbol: g.symbol,
-                                              consequence: m.geneLevelConsequence,
-                                              impact: m.impact}) AS geneConsequences,
+                                              consequence: glc.geneLevelConsequence,
+                                              impact: glc.impact}) AS geneConsequences,
+                            collect(DISTINCT {transcript: t.primaryKey,
+                                              transcriptGFF3ID: t.gff3ID,
+                                              consequence: tlc.transcriptLevelConsequence,
+                                              impact: tlc.impact}) AS transcriptConsequences,
                             p.start AS start,
                             p.end AS end,
                             s.name AS species,
