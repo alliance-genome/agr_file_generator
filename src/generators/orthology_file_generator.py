@@ -4,30 +4,13 @@ from time import gmtime, strftime
 import json
 import csv
 
-#from upload.upload import upload_process
 import upload
-
+from .header import create_header
 
 logger = logging.getLogger(name=__name__)
 
 
 class OrthologyFileGenerator:
-
-    file_header_template = """#########################################################################
-#
-# Ortholog File
-# Source: Alliance of Genome Resources (Alliance)
-# Filter: stringent
-# Filter Details:
-#   Ortholog needs to be called by at least 3 Algorithms
-#        or is being called by either ZFIN or HGNC algorithms
-#        and either is best score or is best reverse score
-#   or ortholog is called by 2 algorithms and is best score and best reverse score
-# Datebase Version: {databaseVersion}
-# Date: {datetimeNow}
-#
-#########################################################################
-"""
 
     def __init__(self, orthologs, generated_files_folder, config_info):
         self.orthologs = orthologs
@@ -36,8 +19,15 @@ class OrthologyFileGenerator:
 
     @classmethod
     def _generate_header(cls, config_info):
-        return cls.file_header_template.format(datetimeNow=strftime("%Y-%m-%d %H:%M:%S", gmtime()),
-                                               databaseVersion=config_info.config['RELEASE_VERSION'])
+
+        stringency_filter = """Stringent
+#        Ortholog needs to be called by at least 3 Algorithms
+#        or is being called by either ZFIN or HGNC algorithms
+#        and either is best score or is best reverse score
+#"""
+
+        return create_header('Orthology File', config_info.config['RELEASE_VERSION'],
+                             stringency_filter=stringency_filter, taxon_ids='#')
 
     def generate_file(self, upload_flag=False):
 

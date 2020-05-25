@@ -47,7 +47,7 @@ class DbSummaryFileGenerator:
             if (len(entity_types) == 1 and entity_types[0] != "Load"):
                 entity_counters[entity_types[0]] = frequency
             elif len(entity_types) == 2:
-                if entity_types[1] in entity_counters:
+                if entity_types[1] in entity_counters and isinstance(entity_types[1], dict):
                     entity_counters[entity_types[1]][entity_types[0]] = frequency
                 else:
                     entity_counters[entity_types[1]] = {entity_types[0]: frequency}
