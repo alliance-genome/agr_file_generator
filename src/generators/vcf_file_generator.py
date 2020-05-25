@@ -32,12 +32,18 @@ class VcfFileGenerator:
 ##ALT=<ID=H,Description="IUPAC code H = A/C/T">
 ##ALT=<ID=V,Description="IUPAC code V = A/C/G">
 ##INFO=<ID=hgvs_nomenclature,Number=1,Type=String,Description="the HGVS name of the allele">
-##INFO=<ID=geneLevelConsequence,Number=.,Type=String,Description="VEP consequence of the variant">
-##INFO=<ID=impact,Number=1,Type=String,Description="Variant impact scale">
-##INFO=<ID=symbol,Number=1,Type=String,Description="The human readable name of the allele">
+##INFO=<ID=geneLevelConsequence,Number=.,Type=String,Description="VEP consequence of the variant on the Gene">
+##INFO=<ID=transcriptLevelConsequence,Number=.,Type=String,Description="VEP consequence of the variant on the Transcript">
+##INFO=<ID=geneImpact,Number=1,Type=String,Description="Variant impact scale for Gene">
+##INFO=<ID=transcriptImpact,Number=1,Type=String,Description="Variant impact scale for Transcript">
+##INFO=<ID=alleleSymbol,Number=1,Type=String,Description="The human readable name of the Allele">
 ##INFO=<ID=soTerm,Number=1,Type=String,Description="The Sequence Ontology term for the variant">
 ##INFO=<ID=alleles,Number=.,Type=String,Description="The alleles of the variant">
-##INFO=<ID=allele_of_genes,Number=.,Type=String,Number=1,Description="The genes that the Allele is located on">
+##INFO=<ID=allele_of_gene_ids,Number=.,Type=String,Number=1,Description="The gene ids that the Allele is located on">
+##INFO=<ID=allele_of_gene_symbols,Number=.,Type=String,Number=1,Description="The gene names that the Allele is located on">
+##INFO=<ID=allele_of_transcripts_ids,Number=.,Type=String,Number=1,Description="The gene ids that the Allele is located on">
+##INFO=<ID=allele_of_transcripts_gff3_ids,Number=.,Type=String,Number=1,Description="The transcript gff3ID that the Allele is located on">
+
 ##INFO=<ID=symbol_text,Number=1,Type=String,Description="Another human readable representation of the allele">
 ##phasing=partial
 ##source=AGR VCF File generator"""
@@ -91,36 +97,82 @@ class VcfFileGenerator:
         info_map['hgvs_nomenclature'] = cls._variant_value_for_file(variant, 'hgvsNomenclature')
 
         variant['geneLevelConsequence'] = []
-        variant['impact'] = []
-        variant['geneSymbol'] = []
+        variant['transcriptLevelConsequence'] = []
+        variant['geneImpact'] = []
+        variant['transcriptImpact'] = []
+        variant['geneSymbols'] = []
+        variant['transcriptGFF3IDs'] = []
+        variant['geneIDs'] = []
+        variant['transcriptIDs'] = []
         for geneConsequence in variant['geneConsequences']:
             if geneConsequence['consequence'] is not None:
                 variant['geneLevelConsequence'].append(geneConsequence['consequence'])
             else:
                 variant['geneLevelConsequence'].append('')
             if geneConsequence['impact'] is not None:
-                variant['impact'].append(geneConsequence['impact'])
+                variant['geneImpact'].append(geneConsequence['impact'])
             else:
-                variant['impact'].append('')
+                variant['geneImpact'].append('')
             if geneConsequence['gene'] is not None:
-                  variant['geneSymbol'].append(geneConsequence['gene'])
+                  variant['geneIDs'].append(geneConsequence['gene'])
+                  variant['geneSymbols'].append(geneConsequence['geneSymbol'])
             else:
-                  variant['geenSymbol'].append('')
+                  variant['geneSymbols'].append('')
+
+        for transcriptConsequence in variant['transcriptConsequences']:
+            if transcriptConsequence['consequence'] is not None:
+                variant['transcriptLevelConsequence'].append(transcriptConsequence['consequence'])
+            else:
+                variant['transcriptLevelConsequence'].append('')
+            if transcriptConsequence['impact'] is not None:
+                variant['transcriptImpact'].append(transcriptConsequence['impact'])
+            else:
+                variant['transcriptImpact'].append('')
+            if transcriptConsequence['transcript'] is not None:
+                  variant['transcriptIDs'].append(transcriptConsequence['transcript'])
+                  if transcriptConsequence['transcriptGFF3ID']:
+                      variant['transcriptGFF3IDs'].append(transcriptConsequence['transcriptGFF3ID'])
+                  else:
+                      variant['transcriptGFF3IDs'].append('')
+            else:
+                  variant['transcriptGFF3IDs'].append('')
+
 
         if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
             info_map['geneLevelConsequence'] = ','.join(cls._variant_value_for_file(variant, 'geneLevelConsequence'))
         else:
             info_map['geneLevelConsequence'] = cls._variant_value_for_file(variant, 'geneLevelConsequence')
 
-        if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
-            info_map['impact'] = ','.join(cls._variant_value_for_file(variant, 'impact'))
+        if cls._variant_value_for_file(variant, 'transcriptLevelConsequence') is not None:
+            info_map['transcriptLevelConsequence'] = ','.join(cls._variant_value_for_file(variant, 'transcriptLevelConsequence'))
         else:
-            info_map['impact'] = cls._variant_value_for_file(variant, 'impact')
+            info_map['transcriptLevelConsequence'] = cls._variant_value_for_file(variant, 'transcriptLevelConsequence')
+
+
+        if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
+            info_map['geneImpact'] = ','.join(cls._variant_value_for_file(variant, 'geneImpact'))
+        else:
+            info_map['geneImpact'] = cls._variant_value_for_file(variant, 'geneImpact')
+
+
+        if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
+            info_map['transcriptImpact'] = ','.join(cls._variant_value_for_file(variant, 'transcriptImpact'))
+        else:
+            info_map['transcriptImpact'] = cls._variant_value_for_file(variant, 'transcriptImpact')
+
         info_map['symbol'] = cls._variant_value_for_file(variant, 'symbol')
         info_map['soTerm'] = cls._variant_value_for_file(variant, 'soTerm')
         info_map['globalId'] = variant['globalId']
         info_map['alleles'] = variant['alleles']#cls._variant_value_for_file(variant,'alleles',transform=','.join)
-        info_map['allele_of_genes'] = cls._variant_value_for_file(variant, 'geneSymbol', transform=','.join)
+
+        if variant['geneIDs']:
+             info_map['allele_of_gene_ids'] = cls._variant_value_for_file(variant, 'geneIDs', transform=','.join)
+             info_map['allele_of_gene_symbols'] = cls._variant_value_for_file(variant, 'geneSymbols', transform=','.join)
+
+        if variant['transcriptIDs']:
+            info_map['allele_of_transcript_ids'] = cls._variant_value_for_file(variant, 'transcriptIDs', transform=','.join)
+            info_map['allele_of_transcript_gff3_ids'] = cls._variant_value_for_file(variant, 'transcriptGFF3IDs', transform=','.join)
+
         info_map['symbol_text'] = cls._variant_value_for_file(variant, 'symbolText')
         if any(info_map.values()):
             info = ';'.join('{}="{}"'.format(k, v)
