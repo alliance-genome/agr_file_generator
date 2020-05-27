@@ -27,7 +27,7 @@ def create_header(file_type, database_version, data_format='', readme='', string
                  'readme': readme, 'species': species}
 
     my_path = os.path.abspath(os.path.dirname(__file__))
-    file_header_template = HeaderTemplate(open(my_path + '/template.txt').read())
+    file_header_template = HeaderTemplate(open(my_path + '/header_template.txt').read())
 
     file_header = file_header_template.substitute(to_change)
 
