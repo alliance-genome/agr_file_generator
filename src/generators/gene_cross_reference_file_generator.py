@@ -43,7 +43,6 @@ class GeneCrossReferenceFileGenerator:
         """
 
         return create_header('Gene Cross Reference', config_info.config['RELEASE_VERSION'],
-                             taxon_ids="# TaxonIDs: " + taxon_ids,
                              species='')
 
 
