@@ -1,3 +1,5 @@
+![Alliance File Generator](https://github.com/alliance-genome/agr_file_generator/workflows/Alliance%20File%20Generator/badge.svg)
+
 # AGR File Generator
 
 ## Description
