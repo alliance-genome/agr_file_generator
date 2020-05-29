@@ -43,7 +43,6 @@ class VcfFileGenerator:
 ##INFO=<ID=allele_of_gene_symbols,Number=.,Type=String,Number=1,Description="The gene names that the Allele is located on">
 ##INFO=<ID=allele_of_transcripts_ids,Number=.,Type=String,Number=1,Description="The gene ids that the Allele is located on">
 ##INFO=<ID=allele_of_transcripts_gff3_ids,Number=.,Type=String,Number=1,Description="The transcript gff3ID that the Allele is located on">
-
 ##INFO=<ID=symbol_text,Number=1,Type=String,Description="Another human readable representation of the allele">
 ##phasing=partial
 ##source=AGR VCF File generator"""
