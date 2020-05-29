@@ -18,11 +18,9 @@ from generators import (daf_file_generator, db_summary_file_generator,
 port = int(os.environ.get('NEO4J_PORT', 7687))
 alliance_db_version = os.environ.get('ALLIANCE_RELEASE')
 
-
 context_info = ContextInfo()
 debug_level = logging.DEBUG if context_info.config["DEBUG"] else logging.INFO
 neo_debug_level = logging.DEBUG if context_info.config["NEO_DEBUG"] else logging.INFO
-
 
 if context_info.config["GENERATED_FILES_FOLDER"]:
     generated_files_folder = context_info.config["GENERATED_FILES_FOLDER"]
@@ -229,7 +227,8 @@ def generate_daf_file(generated_files_folder, context_info, taxon_id_fms_subtype
                                             evidenceCodeName: ec.name,
                                             inferredFromEntity: inferredFromEntity,
                                             otherAssociatedEntityID: otherAssociatedEntity.primaryKey}) as evidence,
-                          REDUCE(t = "1900-01-01", c IN collect(left(pj.dateAssigned, 10)) | CASE WHEN c > t THEN c ELSE t END) AS dateAssigned, //takes most recent date
+                          REDUCE(t = "1900-01-01", c IN collect(left(pj.dateAssigned, 10)) | CASE WHEN c > t THEN c ELSE t END) AS dateAssigned,
+                          ///takes most recent date
                           dej.dataProvider AS dataProvider'''
 
     data_source = DataSource(get_neo_uri(context_info), daf_query)
