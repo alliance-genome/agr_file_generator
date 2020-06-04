@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -13,8 +13,9 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/alliance-genome/agr_file_generator",
     include_package_data=True,
-    package_dir={'agrfilegenerator': 'src'},
-    packages=['agrfilegenerator'],
+    package_dir={'': 'src'},
+    packages=find_packages('src'),
+    py_modules=['common', 'data_source'],
     install_requires=[
         'neo4j==1.7.3',
         'neobolt==1.7.13',
