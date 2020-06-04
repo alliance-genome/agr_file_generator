@@ -1,1 +1,1 @@
-include agrfilegenerator/generators/*.txt
+include src/generators/*.txt
