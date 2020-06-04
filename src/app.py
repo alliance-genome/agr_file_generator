@@ -120,12 +120,11 @@ def get_neo_uri(context_info):
         exit()
 
 
-def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, context_info, upload_flag, tab_flag):
-    os.makedirs(generated_files_folder, exist_ok=True)
-    os.makedirs(fasta_sequences_folder, exist_ok=True)
-    variants_query = """MATCH (s:Species)-[:FROM_SPECIES]-(a:Allele)-[:VARIATION]-(v:Variant)-[l:LOCATED_ON]-(c:Chromosome),
-                              (v:Variant)-[:VARIATION_TYPE]-(st:SOTerm),
-                              (v:Variant)-[:ASSOCIATION]-(p:GenomicLocation)
+def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, skip_chromosomes, context_info, upload_flag, tab_flag):
+    logger.info("Querying Assembly: " + assembly)
+    variants_query = '''MATCH (s:Species)-[:FROM_SPECIES]-(a:Allele)-[:VARIATION]-(v:Variant)-[l:LOCATED_ON]->(c:Chromosome),
+                              (v:Variant)-[:VARIATION_TYPE]->(st:SOTerm),
+                              (v:Variant)-[:ASSOCIATION]->(p:GenomicLocation)-[:ASSOCIATION]->(:Assembly {primaryKey: "''' + assembly + '''"})
                      WHERE NOT v.genomicReferenceSequence = v.genomicVariantSequence
                            OR v.genomicVariantSequence = ""
                      OPTIONAL MATCH (a:Allele)-[:IS_ALLELE_OF]-(g:Gene)
@@ -154,12 +153,33 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
                             p.end AS end,
                             s.name AS species,
                             st.nameKey AS soTerm
-                     """
+                     '''
+
     data_source = DataSource(get_neo_uri(context_info), variants_query)
     gvf = vcf_file_generator.VcfFileGenerator(data_source,
                                               generated_files_folder,
                                               context_info)
     gvf.generate_files(skip_chromosomes=skip_chromosomes, upload_flag=upload_flag, tab_flag=tab_flag)
+
+
+def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, context_info, upload_flag, tab_flag):
+    os.makedirs(generated_files_folder, exist_ok=True)
+    os.makedirs(fasta_sequences_folder, exist_ok=True)
+
+    assembly_query = """MATCH (a:Assembly)
+                        RETURN a.primaryKey as assemblyID"""
+    assembly_data_source = DataSource(get_neo_uri(context_info), assembly_query)
+
+    for assembly_result in assembly_data_source:
+        assembly = assembly_result["assemblyID"]
+        if assembly not in ["", "GRCh38", "R64-2-1"]:
+            generate_vcf_file(assembly,
+                              generated_files_folder,
+                              fasta_sequences_folder,
+                              skip_chromosomes,
+                              context_info,
+                              upload_flag,
+                              tab_flag)
 
 
 def generate_orthology_file(generated_files_folder, context_info, upload_flag):

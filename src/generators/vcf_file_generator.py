@@ -147,12 +147,10 @@ class VcfFileGenerator:
         else:
             info_map['transcriptLevelConsequence'] = cls._variant_value_for_file(variant, 'transcriptLevelConsequence')
 
-
         if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
             info_map['geneImpact'] = ','.join(cls._variant_value_for_file(variant, 'geneImpact'))
         else:
             info_map['geneImpact'] = cls._variant_value_for_file(variant, 'geneImpact')
-
 
         if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
             info_map['transcriptImpact'] = ','.join(cls._variant_value_for_file(variant, 'transcriptImpact'))
@@ -162,11 +160,11 @@ class VcfFileGenerator:
         info_map['symbol'] = cls._variant_value_for_file(variant, 'symbol')
         info_map['soTerm'] = cls._variant_value_for_file(variant, 'soTerm')
         info_map['globalId'] = variant['globalId']
-        info_map['alleles'] = variant['alleles']#cls._variant_value_for_file(variant,'alleles',transform=','.join)
+        info_map['alleles'] = variant['alleles']  # cls._variant_value_for_file(variant,'alleles',transform=','.join)
 
         if variant['geneIDs']:
-             info_map['allele_of_gene_ids'] = cls._variant_value_for_file(variant, 'geneIDs', transform=','.join)
-             info_map['allele_of_gene_symbols'] = cls._variant_value_for_file(variant, 'geneSymbols', transform=','.join)
+            info_map['allele_of_gene_ids'] = cls._variant_value_for_file(variant, 'geneIDs', transform=','.join)
+            info_map['allele_of_gene_symbols'] = cls._variant_value_for_file(variant, 'geneSymbols', transform=','.join)
 
         if variant['transcriptIDs']:
             info_map['allele_of_transcript_ids'] = cls._variant_value_for_file(variant, 'transcriptIDs', transform=','.join)
@@ -204,7 +202,7 @@ class VcfFileGenerator:
 
         info_map['symbol'] = cls._variant_value_for_file(variant, 'symbol')
         info_map['globalId'] = variant['globalId']
-        info_map['alleles'] = cls._variant_value_for_file(variant,'alleles',transform=', '.join)
+        info_map['alleles'] = cls._variant_value_for_file(variant, 'alleles', transform=', '.join)
         info_map['allele_of_genes'] = cls._variant_value_for_file(variant, 'alleleOfGenes', transform=', '.join)
         info_map['symbol_text'] = cls._variant_value_for_file(variant, 'symbolText')
         if any(info_map.values()):
@@ -218,12 +216,11 @@ class VcfFileGenerator:
         assembly_chr_variants = defaultdict(lambda: defaultdict(list))
         assembly_species = {}
         for variant in self.variants:
-            assembly = 'R6' if variant['assembly'].startswith('R6') else variant['assembly'].replace('.', '').replace('_', '')
+            assembly = variant['assembly'].replace('.', '').replace('_', '')
             chromosome = variant['chromosome']
             assembly_chr_variants[assembly][chromosome].append(variant)
             assembly_species[assembly] = variant['species']
         return (assembly_chr_variants, assembly_species)
-
 
     def _find_replace(self, string, iupac_codes):
         # is the item in the dict?
@@ -231,7 +228,7 @@ class VcfFileGenerator:
             # iterate by keys
             if item in iupac_codes:
                 # look up and replace
-                string = string.replace(item, "<" + item +">")
+                string = string.replace(item, "<" + item + ">")
                 # return updated string
         return string
 
@@ -240,11 +237,11 @@ class VcfFileGenerator:
         if variant['start'] is None:
             return None
 
-        #from https://www.bioinformatics.org/sms/iupac.html
+        # from https://www.bioinformatics.org/sms/iupac.html
         iupac_to_vcf_ref_codes = {"R", "Y", "S", "W", "K", "M", "B", "D", "H", "V"}
 
         variant['genomicVariantSequence'] = self._find_replace(variant['genomicVariantSequence'],
-                                                         iupac_to_vcf_ref_codes)
+                                                               iupac_to_vcf_ref_codes)
 
         if so_term == 'deletion':
             variant['POS'] = variant['start'] - 1
