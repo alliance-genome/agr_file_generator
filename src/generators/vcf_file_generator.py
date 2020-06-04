@@ -35,14 +35,14 @@ class VcfFileGenerator:
 ##INFO=<ID=geneLevelConsequence,Number=.,Type=String,Description="VEP consequence of the variant on the Gene">
 ##INFO=<ID=transcriptLevelConsequence,Number=.,Type=String,Description="VEP consequence of the variant on the Transcript">
 ##INFO=<ID=geneImpact,Number=1,Type=String,Description="Variant impact scale for Gene">
-##INFO=<ID=transcriptImpact,Number=1,Type=String,Description="Variant impact scale for Transcript">
+##INFO=<ID=transcriptImpact,Number=.,Type=String,Description="Variant impact scale for Transcript">
 ##INFO=<ID=alleleSymbol,Number=1,Type=String,Description="The human readable name of the Allele">
 ##INFO=<ID=soTerm,Number=1,Type=String,Description="The Sequence Ontology term for the variant">
 ##INFO=<ID=alleles,Number=.,Type=String,Description="The alleles of the variant">
-##INFO=<ID=allele_of_gene_ids,Number=.,Type=String,Number=1,Description="The gene ids that the Allele is located on">
-##INFO=<ID=allele_of_gene_symbols,Number=.,Type=String,Number=1,Description="The gene names that the Allele is located on">
-##INFO=<ID=allele_of_transcripts_ids,Number=.,Type=String,Number=1,Description="The gene ids that the Allele is located on">
-##INFO=<ID=allele_of_transcripts_gff3_ids,Number=.,Type=String,Number=1,Description="The transcript gff3ID that the Allele is located on">
+##INFO=<ID=allele_of_gene_ids,Number=1,Type=String,Description="The gene ids that the Allele is located on">
+##INFO=<ID=allele_of_gene_symbols,Number=1,Type=String,Description="The gene names that the Allele is located on">
+##INFO=<ID=allele_of_transcript_ids,Number=.,Type=String,Description="The gene ids that the Allele is located on">
+##INFO=<ID=allele_of_transcript_gff3_ids,Number=.,Type=String,Description="The transcript gff3ID that the Allele is located on">
 ##INFO=<ID=symbol_text,Number=1,Type=String,Description="Another human readable representation of the allele">
 ##phasing=partial
 ##source=AGR VCF File generator"""
@@ -157,7 +157,7 @@ class VcfFileGenerator:
         else:
             info_map['transcriptImpact'] = cls._variant_value_for_file(variant, 'transcriptImpact')
 
-        info_map['symbol'] = cls._variant_value_for_file(variant, 'symbol')
+        info_map['alleleSymbol'] = cls._variant_value_for_file(variant, 'alleleSymbol')
         info_map['soTerm'] = cls._variant_value_for_file(variant, 'soTerm')
         info_map['globalId'] = variant['globalId']
         info_map['alleles'] = variant['alleles']  # cls._variant_value_for_file(variant,'alleles',transform=','.join)
@@ -200,7 +200,7 @@ class VcfFileGenerator:
         else:
             info_map['impact'] = cls._variant_value_for_file(variant, 'impact')
 
-        info_map['symbol'] = cls._variant_value_for_file(variant, 'symbol')
+        info_map['alleleSymbol'] = cls._variant_value_for_file(variant, 'alleleSymbol')
         info_map['globalId'] = variant['globalId']
         info_map['alleles'] = cls._variant_value_for_file(variant, 'alleles', transform=', '.join)
         info_map['allele_of_genes'] = cls._variant_value_for_file(variant, 'alleleOfGenes', transform=', '.join)

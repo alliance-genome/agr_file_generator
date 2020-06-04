@@ -137,7 +137,7 @@ def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, s
                             v.genomicVariantSequence AS genomicVariantSequence,
                             v.hgvsNomenclature AS hgvsNomenclature,
                             v.dataProvider AS dataProvider,
-                            a.symbol AS symbol,
+                            a.symbol AS alleleSymbol,
                             a.symbolText as symbolText,
                             p.assembly AS assembly,
                             a.primaryKey AS alleles,
