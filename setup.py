@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name="agrfilegenerator",
+    name="agr-file-generator",
     version="3.1.0",
     author="Alliance of Genome Resources",
     author_email="valearna@caltech.edu",
