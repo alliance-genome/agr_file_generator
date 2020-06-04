@@ -13,7 +13,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/alliance-genome/agr_file_generator",
     include_package_data=True,
-    packages=find_packages('src'),
+    packages=['generators', 'common', 'upload', 'data_source'],
     package_dir={'': 'src'},
     install_requires=[
         'neo4j==1.7.3',
