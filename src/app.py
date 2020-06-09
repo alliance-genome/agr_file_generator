@@ -122,9 +122,10 @@ def get_neo_uri(context_info):
 
 def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, skip_chromosomes, context_info, upload_flag, tab_flag):
     logger.info("Querying Assembly: " + assembly)
+    #  {hgvsNomenclature:"NC_004354.4:g.2041152_2043557del"}
     variants_query = '''MATCH (s:Species)-[:FROM_SPECIES]-(a:Allele)-[:VARIATION]-(v:Variant)-[l:LOCATED_ON]->(c:Chromosome),
                               (v:Variant)-[:VARIATION_TYPE]->(st:SOTerm),
-                              (v:Variant)-[:ASSOCIATION]->(p:GenomicLocation)-[:ASSOCIATION]->(:Assembly {primaryKey: "''' + assembly + '''"})
+                              (v:Variant)-[:ASSOCIATION]->(p:GenomicLocation)-[:ASSOCIATION]->(assembly:Assembly {primaryKey: "''' + assembly + '''"})
                      WHERE NOT v.genomicReferenceSequence = v.genomicVariantSequence
                            OR v.genomicVariantSequence = ""
                      OPTIONAL MATCH (a:Allele)-[:IS_ALLELE_OF]-(g:Gene)
@@ -137,11 +138,11 @@ def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, s
                             v.genomicVariantSequence AS genomicVariantSequence,
                             v.hgvsNomenclature AS hgvsNomenclature,
                             v.dataProvider AS dataProvider,
-                            a.symbol AS alleleSymbol,
-                            a.symbolText as symbolText,
-                            p.assembly AS assembly,
-                            a.primaryKey AS alleles,
-                            collect(DISTINCT {gene: g.primaryKey,
+                            assembly.primaryKey AS assembly,
+                            COLLECT(DISTINCT {symbol: a.symbol,
+                                              symbolText: a.symbolText,
+                                              id: a.primaryKey}) AS alleles,
+                            COLLECT(DISTINCT {gene: g.primaryKey,
                                               geneSymbol: g.symbol,
                                               consequence: glc.geneLevelConsequence,
                                               impact: glc.impact}) AS geneConsequences,
