@@ -9,8 +9,6 @@ import pytest
 
 sys.path.append('../src')
 import app
-# import click
-# import pytest
 from click.testing import CliRunner
 
 JSON_FILES = '../json'

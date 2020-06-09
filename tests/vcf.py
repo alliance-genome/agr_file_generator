@@ -24,7 +24,7 @@ EXAMPLE_CASES = {
     EXAMPLE_FILE: [{'CHROMO': '13',
                           'POS': '50540171',
                           'ID': 'ZFIN:ZDB-ALT-160601-8105',
-                         'REF': 'C',
+                          'REF': 'C',
                           'ALT': 'T',
                           'QUAL': '',
                           'FILTER': '',
