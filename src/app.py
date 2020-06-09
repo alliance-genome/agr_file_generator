@@ -18,7 +18,6 @@ from generators import (daf_file_generator, db_summary_file_generator,
 port = int(os.environ.get('NEO4J_PORT', 7687))
 alliance_db_version = os.environ.get('ALLIANCE_RELEASE')
 
-
 context_info = ContextInfo()
 debug_level = logging.DEBUG if context_info.config["DEBUG"] else logging.INFO
 neo_debug_level = logging.DEBUG if context_info.config["NEO_DEBUG"] else logging.INFO
@@ -121,16 +120,17 @@ def get_neo_uri(context_info):
         exit()
 
 
-def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, context_info, upload_flag, tab_flag):
-    os.makedirs(generated_files_folder, exist_ok=True)
-    os.makedirs(fasta_sequences_folder, exist_ok=True)
-    variants_query = """MATCH (s:Species)-[:FROM_SPECIES]-(a:Allele)-[:VARIATION]-(v:Variant)-[l:LOCATED_ON]-(c:Chromosome),
-                              (v:Variant)-[:VARIATION_TYPE]-(st:SOTerm),
-                              (v:Variant)-[:ASSOCIATION]-(p:GenomicLocation)
+def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, skip_chromosomes, context_info, upload_flag, tab_flag):
+    logger.info("Querying Assembly: " + assembly)
+    #  {hgvsNomenclature:"NC_004354.4:g.2041152_2043557del"}
+    variants_query = '''MATCH (s:Species)-[:FROM_SPECIES]-(a:Allele)-[:VARIATION]-(v:Variant)-[l:LOCATED_ON]->(c:Chromosome),
+                              (v:Variant)-[:VARIATION_TYPE]->(st:SOTerm),
+                              (v:Variant)-[:ASSOCIATION]->(p:GenomicLocation)-[:ASSOCIATION]->(assembly:Assembly {primaryKey: "''' + assembly + '''"})
                      WHERE NOT v.genomicReferenceSequence = v.genomicVariantSequence
                            OR v.genomicVariantSequence = ""
                      OPTIONAL MATCH (a:Allele)-[:IS_ALLELE_OF]-(g:Gene)
-                     OPTIONAL MATCH (v:Variant)-[:ASSOCIATION]-(m:GeneLevelConsequence)-[:ASSOCIATION]-(g:Gene)
+                     OPTIONAL MATCH (v:Variant)-[:ASSOCIATION]-(glc:GeneLevelConsequence)-[:ASSOCIATION]-(g:Gene)
+                     OPTIONAL MATCH (v:Variant)-[:ASSOCIATION]-(tlc:TranscriptLevelConsequence)-[:ASSOCIATION]-(t:Transcript)
                      RETURN c.primaryKey AS chromosome,
                             v.globalId AS globalId,
                             right(v.paddingLeft,1) AS paddingLeft,
@@ -138,21 +138,49 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
                             v.genomicVariantSequence AS genomicVariantSequence,
                             v.hgvsNomenclature AS hgvsNomenclature,
                             v.dataProvider AS dataProvider,
-                            a.symbol AS symbol,
-                            a.symbolText as symbolText,
-                            p.assembly AS assembly,
-                            a.primaryKey AS alleles,
-                            collect(DISTINCT {gene: g.primaryKey, consequence: m.geneLevelConsequence, impact: m.impact}) AS geneConsequences,
+                            assembly.primaryKey AS assembly,
+                            COLLECT(DISTINCT {symbol: a.symbol,
+                                              symbolText: a.symbolText,
+                                              id: a.primaryKey}) AS alleles,
+                            COLLECT(DISTINCT {gene: g.primaryKey,
+                                              geneSymbol: g.symbol,
+                                              consequence: glc.geneLevelConsequence,
+                                              impact: glc.impact}) AS geneConsequences,
+                            collect(DISTINCT {transcript: t.primaryKey,
+                                              transcriptGFF3ID: t.gff3ID,
+                                              consequence: tlc.transcriptLevelConsequence,
+                                              impact: tlc.impact}) AS transcriptConsequences,
                             p.start AS start,
                             p.end AS end,
                             s.name AS species,
                             st.nameKey AS soTerm
-                     """
+                     '''
+
     data_source = DataSource(get_neo_uri(context_info), variants_query)
     gvf = vcf_file_generator.VcfFileGenerator(data_source,
                                               generated_files_folder,
                                               context_info)
     gvf.generate_files(skip_chromosomes=skip_chromosomes, upload_flag=upload_flag, tab_flag=tab_flag)
+
+
+def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, context_info, upload_flag, tab_flag):
+    os.makedirs(generated_files_folder, exist_ok=True)
+    os.makedirs(fasta_sequences_folder, exist_ok=True)
+
+    assembly_query = """MATCH (a:Assembly)
+                        RETURN a.primaryKey as assemblyID"""
+    assembly_data_source = DataSource(get_neo_uri(context_info), assembly_query)
+
+    for assembly_result in assembly_data_source:
+        assembly = assembly_result["assemblyID"]
+        if assembly not in ["", "GRCh38", "R64-2-1"]:
+            generate_vcf_file(assembly,
+                              generated_files_folder,
+                              fasta_sequences_folder,
+                              skip_chromosomes,
+                              context_info,
+                              upload_flag,
+                              tab_flag)
 
 
 def generate_orthology_file(generated_files_folder, context_info, upload_flag):
@@ -220,7 +248,8 @@ def generate_daf_file(generated_files_folder, context_info, taxon_id_fms_subtype
                                             evidenceCodeName: ec.name,
                                             inferredFromEntity: inferredFromEntity,
                                             otherAssociatedEntityID: otherAssociatedEntity.primaryKey}) as evidence,
-                          REDUCE(t = "1900-01-01", c IN collect(left(pj.dateAssigned, 10)) | CASE WHEN c > t THEN c ELSE t END) AS dateAssigned, //takes most recent date
+                          REDUCE(t = "1900-01-01", c IN collect(left(pj.dateAssigned, 10)) | CASE WHEN c > t THEN c ELSE t END) AS dateAssigned,
+                          ///takes most recent date
                           dej.dataProvider AS dataProvider'''
 
     data_source = DataSource(get_neo_uri(context_info), daf_query)
@@ -233,13 +262,11 @@ def generate_daf_file(generated_files_folder, context_info, taxon_id_fms_subtype
 
 def generate_expression_file(generated_files_folder, context_info, taxon_id_fms_subtype_map, upload_flag):
     expression_query = '''MATCH (speciesObj:Species)<-[:FROM_SPECIES]-(geneObj:Gene)-[:ASSOCIATION]->(begej:BioEntityGeneExpressionJoin)--(term)
-                          //WHERE geneObj.primaryKey = 'ZFIN:ZDB-GENE-110411-206'
                           WITH {primaryKey: speciesObj.primaryKey, name: speciesObj.name} AS species,
                                {primaryKey: geneObj.primaryKey, symbol: geneObj.symbol, dataProvider: geneObj.dataProvider} AS gene,
                                begej,
                                COLLECT(term) AS terms
                           MATCH (begej:BioEntityGeneExpressionJoin)<-[:ASSOCIATION]-(exp:ExpressionBioEntity)-[a:ANATOMICAL_STRUCTURE|CELLULAR_COMPONENT|ANATOMICAL_SUB_SUBSTRUCTURE|CELLULAR_COMPONENT_QUALIFIER|ANATOMICAL_SUB_STRUCTURE_QUALIFIER|ANATOMICAL_STRUCTURE_QUALIFIER]->(ontology:Ontology)
-
                           RETURN species,
                                  gene,
                                  terms,

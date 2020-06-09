@@ -13,6 +13,7 @@ import json
 from time import gmtime, strftime
 
 from upload import upload
+from .header import create_header
 
 logger = logging.getLogger(name=__name__)
 
@@ -21,16 +22,6 @@ class GeneCrossReferenceFileGenerator:
     """
     TBA
     """
-
-    file_header_template = """#########################################################################
-#
-# Gene Cross Reference
-# Source: Alliance of Genome Resources (Alliance)
-# Datebase Version: {databaseVersion}
-# Date: {datetimeNow}
-#
-#########################################################################
-"""
 
     def __init__(self, gene_cross_references, generated_files_folder, config_info):
         """
@@ -50,8 +41,10 @@ class GeneCrossReferenceFileGenerator:
         :param config_info:
         :return:
         """
-        return cls.file_header_template.format(datetimeNow=strftime("%Y-%m-%d %H:%M:%S", gmtime()),
-                                               databaseVersion=config_info.config['RELEASE_VERSION'])
+
+        return create_header('Gene Cross Reference', config_info.config['RELEASE_VERSION'],
+                             species='')
+
 
     def generate_file(self, upload_flag=False):
         """

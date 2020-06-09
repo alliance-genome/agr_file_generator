@@ -13,6 +13,7 @@ import csv
 from time import gmtime, strftime
 
 import upload
+from .header import create_header
 
 logger = logging.getLogger(name=__name__)
 
@@ -21,17 +22,6 @@ class ExpressionFileGenerator:
     """
     TBA
     """
-
-    file_header_template = """#########################################################################
-#
-# Expression
-# Source: Alliance of Genome Resources (Alliance)
-# TaxonIDs: {taxonIDs}
-# Datebase Version: {databaseVersion}
-# Date: {datetimeNow}
-#
-#########################################################################
-"""
 
     def __init__(self, expressions, generated_files_folder, config_info, taxon_id_fms_subtype_map):
         """
@@ -47,16 +37,23 @@ class ExpressionFileGenerator:
         self.generated_files_folder = generated_files_folder
 
     @classmethod
-    def _generate_header(cls, config_info, taxon_ids):
+    def _generate_header(cls, config_info, species):
         """
 
         :param config_info:
         :param taxon_ids:
         :return:
         """
-        return cls.file_header_template.format(taxonIDs=",".join(taxon_ids),
-                                               datetimeNow=strftime("%Y-%m-%d %H:%M:%S", gmtime()),
-                                               databaseVersion=config_info.config['RELEASE_VERSION'])
+        # return cls.file_header_template.format(taxonIDs=",".join(taxon_ids),
+        #                                        datetimeNow=strftime("%Y-%m-%d %H:%M:%S", gmtime()),
+        #                                        databaseVersion=config_info.config['RELEASE_VERSION'])
+
+        species_names = ','.join(list(species.values()))
+        taxon_ids = ', '.join(species.keys())
+        return create_header('DAF file', config_info.config['RELEASE_VERSION'],
+                             stringency_filter="Stringent",
+                             taxon_ids="# TaxonIDs: " + taxon_ids,
+                             species=species_names)
 
     # 'StageID', currently don't have stage IDs in the database
     def generate_file(self, upload_flag=False):
@@ -89,7 +86,8 @@ class ExpressionFileGenerator:
                   'Source',
                   'Reference']
 
-        associations = dict()
+        associations = {}
+        species = {}
         for expression in self.expressions:
             association = dict(zip(fields, [None] * len(fields)))
             association['Species'] = expression['species']['name']
@@ -155,18 +153,19 @@ class ExpressionFileGenerator:
                         association['AnatomyTermQualifierTermNames'].append(ontology_path['name'])
                     else:
                         association['AnatomyTermQualifierTermNames'] = [ontology_path['name']]
-                taxon_id = association['SpeciesID']
-                if taxon_id in associations:
-                    associations[taxon_id].append(association)
-                else:
-                    associations[taxon_id] = [association]
+            taxon_id = association['SpeciesID']
+            species[taxon_id] = association['Species']
+            if taxon_id in associations:
+                associations[taxon_id].append(association)
+            else:
+                associations[taxon_id] = [association]
 
         file_basename = "agr-expression-" + self.config_info.config['RELEASE_VERSION']
         combined_file_basepath = os.path.join(self.generated_files_folder, file_basename + '.combined')
 
         combined_filepath_tsv = combined_file_basepath + '.tsv'
         combined_expression_file = open(combined_filepath_tsv, 'w')
-        combined_expression_file.write(self._generate_header(self.config_info, set(associations.keys())))
+        combined_expression_file.write(self._generate_header(self.config_info, species))
         combined_tsv_writer = csv.DictWriter(combined_expression_file, delimiter='\t', fieldnames=fields, lineterminator="\n")
         combined_tsv_writer.writeheader()
 
@@ -175,6 +174,7 @@ class ExpressionFileGenerator:
             json.dump(sum(associations.values(), []), outfile)
 
         for taxon_id in associations:
+            species_name = species[taxon_id]
             taxon_file_basepath = os.path.join(self.generated_files_folder, file_basename + '.' + taxon_id)
             taxon_filepath_json = taxon_file_basepath + '.json'
             with open(taxon_filepath_json, 'w') as f:
@@ -189,7 +189,7 @@ class ExpressionFileGenerator:
             combined_tsv_writer.writerows(associations[taxon_id])
             taxon_filename_tsv = taxon_file_basepath + '.tsv'
             with open(taxon_filename_tsv, 'w') as f:
-                f.write(self._generate_header(self.config_info, [taxon_id]))
+                f.write(self._generate_header(self.config_info, {taxon_id: species_name}))
                 tsv_writer = csv.DictWriter(f, delimiter='\t', fieldnames=fields, lineterminator="\n")
                 tsv_writer.writeheader()
                 tsv_writer.writerows(associations[taxon_id])
