@@ -36,14 +36,14 @@ class VcfFileGenerator:
 ##INFO=<ID=transcriptLevelConsequence,Number=.,Type=String,Description="VEP consequence of the variant on the Transcript">
 ##INFO=<ID=geneImpact,Number=1,Type=String,Description="Variant impact scale for Gene">
 ##INFO=<ID=transcriptImpact,Number=.,Type=String,Description="Variant impact scale for Transcript">
-##INFO=<ID=alleleSymbol,Number=1,Type=String,Description="The human readable name of the Allele">
+##INFO=<ID=allele_symbols,Number=.,Type=String,Description="The human readable name of the Allele">
 ##INFO=<ID=soTerm,Number=1,Type=String,Description="The Sequence Ontology term for the variant">
 ##INFO=<ID=alleles,Number=.,Type=String,Description="The alleles of the variant">
 ##INFO=<ID=allele_of_gene_ids,Number=1,Type=String,Description="The gene ids that the Allele is located on">
 ##INFO=<ID=allele_of_gene_symbols,Number=1,Type=String,Description="The gene names that the Allele is located on">
 ##INFO=<ID=allele_of_transcript_ids,Number=.,Type=String,Description="The gene ids that the Allele is located on">
 ##INFO=<ID=allele_of_transcript_gff3_ids,Number=.,Type=String,Description="The transcript gff3ID that the Allele is located on">
-##INFO=<ID=symbol_text,Number=1,Type=String,Description="Another human readable representation of the allele">
+##INFO=<ID=allele_symbols_text,Number=.,Type=String,Description="Another human readable representation of the allele">
 ##phasing=partial
 ##source=AGR VCF File generator"""
 
@@ -113,10 +113,10 @@ class VcfFileGenerator:
             else:
                 variant['geneImpact'].append('')
             if geneConsequence['gene'] is not None:
-                  variant['geneIDs'].append(geneConsequence['gene'])
-                  variant['geneSymbols'].append(geneConsequence['geneSymbol'])
+                variant['geneIDs'].append(geneConsequence['gene'])
+                variant['geneSymbols'].append(geneConsequence['geneSymbol'])
             else:
-                  variant['geneSymbols'].append('')
+                variant['geneSymbols'].append('')
 
         for transcriptConsequence in variant['transcriptConsequences']:
             if transcriptConsequence['consequence'] is not None:
@@ -128,14 +128,13 @@ class VcfFileGenerator:
             else:
                 variant['transcriptImpact'].append('')
             if transcriptConsequence['transcript'] is not None:
-                  variant['transcriptIDs'].append(transcriptConsequence['transcript'])
-                  if transcriptConsequence['transcriptGFF3ID']:
-                      variant['transcriptGFF3IDs'].append(transcriptConsequence['transcriptGFF3ID'])
-                  else:
-                      variant['transcriptGFF3IDs'].append('')
+                variant['transcriptIDs'].append(transcriptConsequence['transcript'])
+                if transcriptConsequence['transcriptGFF3ID']:
+                    variant['transcriptGFF3IDs'].append(transcriptConsequence['transcriptGFF3ID'])
+                else:
+                    variant['transcriptGFF3IDs'].append('')
             else:
-                  variant['transcriptGFF3IDs'].append('')
-
+                variant['transcriptGFF3IDs'].append('')
 
         if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
             info_map['geneLevelConsequence'] = ','.join(cls._variant_value_for_file(variant, 'geneLevelConsequence'))
@@ -157,10 +156,25 @@ class VcfFileGenerator:
         else:
             info_map['transcriptImpact'] = cls._variant_value_for_file(variant, 'transcriptImpact')
 
-        info_map['alleleSymbol'] = cls._variant_value_for_file(variant, 'alleleSymbol')
+        for allele in variant['alleles']:
+            if 'id' in variant:
+                variant['alleles_ids'].append(allele['id'])
+            else:
+                variant['alleles'] = [allele['id']]
+            if 'alleleSymbols' in variant:
+                variant['alleleSymbols'].append(allele['symbol'])
+            else:
+                variant['alleleSymbols'] = [allele['symbol']]
+            if 'alleleSymbolText' in variant:
+                variant['alleleSymbolText'].append(allele['symbolText'])
+            else:
+                variant['alleleSymbolText'] = [allele['symbolText']]
+
+        info_map['alleles'] = cls._variant_value_for_file(variant, 'allele_ids', transform=','.join)
+        info_map['allele_symbols'] = cls._variant_value_for_file(variant, 'alleleSymbols', transform=','.join)
+        info_map['allele_symbols_text'] = cls._variant_value_for_file(variant, 'alleleSymbolText', transform=','.join)
         info_map['soTerm'] = cls._variant_value_for_file(variant, 'soTerm')
         info_map['globalId'] = variant['globalId']
-        info_map['alleles'] = variant['alleles']  # cls._variant_value_for_file(variant,'alleles',transform=','.join)
 
         if variant['geneIDs']:
             info_map['allele_of_gene_ids'] = cls._variant_value_for_file(variant, 'geneIDs', transform=','.join)
@@ -170,7 +184,6 @@ class VcfFileGenerator:
             info_map['allele_of_transcript_ids'] = cls._variant_value_for_file(variant, 'transcriptIDs', transform=','.join)
             info_map['allele_of_transcript_gff3_ids'] = cls._variant_value_for_file(variant, 'transcriptGFF3IDs', transform=','.join)
 
-        info_map['symbol_text'] = cls._variant_value_for_file(variant, 'symbolText')
         if any(info_map.values()):
             info = ';'.join('{}="{}"'.format(k, v)
                             for (k, v) in info_map.items()
