@@ -1,6 +1,5 @@
 import os
 import logging
-from time import gmtime, strftime
 import json
 import csv
 
@@ -33,18 +32,18 @@ class OrthologyFileGenerator:
 
         file_basename = "agr_orthologs-" + self.config_info.config['RELEASE_VERSION']
         fields = ["Gene1ID",
-                   "Gene1Symbol",
-                   "Gene1SpeciesTaxonID",
-                   "Gene1SpeciesName",
-                   "Gene2ID",
-                   "Gene2Symbol",
-                   "Gene2SpeciesTaxonID",
-                   "Gene2SpeciesName",
-                   "Algorithms",
-                   "AlgorithmsMatch",
-                   "OutOfAlgorithms",
-                   "IsBestScore",
-                   "IsBestRevScore"]
+                  "Gene1Symbol",
+                  "Gene1SpeciesTaxonID",
+                  "Gene1SpeciesName",
+                  "Gene2ID",
+                  "Gene2Symbol",
+                  "Gene2SpeciesTaxonID",
+                  "Gene2SpeciesName",
+                  "Algorithms",
+                  "AlgorithmsMatch",
+                  "OutOfAlgorithms",
+                  "IsBestScore",
+                  "IsBestRevScore"]
 
         processed_orthologs = []
         for ortholog in self.orthologs:
@@ -66,7 +65,7 @@ class OrthologyFileGenerator:
         json_filename = file_basename + ".json"
         json_filepath = os.path.join(self.generated_files_folder, json_filename)
         with open(json_filepath, 'w') as outfile:
-              json.dump(processed_orthologs, outfile)
+            json.dump(processed_orthologs, outfile)
 
         for processed_ortholog in processed_orthologs:
             processed_ortholog['Algorithms'] = "|".join(set(processed_ortholog['Algorithms']))

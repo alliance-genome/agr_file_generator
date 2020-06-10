@@ -55,7 +55,6 @@ class DafFileGenerator:
                              taxon_ids="# TaxonIDs: " + taxon_ids,
                              species=species_names)
 
-
     def generate_file(self, upload_flag=False):
         """
 
@@ -67,24 +66,24 @@ class DafFileGenerator:
                   "DBobjectType",
                   "DBObjectID",
                   "DBObjectSymbol",
-                  #"InferredGeneAssociation",
-                  #"GeneProductFormID",
-                  #"AdditionalGeneticComponent",
-                  #"ExperimentalConditions",
+                  # "InferredGeneAssociation",
+                  # "GeneProductFormID",
+                  # "AdditionalGeneticComponent",
+                  # "ExperimentalConditions",
                   "AssociationType",
-                  #"Qualifier",
+                  # "Qualifier",
                   "DOID",
                   "DOtermName",
                   "WithOrthologs",
                   "InferredFromID",
                   "InferredFromSymbol",
-                  #"Modifier-AssociationType",
-                  #"Modifier-Qualifier",
-                  #"Modifier-Genetic",
-                  #"Modifier-ExperimentalConditions",
+                  # "Modifier-AssociationType",
+                  # "Modifier-Qualifier",
+                  # "Modifier-Genetic",
+                  # "Modifier-ExperimentalConditions",
                   "EvidenceCode",
                   "EvidenceCodeName",
-                  #"genetic-sex",
+                  # "genetic-sex",
                   "Reference",
                   "Date",
                   "Source"]
@@ -104,16 +103,15 @@ class DafFileGenerator:
                 else:
                     db_object_type = disease_association["objectType"][0].lower()
 
-
                 pub_id = evidence["pubMedID"] if evidence["pubMedID"] else evidence["pubModID"]
                 if pub_id is None:
                     pub_id = ""
 
                 do_name = disease_association["DOtermName"] if disease_association["DOtermName"] else ""
-                #inferred_gene_association = ""
-                #if db_object_type == "gene":
+                # inferred_gene_association = ""
+                # if db_object_type == "gene":
                 #    inferred_gene_association = disease_association["dbObjectID"]
-                #elif db_object_type == "allele":
+                # elif db_object_type == "allele":
                 #    inferred_gene_association = ",".join(disease_association["inferredGeneAssociation"])
 
                 if evidence["evidenceCode"] is not None:
@@ -164,25 +162,25 @@ class DafFileGenerator:
                                                           disease_association["speciesName"],
                                                           db_object_type,
                                                           disease_association["dbObjectID"],
-                                                          disease_association["dbObjectSymbol"] if disease_association["dbObjectSymbol"]  else disease_association["dbObjectName"],
-                                                          #inferred_gene_association,
-                                                          #gene_product_form_id,
-                                                          #additional_genetic_component,
-                                                          #experimental_conditions,
+                                                          disease_association["dbObjectSymbol"] if disease_association["dbObjectSymbol"] else disease_association["dbObjectName"],
+                                                          # inferred_gene_association,
+                                                          # gene_product_form_id,
+                                                          # additional_genetic_component,
+                                                          # experimental_conditions,
                                                           disease_association["associationType"].lower(),
-                                                          #qualifier,
+                                                          # qualifier,
                                                           disease_association["DOID"],
                                                           do_name,
                                                           disease_association["withOrthologs"],
                                                           inferred_from_id,
                                                           inferred_from_symbol,
-                                                          #modifier_association_type,
-                                                          #modifier_qualifier,
-                                                          #modifier_genetic,
-                                                          #modifier_experimental_conditions,
+                                                          # modifier_association_type,
+                                                          # modifier_qualifier,
+                                                          # modifier_genetic,
+                                                          # modifier_experimental_conditions,
                                                           evidence_code,
                                                           evidence_code_name,
-                                                          #genetic_sex,
+                                                          # genetic_sex,
                                                           pub_id,
                                                           datetime.strptime(date_str, "%Y-%m-%d").strftime("%Y%m%d"),
                                                           disease_association["dataProvider"]]))
@@ -240,4 +238,9 @@ class DafFileGenerator:
                     datatype = "DISEASE-ALLIANCE"
                     if file_extension == "json":
                         datatype += "-JSON"
-                    upload.upload_process(process_name, filename, self.generated_files_folder, datatype, self.taxon_id_fms_subtype_map[taxon_id], self.config_info)
+                    upload.upload_process(process_name,
+                                          filename,
+                                          self.generated_files_folder,
+                                          datatype,
+                                          self.taxon_id_fms_subtype_map[taxon_id],
+                                          self.config_info)

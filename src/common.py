@@ -37,5 +37,4 @@ def compress(cmd):
     process.wait()
     stdout, stderr = process.communicate()
 
-
     return stdout, stderr, process.returncode
