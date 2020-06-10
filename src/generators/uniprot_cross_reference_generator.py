@@ -33,4 +33,9 @@ class UniProtGenerator:
         if upload_flag:
             logger.info("Submitting CROSSREFERENCEUNIPROT_COMBINED to FMS")
             process_name = "1"
-            upload.upload_process(process_name, 'CROSSREFERENCEUNIPROT_COMBINED.tsv', self.generated_files_folder, 'CROSSREFERENCEUNIPROT', 'COMBINED', self.config_info)
+            upload.upload_process(process_name,
+                                  'CROSSREFERENCEUNIPROT_COMBINED.tsv',
+                                  self.generated_files_folder,
+                                  'CROSSREFERENCEUNIPROT',
+                                  'COMBINED',
+                                  self.config_info)

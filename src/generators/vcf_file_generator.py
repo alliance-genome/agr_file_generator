@@ -4,12 +4,11 @@ import sys
 from collections import defaultdict, OrderedDict
 from functools import partial
 from operator import itemgetter
+from common import compress
 import logging
 import upload
 
 sys.path.append('../')
-
-from common import compress
 
 logger = logging.getLogger(name=__name__)
 

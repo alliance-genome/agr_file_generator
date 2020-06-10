@@ -1,15 +1,17 @@
 # Paulo Nuin March 2020
 
+import app
+from click.testing import CliRunner
 
 import sys
 import os
+import glob
+import requests
 import jsonschema
 import simplejson as json
 import pytest
 
 sys.path.append('../src')
-import app
-from click.testing import CliRunner
 
 JSON_FILES = '../json'
 OUTPUT_DIR = '../output'
@@ -41,7 +43,7 @@ def test_validate_generated_file():
     print('Starting test')
     print('Checking file ' + OUTPUT_DIR + '/' + 'agr_orthologs-' + RELEASE_VERSION + '.json')
 
-    if not os.path.isfile(OUTPUT_DIR + '/' + 'agr_orthologs-' + RELEASE_VERSION + '.json' ):
+    if not os.path.isfile(OUTPUT_DIR + '/' + 'agr_orthologs-' + RELEASE_VERSION + '.json'):
         assert False
     else:
         with open(SCHEMAS + '/orthology.schema', 'r') as f:
@@ -52,7 +54,7 @@ def test_validate_generated_file():
             result_data = f.read()
         result_file = json.loads(result_data)
 
-        assert jsonschema.validate(result_file, schema) == None
+        assert jsonschema.validate(result_file, schema) is None
 
 
 @pytest.mark.skip(reason="not a current test, needs work")

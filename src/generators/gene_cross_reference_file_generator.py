@@ -10,7 +10,6 @@ import os
 import logging
 import csv
 import json
-from time import gmtime, strftime
 
 from upload import upload
 from .header import create_header
@@ -44,7 +43,6 @@ class GeneCrossReferenceFileGenerator:
 
         return create_header('Gene Cross Reference', config_info.config['RELEASE_VERSION'],
                              species='')
-
 
     def generate_file(self, upload_flag=False):
         """

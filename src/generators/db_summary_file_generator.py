@@ -35,7 +35,6 @@ class DbSummaryFileGenerator:
         self.config_info = config_info
         self.generated_files_folder = generated_files_folder
 
-
     def __get_entity_counters(self):
         """Get the count for each entity in database"""
 
@@ -51,14 +50,13 @@ class DbSummaryFileGenerator:
                     entity_counters[entity_types[1]][entity_types[0]] = frequency
                 else:
                     entity_counters[entity_types[1]] = {entity_types[0]: frequency}
-                if (entity_types[0] not in entity_counters) or (entity_types[0] in entity_counters
-                        and isinstance(entity_counters[entity_types[0]], dict)):
+                if (entity_types[0] not in entity_counters) or (entity_types[0] in entity_counters and isinstance(entity_counters[entity_types[0]], dict)):
                     if entity_types[0] in entity_counters:
                         entity_counters[entity_types[0]][entity_types[1]] = frequency
                     else:
                         entity_counters[entity_types[0]] = {entity_types[1]: frequency}
 
-        for key in  list(entity_counters.keys()).copy():
+        for key in list(entity_counters.keys()).copy():
             if not isinstance(entity_counters[key], int):
                 if len(entity_counters[key].keys()) == 1:
                     subKey = list(entity_counters[key].keys())[0]
@@ -66,7 +64,6 @@ class DbSummaryFileGenerator:
                         del entity_counters[key]
 
         return entity_counters
-
 
     def __generate_overview(self):
         """Generate overview counts for each nod label and sub label"""
@@ -91,7 +88,6 @@ class DbSummaryFileGenerator:
 
         return overview
 
-
     def generate_file(self, upload_flag=False):
         """
 
@@ -110,4 +106,9 @@ class DbSummaryFileGenerator:
         if upload_flag:
             logger.info("Submitting to FMS")
             process_name = "1"
-            upload.upload_process(process_name, filename, self.generated_files_folder, 'DB-SUMMARY', self.config_info.config['RELEASE_VERSION'], self.config_info)
+            upload.upload_process(process_name,
+                                  filename,
+                                  self.generated_files_folder,
+                                  'DB-SUMMARY',
+                                  self.config_info.config['RELEASE_VERSION'],
+                                  self.config_info)
