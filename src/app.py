@@ -1,3 +1,4 @@
+
 import logging
 import os
 import time
@@ -126,6 +127,10 @@ def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, s
                      WHERE NOT v.genomicReferenceSequence = v.genomicVariantSequence
                            OR v.genomicVariantSequence = ""
                      OPTIONAL MATCH (a:Allele)-[:IS_ALLELE_OF]-(g:Gene)
+                     WITH COLLECT(DISTINCT {symbol: a.symbol,
+                                            symbolText: a.symbolText,
+                                            id: a.primaryKey}) AS alleles,
+                          s, v, l, c, st, p, assembly
                      OPTIONAL MATCH (v:Variant)-[:ASSOCIATION]-(glc:GeneLevelConsequence)-[:ASSOCIATION]-(g:Gene)
                      OPTIONAL MATCH (v:Variant)-[:ASSOCIATION]-(tlc:TranscriptLevelConsequence)-[:ASSOCIATION]-(t:Transcript)
                      RETURN c.primaryKey AS chromosome,
@@ -136,9 +141,7 @@ def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, s
                             v.hgvsNomenclature AS hgvsNomenclature,
                             v.dataProvider AS dataProvider,
                             assembly.primaryKey AS assembly,
-                            COLLECT(DISTINCT {symbol: a.symbol,
-                                              symbolText: a.symbolText,
-                                              id: a.primaryKey}) AS alleles,
+                            alleles,
                             COLLECT(DISTINCT {gene: g.primaryKey,
                                               geneSymbol: g.symbol,
                                               consequence: glc.geneLevelConsequence,
