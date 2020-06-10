@@ -120,7 +120,7 @@ def get_neo_uri(context_info):
 def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, skip_chromosomes, context_info, upload_flag, tab_flag):
     logger.info("Querying Assembly: " + assembly)
     #  {hgvsNomenclature:"NC_004354.4:g.2041152_2043557del"}
-    variants_query = '''MATCH (s:Species)-[:FROM_SPECIES]-(a:Allele)-[:VARIATION]-(v:Variant)-[l:LOCATED_ON]->(c:Chromosome),
+    variants_query = '''MATCH (s:Species)-[:FROM_SPECIES]-(a:Allele)-[:VARIATION]-(v:Variant {hgvsNomenclature:"NC_000074.6:g.57322231_57322238delinsGAGGACGA"})-[l:LOCATED_ON]->(c:Chromosome),
                               (v:Variant)-[:VARIATION_TYPE]->(st:SOTerm),
                               (v:Variant)-[:ASSOCIATION]->(p:GenomicLocation)-[:ASSOCIATION]->(assembly:Assembly {primaryKey: "''' + assembly + '''"})
                      WHERE NOT v.genomicReferenceSequence = v.genomicVariantSequence
@@ -170,7 +170,7 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
 
     for assembly_result in assembly_data_source:
         assembly = assembly_result["assemblyID"]
-        if assembly not in ["", "GRCh38", "R64-2-1"]:
+        if assembly not in ["", "GRCh38", "R64-2-1"] and assembly == "GRCm38":
             generate_vcf_file(assembly,
                               generated_files_folder,
                               fasta_sequences_folder,
