@@ -145,6 +145,7 @@ def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, s
                                               impact: glc.impact}) AS geneConsequences,
                             collect(DISTINCT {transcript: t.primaryKey,
                                               transcriptGFF3ID: t.gff3ID,
+                                              transcriptGFF3Name: t.name,
                                               consequence: tlc.transcriptLevelConsequence,
                                               impact: tlc.impact}) AS transcriptConsequences,
                             p.start AS start,
