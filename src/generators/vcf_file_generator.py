@@ -42,6 +42,7 @@ class VcfFileGenerator:
 ##INFO=<ID=allele_of_gene_symbols,Number=1,Type=String,Description="The gene names that the Allele is located on">
 ##INFO=<ID=allele_of_transcript_ids,Number=.,Type=String,Description="The gene ids that the Allele is located on">
 ##INFO=<ID=allele_of_transcript_gff3_ids,Number=.,Type=String,Description="The transcript gff3ID that the Allele is located on">
+##INFO=<ID=allele_of_transcript_gff3_names,Number=.,Type=String,Description="The transcript gff3 Names that the Allele is located on">
 ##INFO=<ID=allele_symbols_text,Number=.,Type=String,Description="Another human readable representation of the allele">
 ##phasing=partial
 ##source=AGR VCF File generator"""
@@ -100,6 +101,7 @@ class VcfFileGenerator:
         variant['transcriptImpact'] = []
         variant['geneSymbols'] = []
         variant['transcriptGFF3IDs'] = []
+        variant['transcriptGFF3Names'] = []
         variant['geneIDs'] = []
         variant['transcriptIDs'] = []
         for geneConsequence in variant['geneConsequences']:
@@ -132,9 +134,13 @@ class VcfFileGenerator:
                     variant['transcriptGFF3IDs'].append(transcriptConsequence['transcriptGFF3ID'])
                 else:
                     variant['transcriptGFF3IDs'].append('')
+                if transcriptConsequence['transcriptGFF3Name']:
+                    variant['transcriptGFF3Names'].append(transcriptConsequence['transcriptGFF3Name'])
+                else:
+                    variant['transcriptGFF3Names'].append('')
             else:
                 variant['transcriptGFF3IDs'].append('')
-
+                variant['transcriptGFF3Names'].append('')
         if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
             info_map['geneLevelConsequence'] = ','.join(cls._variant_value_for_file(variant, 'geneLevelConsequence'))
         else:
@@ -182,6 +188,7 @@ class VcfFileGenerator:
         if variant['transcriptIDs']:
             info_map['allele_of_transcript_ids'] = cls._variant_value_for_file(variant, 'transcriptIDs', transform=','.join)
             info_map['allele_of_transcript_gff3_ids'] = cls._variant_value_for_file(variant, 'transcriptGFF3IDs', transform=','.join)
+            info_map['allele_of_transcript_gff3_names'] = cls._variant_value_for_file(variant, 'transcriptGFF3Names', transform=','.join)
 
         if any(info_map.values()):
             info = ';'.join('{}="{}"'.format(k, v)
