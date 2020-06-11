@@ -104,7 +104,7 @@ class VcfFileGenerator:
         variant['transcriptIDs'] = []
         for geneConsequence in variant['geneConsequences']:
             if geneConsequence['consequence'] is not None:
-                variant['geneLevelConsequence'].append(geneConsequence['consequence'])
+                variant['geneLevelConsequence'].append(geneConsequence['consequence'].replace(",", "|"))
             else:
                 variant['geneLevelConsequence'].append('')
             if geneConsequence['impact'] is not None:
@@ -119,7 +119,7 @@ class VcfFileGenerator:
 
         for transcriptConsequence in variant['transcriptConsequences']:
             if transcriptConsequence['consequence'] is not None:
-                variant['transcriptLevelConsequence'].append(transcriptConsequence['consequence'])
+                variant['transcriptLevelConsequence'].append(transcriptConsequence['consequence'].replace(",", "|"))
             else:
                 variant['transcriptLevelConsequence'].append('')
             if transcriptConsequence['impact'] is not None:
