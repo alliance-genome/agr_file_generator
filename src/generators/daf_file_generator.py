@@ -55,7 +55,6 @@ class DafFileGenerator:
                              taxon_ids="# TaxonIDs: " + taxon_ids,
                              species=species_names)
 
-
     def generate_file(self, upload_flag=False):
         """
 
@@ -239,4 +238,9 @@ class DafFileGenerator:
                     datatype = "DISEASE-ALLIANCE"
                     if file_extension == "json":
                         datatype += "-JSON"
-                    upload.upload_process(process_name, filename, self.generated_files_folder, datatype, self.taxon_id_fms_subtype_map[taxon_id], self.config_info)
+                    upload.upload_process(process_name,
+                                          filename,
+                                          self.generated_files_folder,
+                                          datatype,
+                                          self.taxon_id_fms_subtype_map[taxon_id],
+                                          self.config_info)

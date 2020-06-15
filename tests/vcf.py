@@ -1,17 +1,14 @@
+import app
+from click.testing import CliRunner
 import logging
 import os
 import glob
 import sys
 from collections import OrderedDict
-import pytest
 from operator import itemgetter
 from itertools import groupby
 
 sys.path.append('../src')
-from common import ContextInfo
-import app
-import click
-from click.testing import CliRunner
 
 logger = logging.getLogger(name=__package__)
 
@@ -22,29 +19,30 @@ VCF_DATA = OrderedDict()
 EXAMPLE_FILE = 'GRCm38-' + RELEASE_VERSION + '.vcf'
 EXAMPLE_CASES = {
     EXAMPLE_FILE: [{'CHROMO': '13',
-                          'POS': '50540171',
-                          'ID': 'ZFIN:ZDB-ALT-160601-8105',
-                          'REF': 'C',
-                          'ALT': 'T',
-                          'QUAL': '',
-                          'FILTER': '',
-                          'INFO': ''},
-                         {'CHROMO': '5',
-                          'POS': '72118556',
-                          'ID': 'ZFIN:ZDB-ALT-170321-11',
-                          'REF': 'CGCTTTGA',
-                          'ALT': 'C',
-                          'QUAL': '',
-                          'FILTER': ''},
-                         {'CHROM': '10',
-                          'POS': '16027812',
-                          'ID': 'ZFIN:ZDB-ALT-180207-16',
-                          'REF': 'G',
-                          'ALT': 'GCCGTT',
-                          'QUAL': '',
-                          'FILTER': '',
-                          'INFO': ''}]
+                    'POS': '50540171',
+                    'ID': 'ZFIN:ZDB-ALT-160601-8105',
+                    'REF': 'C',
+                    'ALT': 'T',
+                    'QUAL': '',
+                    'FILTER': '',
+                    'INFO': ''},
+                   {'CHROMO': '5',
+                    'POS': '72118556',
+                    'ID': 'ZFIN:ZDB-ALT-170321-11',
+                    'REF': 'CGCTTTGA',
+                    'ALT': 'C',
+                    'QUAL': '',
+                    'FILTER': ''},
+                   {'CHROM': '10',
+                    'POS': '16027812',
+                    'ID': 'ZFIN:ZDB-ALT-180207-16',
+                    'REF': 'G',
+                    'ALT': 'GCCGTT',
+                    'QUAL': '',
+                    'FILTER': '',
+                    'INFO': ''}]
 }
+
 
 def parse_vcf_file(path):
     """

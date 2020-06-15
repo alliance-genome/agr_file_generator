@@ -130,7 +130,7 @@
 # # # def parse_generated_file(path, assembly):
 # # #     return parse_vcf_file(path)
 
-# # # def main(vcf, orthology, disease, expression, all_filetypes, upload, tab, 
+# # # def main(vcf, orthology, disease, expression, all_filetypes, upload, tab,
 # # #          generated_files_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output',
 # # #          fasta_sequences_folder='sequences',
 # # #          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):

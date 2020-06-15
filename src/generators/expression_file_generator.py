@@ -10,8 +10,6 @@ import os
 import logging
 import json
 import csv
-from time import gmtime, strftime
-
 import upload
 from .header import create_header
 
@@ -207,4 +205,9 @@ class ExpressionFileGenerator:
                     datatype = "EXPRESSION-ALLIANCE"
                     if file_extension == "json":
                         datatype += "-JSON"
-                    upload.upload_process(process_name, filename, self.generated_files_folder, datatype, self.taxon_id_fms_subtype_map[taxon_id], self.config_info)
+                    upload.upload_process(process_name,
+                                          filename,
+                                          self.generated_files_folder,
+                                          datatype,
+                                          self.taxon_id_fms_subtype_map[taxon_id],
+                                          self.config_info)

@@ -1,11 +1,8 @@
-
 import logging
 import os
 import time
 import click
 import coloredlogs
-# import requests
-# import urllib3
 from common import ContextInfo
 from data_source import DataSource
 from generators import (daf_file_generator, db_summary_file_generator,
