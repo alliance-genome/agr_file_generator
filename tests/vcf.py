@@ -12,7 +12,6 @@ from common import ContextInfo
 import app
 import click
 from click.testing import CliRunner
-import vcf
 
 logger = logging.getLogger(name=__package__)
 
