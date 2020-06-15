@@ -162,3 +162,17 @@ def test_generated_files_sorted_by_chr_and_pos():
             row = list(recs)
             positions = list(int(col['POS']) for col in row)
             assert positions == sorted(positions), 'Positions are not sorted in correct order'
+
+
+def test_duplicate_entries():
+    """
+
+    :return:
+    """
+
+    vcf_data = vcf_data_by_filename_and_id()
+    all_entries = []
+    for i in vcf_data:
+        for key, value in vcf_data[i].items():
+            all_entries.append(key)
+    assert len(all_entries) == len(set(all_entries))
