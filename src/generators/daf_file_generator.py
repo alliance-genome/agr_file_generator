@@ -56,9 +56,10 @@ class DafFileGenerator:
             species_names = 'Homo sapiens, Rattus norvegicus, Mus musculus, Danio rerio, Drosophila melanogaster, Caenorhabditis elegans, Saccharomyces cerevisiae'
 
         return create_header('Disease', config_info.config['RELEASE_VERSION'],
-                             stringency_filter="Stringent",
+                             stringency_filter='Stringent',
                              taxon_ids=taxon_ids,
-                             species=species_names)
+                             species=species_names,
+                             )
 
 
     def generate_file(self, upload_flag=False):
