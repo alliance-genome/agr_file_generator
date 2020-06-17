@@ -10,6 +10,6 @@
 %taxon_ids
 # Species: %species
 # Alliance Database Version: %database_version
-# File generated (UTC): %gen_time
+# Date file generated (UTC): %gen_time
 #
 ##########################################################################
