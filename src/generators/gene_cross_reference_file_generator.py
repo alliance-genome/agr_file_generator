@@ -40,6 +40,8 @@ class GeneCrossReferenceFileGenerator:
         :param config_info:
         :return:
         """
+        taxon_ids = '# TaxonIDs: NCBI:txid9606, NCBI: txid10116, NCBI: txid10090, NCBI: txid7955, NCBI: txid7227, NCBI: txid6239, NCBI: txid559292'
+        species_names = 'Homo sapiens, Rattus norvegicus, Mus musculus, Danio rerio, Drosophila melanogaster, Caenorhabditis elegans, Saccharomyces cerevisiae'
 
         return create_header('Gene Cross Reference', config_info.config['RELEASE_VERSION'],
                              species='')

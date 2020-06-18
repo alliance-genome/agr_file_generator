@@ -48,12 +48,19 @@ class DafFileGenerator:
         :return:
         """
 
-        species_names = ','.join(list(species.values()))
-        taxon_ids = ', '.join(species.keys())
-        return create_header('DAF file', config_info.config['RELEASE_VERSION'],
-                             stringency_filter="Stringent",
-                             taxon_ids="# TaxonIDs: " + taxon_ids,
-                             species=species_names)
+        if len(species.keys()) == 1:
+            species_names = ''.join(list(species.values()))
+            taxon_ids = '# TaxonIDs:' + ''.join(species.keys())
+        else:
+            taxon_ids = '# TaxonIDs: NCBI:txid9606, NCBI: txid10116, NCBI: txid10090, NCBI: txid7955, NCBI: txid7227, NCBI: txid6239, NCBI: txid559292'
+            species_names = 'Homo sapiens, Rattus norvegicus, Mus musculus, Danio rerio, Drosophila melanogaster, Caenorhabditis elegans, Saccharomyces cerevisiae'
+
+        return create_header('Disease', config_info.config['RELEASE_VERSION'],
+                             stringency_filter='Stringent',
+                             taxon_ids=taxon_ids,
+                             species=species_names,
+                             )
+
 
     def generate_file(self, upload_flag=False):
         """
