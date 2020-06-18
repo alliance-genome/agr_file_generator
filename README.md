@@ -55,3 +55,11 @@ Files that are generated are located in the docker shared folder. This folder ca
 ```bash
 source venv/bin/activate
 ```
+
+##Debug
+
+In order to get comprehensive logging statments for debugging purposes.
+
+```bash
+export DEBUG=True
+```
