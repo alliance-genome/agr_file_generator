@@ -47,7 +47,7 @@ class ExpressionFileGenerator:
             species_names = ''.join(list(species.values()))
             taxon_ids = '# TaxonIDs:' + ''.join(species.keys())
         else:
-            taxon_ids = '# TaxonIDs: NCBI:txid9606, NCBI: txid10116, NCBI: txid10090, NCBI: txid7955, NCBI: txid7227, NCBI: txid6239, NCBI: txid559292'
+            taxon_ids = '# TaxonIDs: NCBITaxon:9606, NCBITaxon:10116, NCBITaxon:10090, NCBITaxon:7955, NCBITaxon:7227, NCBITaxon:6239, NCBITaxon:559292'
             species_names = 'Homo sapiens, Rattus norvegicus, Mus musculus, Danio rerio, Drosophila melanogaster, Caenorhabditis elegans, Saccharomyces cerevisiae'
 
         return create_header('Expression', config_info.config['RELEASE_VERSION'],
