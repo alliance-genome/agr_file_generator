@@ -19,7 +19,7 @@ def create_header(file_type, database_version, data_format='', readme='', string
     """
 
     if stringency_filter != '':
-        stringency_filter = '# Orthology Filter: ' + stringency_filter
+        stringency_filter = '\n# Orthology Filter: ' + stringency_filter
 
     gen_time = datetime.utcnow().strftime("%Y-%m-%d %H:%M")
     to_change = {'filetype': file_type, 'taxon_ids': taxon_ids, 'database_version': database_version,

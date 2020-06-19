@@ -51,8 +51,7 @@ class ExpressionFileGenerator:
             species_names = 'Homo sapiens, Rattus norvegicus, Mus musculus, Danio rerio, Drosophila melanogaster, Caenorhabditis elegans, Saccharomyces cerevisiae'
 
         return create_header('Expression', config_info.config['RELEASE_VERSION'],
-                             stringency_filter='Stringent',
-                             taxon_ids="# TaxonIDs: " + taxon_ids,
+                             taxon_ids=taxon_ids,
                              species=species_names,
                              data_format='tsv')
 
