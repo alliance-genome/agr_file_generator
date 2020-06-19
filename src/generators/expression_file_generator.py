@@ -42,16 +42,18 @@ class ExpressionFileGenerator:
         :param taxon_ids:
         :return:
         """
-        # return cls.file_header_template.format(taxonIDs=",".join(taxon_ids),
-        #                                        datetimeNow=strftime("%Y-%m-%d %H:%M:%S", gmtime()),
-        #                                        databaseVersion=config_info.config['RELEASE_VERSION'])
 
-        species_names = ','.join(list(species.values()))
-        taxon_ids = ', '.join(species.keys())
-        return create_header('DAF file', config_info.config['RELEASE_VERSION'],
-                             stringency_filter="Stringent",
-                             taxon_ids="# TaxonIDs: " + taxon_ids,
-                             species=species_names)
+        if len(species.keys()) == 1:
+            species_names = ''.join(list(species.values()))
+            taxon_ids = '# TaxonIDs:' + ''.join(species.keys())
+        else:
+            taxon_ids = '# TaxonIDs: NCBITaxon:9606, NCBITaxon:10116, NCBITaxon:10090, NCBITaxon:7955, NCBITaxon:7227, NCBITaxon:6239, NCBITaxon:559292'
+            species_names = 'Homo sapiens, Rattus norvegicus, Mus musculus, Danio rerio, Drosophila melanogaster, Caenorhabditis elegans, Saccharomyces cerevisiae'
+
+        return create_header('Expression', config_info.config['RELEASE_VERSION'],
+                             taxon_ids=taxon_ids,
+                             species=species_names,
+                             data_format='tsv')
 
     # 'StageID', currently don't have stage IDs in the database
     def generate_file(self, upload_flag=False):

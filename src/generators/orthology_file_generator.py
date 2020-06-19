@@ -19,14 +19,16 @@ class OrthologyFileGenerator:
     @classmethod
     def _generate_header(cls, config_info):
 
-        stringency_filter = """Stringent
-#        Ortholog needs to be called by at least 3 Algorithms
-#        or is being called by either ZFIN or HGNC algorithms
-#        and either is best score or is best reverse score
-#"""
+        stringency_filter = 'Stringent'
 
-        return create_header('Orthology File', config_info.config['RELEASE_VERSION'],
-                             stringency_filter=stringency_filter, taxon_ids='#')
+        taxon_ids = '# TaxonIDs: NCBITaxon:9606, NCBITaxon:10116, NCBITaxon:10090, NCBITaxon:7955, NCBITaxon:7227, NCBITaxon:6239, NCBITaxon:559292'
+        species_names = 'Homo sapiens, Rattus norvegicus, Mus musculus, Danio rerio, Drosophila melanogaster, Caenorhabditis elegans, Saccharomyces cerevisiae'
+
+        return create_header('Orthology', config_info.config['RELEASE_VERSION'],
+                             stringency_filter=stringency_filter,
+                             taxon_ids=taxon_ids,
+                             species=species_names,
+                             data_format='tsv')
 
     def generate_file(self, upload_flag=False):
 
