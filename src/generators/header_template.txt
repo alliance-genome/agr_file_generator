@@ -5,8 +5,7 @@
 # README: %readme
 # Source: Alliance of Genome Resources (Alliance)
 # Source URL: http://alliancegenome.org/downloads
-# Help Desk: help@alliancegenome.org
-%stringency_filter
+# Help Desk: help@alliancegenome.org%stringency_filter
 %taxon_ids
 # Species: %species
 # Alliance Database Version: %database_version
