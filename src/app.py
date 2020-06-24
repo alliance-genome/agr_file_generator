@@ -5,6 +5,7 @@ import time
 import click
 import coloredlogs
 from common import ContextInfo
+from common import get_neo_uri
 from data_source import DataSource
 from generators import (daf_file_generator, db_summary_file_generator,
                         expression_file_generator,
@@ -13,15 +14,12 @@ from generators import (daf_file_generator, db_summary_file_generator,
                         uniprot_cross_reference_generator)
 
 
-port = int(os.environ.get('NEO4J_PORT', 7687))
-alliance_db_version = os.environ.get('ALLIANCE_RELEASE')
+config_info = ContextInfo()
+debug_level = logging.DEBUG if config_info.config["DEBUG"] else logging.INFO
+neo_debug_level = logging.DEBUG if config_info.config["NEO_DEBUG"] else logging.INFO
 
-context_info = ContextInfo()
-debug_level = logging.DEBUG if context_info.config["DEBUG"] else logging.INFO
-neo_debug_level = logging.DEBUG if context_info.config["NEO_DEBUG"] else logging.INFO
-
-if context_info.config["GENERATED_FILES_FOLDER"]:
-    generated_files_folder = context_info.config["GENERATED_FILES_FOLDER"]
+if config_info.config["GENERATED_FILES_FOLDER"]:
+    generated_files_folder = config_info.config["GENERATED_FILES_FOLDER"]
 else:
     generated_files_folder = os.path.join("/tmp", "agr_generated_files")
 
@@ -38,7 +36,7 @@ logging.getLogger("urllib3").setLevel(debug_level)
 logging.getLogger("neobolt").setLevel(neo_debug_level)
 logger = logging.getLogger(__name__)
 
-if context_info.config["DEBUG"]:
+if config_info.config["DEBUG"]:
     logger.warning('DEBUG mode enabled!')
 
 taxon_id_fms_subtype_map = {"NCBITaxon:10116": "RGD",
@@ -88,41 +86,31 @@ def main(vcf,
             click.echo('INFO:\tGenerating VCF files')
         else:
             click.echo('INFO:\tGenerating TAB delimited files')
-        generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, context_info, upload, tab)
+        generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, config_info, upload, tab)
     if orthology is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Orthology file')
-        generate_orthology_file(generated_files_folder, context_info, upload)
+        generate_orthology_file(generated_files_folder, config_info, upload)
     if disease is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Disease files')
-        generate_daf_file(generated_files_folder, context_info, taxon_id_fms_subtype_map, upload)
+        generate_daf_file(generated_files_folder, config_info, taxon_id_fms_subtype_map, upload)
     if expression is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Expression files')
-        generate_expression_file(generated_files_folder, context_info, taxon_id_fms_subtype_map, upload)
+        generate_expression_file(generated_files_folder, config_info, taxon_id_fms_subtype_map, upload)
     if db_summary is True or all_filetypes is True:
         click.echo('INFO:\tGenerating DB summary file')
-        generate_db_summary_file(generated_files_folder, context_info, upload)
+        generate_db_summary_file(generated_files_folder, config_info, upload)
     if gene_cross_reference is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Gene Cross Reference file')
-        generate_gene_cross_reference_file(generated_files_folder, context_info, upload)
+        generate_gene_cross_reference_file(generated_files_folder, config_info, upload)
     if uniprot is True or all_filetypes is True:
-        generate_uniprot_cross_reference(generated_files_folder, input_folder, context_info, upload)
+        generate_uniprot_cross_reference(generated_files_folder, input_folder, config_info, upload)
 
     end_time = time.time()
     elapsed_time = end_time - start_time
     click.echo('File Generator finished. Elapsed time: %s' % time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
 
 
-def get_neo_uri(context_info):
-    if context_info.config['NEO4J_HOST']:
-        uri = "bolt://" + context_info.config['NEO4J_HOST'] + ":" + str(port)
-        logger.info("Using db URI: {}".format(uri))
-        return uri
-    else:
-        logger.error("Need to set NEO4J_HOST env variable")
-        exit()
-
-
-def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, skip_chromosomes, context_info, upload_flag, tab_flag):
+def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, skip_chromosomes, config_info, upload_flag, tab_flag):
     logger.info("Querying Assembly: " + assembly)
 
     variants_query = '''MATCH (s:Species)-[:FROM_SPECIES]-(a:Allele)-[:VARIATION]-(v:Variant)-[l:LOCATED_ON]->(c:Chromosome),
@@ -161,32 +149,32 @@ def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, s
                             st.nameKey AS soTerm
                      '''
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         logger.info(variants_query)
         start_time = time.time()
         logger.info("Start time: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
 
-    data_source = DataSource(get_neo_uri(context_info), variants_query)
+    data_source = DataSource(get_neo_uri(config_info), variants_query)
     gvf = vcf_file_generator.VcfFileGenerator(data_source,
                                               generated_files_folder,
-                                              context_info)
+                                              config_info)
     gvf.generate_files(skip_chromosomes=skip_chromosomes, upload_flag=upload_flag, tab_flag=tab_flag)
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         end_time = time.time()
         logger.info("Created VCF file - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, context_info, upload_flag, tab_flag):
+def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, config_info, upload_flag, tab_flag):
     os.makedirs(generated_files_folder, exist_ok=True)
     os.makedirs(fasta_sequences_folder, exist_ok=True)
 
     assembly_query = """MATCH (a:Assembly)
                         RETURN a.primaryKey as assemblyID"""
-    assembly_data_source = DataSource(get_neo_uri(context_info), assembly_query)
+    assembly_data_source = DataSource(get_neo_uri(config_info), assembly_query)
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         start_time = time.time()
         logger.info("Start time for generating VCF files: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
 
@@ -197,17 +185,17 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
                               generated_files_folder,
                               fasta_sequences_folder,
                               skip_chromosomes,
-                              context_info,
+                              config_info,
                               upload_flag,
                               tab_flag)
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         end_time = time.time()
         logger.info("Created VCF files - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_orthology_file(generated_files_folder, context_info, upload_flag):
+def generate_orthology_file(generated_files_folder, config_info, upload_flag):
     orthology_query = '''MATCH (species1)<-[sa:FROM_SPECIES]-(gene1:Gene)-[o:ORTHOLOGOUS]->(gene2:Gene)-[sa2:FROM_SPECIES]->(species2:Species)
                        WHERE o.strictFilter
                        OPTIONAL MATCH (algorithm:OrthoAlgorithm)-[m:MATCHED]-(ogj:OrthologyGeneJoin)-[association:ASSOCIATION]-(gene1)
@@ -228,25 +216,25 @@ def generate_orthology_file(generated_files_folder, context_info, upload_flag):
                               species2.primaryKey AS species2TaxonID,
                               species2.name AS species2Name'''
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         logger.info("Orthology query")
         logger.info(orthology_query)
         start_time = time.time()
         logger.info("Start time: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
 
-    data_source = DataSource(get_neo_uri(context_info), orthology_query)
+    data_source = DataSource(get_neo_uri(config_info), orthology_query)
     of = orthology_file_generator.OrthologyFileGenerator(data_source,
                                                          generated_files_folder,
-                                                         context_info)
+                                                         config_info)
     of.generate_file(upload_flag=upload_flag)
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         end_time = time.time()
         logger.info("Created VCF file - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_daf_file(generated_files_folder, context_info, taxon_id_fms_subtype_map, upload_flag):
+def generate_daf_file(generated_files_folder, config_info, taxon_id_fms_subtype_map, upload_flag):
     daf_query = '''MATCH (disease:DOTerm)-[:ASSOCIATION]-(dej:Association:DiseaseEntityJoin)-[:ASSOCIATION]-(object)-[:FROM_SPECIES]-(species:Species)
                    WHERE (object:Gene OR object:Allele OR object:AffectedGenomicModel)
                          AND dej.joinType IN ["IS_MARKER_FOR", // need to remove when removed from database
@@ -288,26 +276,26 @@ def generate_daf_file(generated_files_folder, context_info, taxon_id_fms_subtype
                           ///takes most recent date
                           dej.dataProvider AS dataProvider'''
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         logger.info("Disease Association Query: ")
         logger.info(daf_query)
         start_time = time.time()
         logger.info("Start time: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
 
-    data_source = DataSource(get_neo_uri(context_info), daf_query)
+    data_source = DataSource(get_neo_uri(config_info), daf_query)
     daf = daf_file_generator.DafFileGenerator(data_source,
                                               generated_files_folder,
-                                              context_info,
+                                              config_info,
                                               taxon_id_fms_subtype_map)
     daf.generate_file(upload_flag=upload_flag)
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         end_time = time.time()
         logger.info("Created Disease Association file - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_expression_file(generated_files_folder, context_info, taxon_id_fms_subtype_map, upload_flag):
+def generate_expression_file(generated_files_folder, config_info, taxon_id_fms_subtype_map, upload_flag):
     expression_query = '''MATCH (speciesObj:Species)<-[:FROM_SPECIES]-(geneObj:Gene)-[:ASSOCIATION]->(begej:BioEntityGeneExpressionJoin)--(term)
                           WITH {primaryKey: speciesObj.primaryKey, name: speciesObj.name} AS species,
                                {primaryKey: geneObj.primaryKey, symbol: geneObj.symbol, dataProvider: geneObj.dataProvider} AS gene,
@@ -323,50 +311,50 @@ def generate_expression_file(generated_files_folder, context_info, taxon_id_fms_
                                           primaryKey: ontology.primaryKey,
                                           name: ontology.name}) AS ontologyPaths'''
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         logger.info("Expression query")
         logger.info(expression_query)
         start_time = time.time()
         logger.info("Start time: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
 
-    data_source = DataSource(get_neo_uri(context_info), expression_query)
+    data_source = DataSource(get_neo_uri(config_info), expression_query)
     expression = expression_file_generator.ExpressionFileGenerator(data_source,
                                                                    generated_files_folder,
-                                                                   context_info,
+                                                                   config_info,
                                                                    taxon_id_fms_subtype_map)
     expression.generate_file(upload_flag=upload_flag)
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         end_time = time.time()
         logger.info("Created Expression file - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_db_summary_file(generated_files_folder, context_info, upload_flag):
+def generate_db_summary_file(generated_files_folder, config_info, upload_flag):
     db_summary_query = '''MATCH (entity)
                           WITH labels(entity) AS entityTypes
                           RETURN count(entityTypes) AS frequency,
                           entityTypes'''
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         logger.info("DB Summary Query")
         logger.info(db_summary_query)
         start_time = time.time()
         logger.info("Start time: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
 
-    data_source = DataSource(get_neo_uri(context_info), db_summary_query)
+    data_source = DataSource(get_neo_uri(config_info), db_summary_query)
     db_summary = db_summary_file_generator.DbSummaryFileGenerator(data_source,
                                                                   generated_files_folder,
-                                                                  context_info)
+                                                                  config_info)
     db_summary.generate_file(upload_flag=upload_flag)
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         end_time = time.time()
         logger.info("Created DB Summary file - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_gene_cross_reference_file(generated_files_folder, context_info, upload_flag):
+def generate_gene_cross_reference_file(generated_files_folder, config_info, upload_flag):
     gene_cross_reference_query = '''MATCH (g:Gene)--(cr:CrossReference)
                           RETURN g.primaryKey as GeneID,
                                  cr.globalCrossRefId as GlobalCrossReferenceID,
@@ -374,41 +362,41 @@ def generate_gene_cross_reference_file(generated_files_folder, context_info, upl
                                  cr.page as ResourceDescriptorPage,
                                  g.taxonId as TaxonID'''
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         logger.info("Gene Cross Reference query")
         logger.info(gene_cross_reference_query)
         start_time = time.time()
         logger.info("Start time: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
 
-    data_source = DataSource(get_neo_uri(context_info), gene_cross_reference_query)
+    data_source = DataSource(get_neo_uri(config_info), gene_cross_reference_query)
     gene_cross_reference = gene_cross_reference_file_generator.GeneCrossReferenceFileGenerator(data_source,
                                                                                                generated_files_folder,
-                                                                                               context_info)
+                                                                                               config_info)
     gene_cross_reference.generate_file(upload_flag=upload_flag)
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         end_time = time.time()
         logger.info("Gene Cross Reference file - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_uniprot_cross_reference(generated_files_folder, input_folder, context_info, upload_flag):
+def generate_uniprot_cross_reference(generated_files_folder, input_folder, config_info, upload_flag):
     uniprot_cross_reference_query = '''MATCH (g:Gene)--(cr:CrossReference)
                                 WHERE cr.prefix = "UniProtKB"
                                 RETURN g.primaryKey as GeneID,
                                     cr.globalCrossRefId as GlobalCrossReferenceID'''
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         logger.info("UniProt Cross Reference query")
         logger.info(uniprot_cross_reference_query)
         start_time = time.time()
         logger.info("Start time: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
 
-    data_source = DataSource(get_neo_uri(context_info), uniprot_cross_reference_query)
-    ucf = uniprot_cross_reference_generator.UniProtGenerator(data_source, context_info, generated_files_folder)
+    data_source = DataSource(get_neo_uri(config_info), uniprot_cross_reference_query)
+    ucf = uniprot_cross_reference_generator.UniProtGenerator(data_source, config_info, generated_files_folder)
     ucf.generate_file(upload_flag=upload_flag)
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         end_time = time.time()
         logger.info("Created UniProt Cross Reference file - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))

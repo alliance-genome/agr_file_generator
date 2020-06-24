@@ -4,6 +4,7 @@ import json
 import csv
 
 import upload
+from common import get_ordered_species_dict
 from .header import create_header
 
 logger = logging.getLogger(name=__name__)
@@ -17,17 +18,14 @@ class OrthologyFileGenerator:
         self.generated_files_folder = generated_files_folder
 
     @classmethod
-    def _generate_header(cls, config_info):
+    def _generate_header(cls, config_info, taxon_ids):
 
         stringency_filter = 'Stringent'
 
-        taxon_ids = '# TaxonIDs: NCBITaxon:9606, NCBITaxon:10116, NCBITaxon:10090, NCBITaxon:7955, NCBITaxon:7227, NCBITaxon:6239, NCBITaxon:559292'
-        species_names = 'Homo sapiens, Rattus norvegicus, Mus musculus, Danio rerio, Drosophila melanogaster, Caenorhabditis elegans, Saccharomyces cerevisiae'
 
         return create_header('Orthology', config_info.config['RELEASE_VERSION'],
                              stringency_filter=stringency_filter,
-                             taxon_ids=taxon_ids,
-                             species=species_names,
+                             ordered_taxon_species_map=get_ordered_species_dict(config_info, taxon_ids),
                              data_format='tsv')
 
     def generate_file(self, upload_flag=False):
@@ -48,8 +46,11 @@ class OrthologyFileGenerator:
                   "IsBestRevScore"]
 
         processed_orthologs = []
+        taxon_ids = set()
         for ortholog in self.orthologs:
             num_algorithms = ortholog["numAlgorithmMatch"] + ortholog["numAlgorithmNotMatched"]
+            taxon_ids.add(ortholog["species1TaxonID"])
+            taxon_ids.add(ortholog["species2TaxonID"])
             processed_orthologs.append(dict(zip(fields, [ortholog["gene1ID"],
                                                          ortholog["gene1Symbol"],
                                                          ortholog["species1TaxonID"],
@@ -75,7 +76,7 @@ class OrthologyFileGenerator:
         tsv_filename = file_basename + ".tsv"
         tsv_filepath = os.path.join(self.generated_files_folder, tsv_filename)
         tsv_file = open(tsv_filepath, 'w')
-        tsv_file.write(self._generate_header(self.config_info))
+        tsv_file.write(self._generate_header(self.config_info, taxon_ids))
 
         tsv_writer = csv.DictWriter(tsv_file, delimiter='\t', fieldnames=fields, lineterminator="\n")
         tsv_writer.writeheader()
