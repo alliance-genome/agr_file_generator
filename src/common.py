@@ -3,7 +3,9 @@ import os
 import yaml
 import logging
 import subprocess
+from collections import OrderedDict
 
+from data_source import DataSource
 
 logger = logging.getLogger(__name__)
 
@@ -38,3 +40,28 @@ def compress(cmd):
     stdout, stderr = process.communicate()
 
     return stdout, stderr, process.returncode
+
+
+def get_neo_uri(config_info):
+    if config_info.config['NEO4J_HOST']:
+        uri = "bolt://" + config_info.config['NEO4J_HOST'] + ":" + str(config_info.config['NEO4J_PORT'])
+        if config_info.config['DEBUG']:
+            logger.info("Using db URI: {}".format(uri))
+        return uri
+    else:
+        logger.error("Need to set NEO4J_HOST env variable")
+        exit()
+
+
+def get_ordered_species_dict(config_info, taxon_ids):
+    species_query = """MATCH (s:Species)
+                       RETURN s
+                       ORDER BY s.phylogeneticOrder"""
+    species_data_source = DataSource(get_neo_uri(config_info), species_query)
+
+    species = OrderedDict()
+    for record in species_data_source:
+        if record["s"]["primaryKey"] in taxon_ids:
+            species[record["s"]["primaryKey"]] = record["s"]["species"]
+
+    return species

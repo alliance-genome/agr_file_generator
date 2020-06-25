@@ -17,15 +17,10 @@ class UniProtGenerator:
 
     def _write_uniprot_file(cls, relationships, tab_file):
         logger.info('Writing output file')
-        output_file = open(cls.generated_files_folder + '/' + tab_file, 'w')
-        output_file.write(cls.file_header + '\n')
-        output_file.close()
-
-        with open(cls.generated_files_folder + '/' + tab_file, 'a') as tsvfile:
-            writer = csv.writer(tsvfile, delimiter='\t')
+        with open(cls.generated_files_folder + '/' + tab_file, 'w') as tsvfile:
+            tsvfile.write(cls.file_header + "\n")
             for item in relationships:
-                writer.writerow([item['GlobalCrossReferenceID'], item['GeneID']])
-        tsvfile.close()
+                tsvfile.write(item['GlobalCrossReferenceID'] + "\t" + item['GeneID'] + "\n")
 
     def generate_file(self, upload_flag=False):
         self._write_uniprot_file(self.relationships, 'CROSSREFERENCEUNIPROT_COMBINED.tsv')

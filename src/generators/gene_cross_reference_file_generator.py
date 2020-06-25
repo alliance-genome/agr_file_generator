@@ -11,6 +11,7 @@ import logging
 import csv
 import json
 
+from common import get_ordered_species_dict
 from upload import upload
 from .header import create_header
 
@@ -34,17 +35,16 @@ class GeneCrossReferenceFileGenerator:
         self.generated_files_folder = generated_files_folder
 
     @classmethod
-    def _generate_header(cls, config_info):
+    def _generate_header(cls, config_info, taxon_ids):
         """
 
         :param config_info:
         :return:
         """
-        taxon_ids = '# TaxonIDs: NCBITaxon:9606, NCBITaxon:10116, NCBITaxon:10090, NCBITaxon:7955, NCBITaxon:7227, NCBITaxon:6239, NCBITaxon:559292'
-        species_names = 'Homo sapiens, Rattus norvegicus, Mus musculus, Danio rerio, Drosophila melanogaster, Caenorhabditis elegans, Saccharomyces cerevisiae'
 
-        return create_header('Gene Cross Reference', config_info.config['RELEASE_VERSION'],
-                             species=species_names, taxon_ids=taxon_ids)
+        return create_header('Gene Cross Reference',
+                             config_info.config['RELEASE_VERSION'],
+                             ordered_taxon_species_map=get_ordered_species_dict(config_info, taxon_ids))
 
     def generate_file(self, upload_flag=False):
         """
@@ -57,16 +57,16 @@ class GeneCrossReferenceFileGenerator:
         output_filepath = os.path.join(self.generated_files_folder, TSVfilename)
         output_filepath_json = os.path.join(self.generated_files_folder, JSONfilename)
         gene_cross_reference_file = open(output_filepath, 'w')
-        gene_cross_reference_file.write(self._generate_header(self.config_info))
+
         columns = ['GeneID',
                    'GlobalCrossReferenceID',
                    'CrossReferenceCompleteURL',
                    'ResourceDescriptorPage',
                    'TaxonID']
 
-        tsv_writer = csv.DictWriter(gene_cross_reference_file, delimiter='\t', fieldnames=columns, lineterminator="\n")
-        tsv_writer.writeheader()
         listofxrefs = []
+        taxon_ids = set()
+        rows = []
         for data in self.gene_cross_references:
             listofxrefs.append(data)
             row = dict(zip(columns, [None] * len(columns)))
@@ -75,8 +75,13 @@ class GeneCrossReferenceFileGenerator:
             row['CrossReferenceCompleteURL'] = data['CrossReferenceCompleteURL']
             row['ResourceDescriptorPage'] = data['ResourceDescriptorPage']
             row['TaxonID'] = data['TaxonID']
-            tsv_writer.writerows([row])
+            taxon_ids.add(data['TaxonID'])
+            rows.append(row)
 
+        gene_cross_reference_file.write(self._generate_header(self.config_info, taxon_ids))
+        tsv_writer = csv.DictWriter(gene_cross_reference_file, delimiter='\t', fieldnames=columns, lineterminator="\n")
+        tsv_writer.writeheader()
+        tsv_writer.writerows(rows)
         gene_cross_reference_file.close()
 
         with open(output_filepath_json, 'w') as outfile:
