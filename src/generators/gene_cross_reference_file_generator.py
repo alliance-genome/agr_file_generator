@@ -11,7 +11,6 @@ import logging
 import csv
 import json
 
-from common import get_ordered_species_dict
 from upload import upload
 from .header import create_header
 
@@ -44,7 +43,8 @@ class GeneCrossReferenceFileGenerator:
 
         return create_header('Gene Cross Reference',
                              config_info.config['RELEASE_VERSION'],
-                             ordered_taxon_species_map=get_ordered_species_dict(config_info, taxon_ids))
+                             config_info=config_info,
+                             taxon_ids=taxon_ids)
 
     def generate_file(self, upload_flag=False):
         """

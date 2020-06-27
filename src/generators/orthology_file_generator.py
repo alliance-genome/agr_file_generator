@@ -4,7 +4,6 @@ import json
 import csv
 
 import upload
-from common import get_ordered_species_dict
 from .header import create_header
 
 logger = logging.getLogger(name=__name__)
@@ -22,10 +21,10 @@ class OrthologyFileGenerator:
 
         stringency_filter = 'Stringent'
 
-
         return create_header('Orthology', config_info.config['RELEASE_VERSION'],
                              stringency_filter=stringency_filter,
-                             ordered_taxon_species_map=get_ordered_species_dict(config_info, taxon_ids),
+                             config_info=config_info,
+                             taxon_ids=taxon_ids,
                              data_format='tsv')
 
     def generate_file(self, upload_flag=False):

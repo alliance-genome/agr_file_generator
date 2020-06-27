@@ -13,6 +13,7 @@ from generators import (daf_file_generator, db_summary_file_generator,
                         orthology_file_generator, vcf_file_generator,
                         uniprot_cross_reference_generator)
 
+from common import ordered_taxon_species_map_from_data_dictionary
 
 config_info = ContextInfo()
 debug_level = logging.DEBUG if config_info.config["DEBUG"] else logging.INFO

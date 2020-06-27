@@ -12,7 +12,6 @@ import json
 import csv
 import upload
 from .header import create_header
-from common import get_ordered_species_dict
 
 logger = logging.getLogger(name=__name__)
 
@@ -46,7 +45,8 @@ class ExpressionFileGenerator:
 
         return create_header('Expression',
                              config_info.config['RELEASE_VERSION'],
-                             ordered_taxon_species_map=get_ordered_species_dict(config_info, taxon_ids),
+                             taxon_ids=taxon_ids,
+                             config_info=config_info,
                              data_format='tsv')
 
     # 'StageID', currently don't have stage IDs in the database
