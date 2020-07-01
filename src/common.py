@@ -1,9 +1,12 @@
 import os
 
+import requests
 import yaml
 import logging
 import subprocess
+from collections import OrderedDict
 
+from data_source import DataSource
 
 logger = logging.getLogger(__name__)
 
@@ -38,3 +41,46 @@ def compress(cmd):
     stdout, stderr = process.communicate()
 
     return stdout, stderr, process.returncode
+
+
+def get_neo_uri(config_info):
+    if config_info.config['NEO4J_HOST']:
+        uri = "bolt://" + config_info.config['NEO4J_HOST'] + ":" + str(config_info.config['NEO4J_PORT'])
+        if config_info.config['DEBUG']:
+            logger.info("Using db URI: {}".format(uri))
+        return uri
+    else:
+        logger.error("Need to set NEO4J_HOST env variable")
+        exit()
+
+
+def get_ordered_species_dict(config_info, taxon_ids):
+    species_query = """MATCH (s:Species)
+                       RETURN s
+                       ORDER BY s.phylogeneticOrder"""
+    species_data_source = DataSource(get_neo_uri(config_info), species_query)
+
+    species = OrderedDict()
+    for record in species_data_source:
+        if record["s"]["primaryKey"] in taxon_ids:
+            species[record["s"]["primaryKey"]] = record["s"]["species"]
+
+    return species
+
+
+def ordered_taxon_species_map_from_data_dictionary(taxon_ids):
+    species_url = 'https://raw.githubusercontent.com/alliance-genome/agr_schemas/master/ingest/species/species.yaml'
+    logger.info('Reading in ' + species_url)
+    response = requests.get(species_url)
+
+    if response.status_code == 200:
+        species_yaml = yaml.load(response.content, Loader=yaml.FullLoader)
+        species = OrderedDict()
+        for species_obj in sorted(species_yaml, key=lambda x: x['phylogenicOrder']):
+            if species_obj['taxonId'] in taxon_ids:
+                species[species_obj['taxonId']] = species_obj['fullName']
+
+        return species
+    else:
+        logger.critical('unable to download ' + species_url + ' with status code: ' + str(response.status_code))
+        exit(-1)

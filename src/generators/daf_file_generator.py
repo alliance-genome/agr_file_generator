@@ -39,7 +39,7 @@ class DafFileGenerator:
         self.generated_files_folder = generated_files_folder
 
     @classmethod
-    def _generate_header(cls, config_info, species):
+    def _generate_header(cls, config_info, taxon_ids):
         """
         TBA
 
@@ -50,19 +50,11 @@ class DafFileGenerator:
 
         stringency_filter = 'Stringent'
 
-        if len(species.keys()) == 1:
-            species_names = ''.join(list(species.values()))
-            taxon_ids = '# TaxonIDs: ' + ''.join(species.keys())
-        else:
-            taxon_ids = '# TaxonIDs: NCBITaxon:9606, NCBITaxon:10116, NCBITaxon:10090, NCBITaxon:7955, NCBITaxon:7227, NCBITaxon:6239, NCBITaxon:559292'
-            species_names = 'Homo sapiens, Rattus norvegicus, Mus musculus, Danio rerio, Drosophila melanogaster, Caenorhabditis elegans, Saccharomyces cerevisiae'
-
         return create_header('Disease', config_info.config['RELEASE_VERSION'],
                              taxon_ids=taxon_ids,
-                             species=species_names,
+                             config_info=config_info,
                              data_format='tsv',
                              stringency_filter=stringency_filter)
-
 
     def generate_file(self, upload_flag=False):
         """
