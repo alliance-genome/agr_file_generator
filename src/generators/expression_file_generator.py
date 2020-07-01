@@ -35,7 +35,7 @@ class ExpressionFileGenerator:
         self.generated_files_folder = generated_files_folder
 
     @classmethod
-    def _generate_header(cls, config_info, species):
+    def _generate_header(cls, config_info, taxon_ids):
         """
 
         :param config_info:
@@ -43,16 +43,10 @@ class ExpressionFileGenerator:
         :return:
         """
 
-        if len(species.keys()) == 1:
-            species_names = ''.join(list(species.values()))
-            taxon_ids = '# TaxonIDs:' + ''.join(species.keys())
-        else:
-            taxon_ids = '# TaxonIDs: NCBITaxon:9606, NCBITaxon:10116, NCBITaxon:10090, NCBITaxon:7955, NCBITaxon:7227, NCBITaxon:6239, NCBITaxon:559292'
-            species_names = 'Homo sapiens, Rattus norvegicus, Mus musculus, Danio rerio, Drosophila melanogaster, Caenorhabditis elegans, Saccharomyces cerevisiae'
-
-        return create_header('Expression', config_info.config['RELEASE_VERSION'],
+        return create_header('Expression',
+                             config_info.config['RELEASE_VERSION'],
                              taxon_ids=taxon_ids,
-                             species=species_names,
+                             config_info=config_info,
                              data_format='tsv')
 
     # 'StageID', currently don't have stage IDs in the database
@@ -165,7 +159,7 @@ class ExpressionFileGenerator:
 
         combined_filepath_tsv = combined_file_basepath + '.tsv'
         combined_expression_file = open(combined_filepath_tsv, 'w')
-        combined_expression_file.write(self._generate_header(self.config_info, species))
+        combined_expression_file.write(self._generate_header(self.config_info, species.keys()))
         combined_tsv_writer = csv.DictWriter(combined_expression_file, delimiter='\t', fieldnames=fields, lineterminator="\n")
         combined_tsv_writer.writeheader()
 
