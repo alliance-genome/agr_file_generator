@@ -57,7 +57,6 @@ taxon_id_fms_subtype_map = {"NCBITaxon:10116": "RGD",
 @click.option('--db-summary', is_flag=True, help='Generates summary of database contents')
 @click.option('--gene-cross-reference', is_flag=True, help='Generates a file of cross references for gene objects')
 @click.option('--all-filetypes', is_flag=True, help='Generates all filetypes')
-@click.option('--tab', is_flag=True, help='Generates tab delimited files with VCF info columns contents')
 @click.option('--uniprot', is_flag=True, help='Generates a file of gene and uniprot cross references')
 @click.option('--upload', is_flag=True, help='Submits generated files to File Management System (FMS)')
 def main(vcf,
@@ -68,7 +67,6 @@ def main(vcf,
          gene_cross_reference,
          all_filetypes,
          upload,
-         tab,
          uniprot,
          generated_files_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output',
          input_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/input',
@@ -83,11 +81,8 @@ def main(vcf,
 
     click.echo('INFO:\tFiles output: ' + generated_files_folder)
     if vcf is True or all_filetypes is True:
-        if not tab:
-            click.echo('INFO:\tGenerating VCF files')
-        else:
-            click.echo('INFO:\tGenerating TAB delimited files')
-        generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, config_info, upload, tab)
+        click.echo('INFO:\tGenerating VCF files')
+        generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, config_info, upload)
     if orthology is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Orthology file')
         generate_orthology_file(generated_files_folder, config_info, upload)
@@ -111,7 +106,7 @@ def main(vcf,
     click.echo('File Generator finished. Elapsed time: %s' % time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
 
 
-def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, skip_chromosomes, config_info, upload_flag, tab_flag):
+def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, skip_chromosomes, config_info, upload_flag):
     logger.info("Querying Assembly: " + assembly)
 
     variants_query = '''MATCH (s:Species)-[:FROM_SPECIES]-(a:Allele)-[:VARIATION]-(v:Variant)-[l:LOCATED_ON]->(c:Chromosome),
@@ -159,7 +154,7 @@ def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, s
     gvf = vcf_file_generator.VcfFileGenerator(data_source,
                                               generated_files_folder,
                                               config_info)
-    gvf.generate_files(skip_chromosomes=skip_chromosomes, upload_flag=upload_flag, tab_flag=tab_flag)
+    gvf.generate_files(skip_chromosomes=skip_chromosomes, upload_flag=upload_flag)
 
     if config_info.config["DEBUG"]:
         end_time = time.time()
@@ -167,7 +162,7 @@ def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, s
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, config_info, upload_flag, tab_flag):
+def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, config_info, upload_flag):
     os.makedirs(generated_files_folder, exist_ok=True)
     os.makedirs(fasta_sequences_folder, exist_ok=True)
 
@@ -187,8 +182,7 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
                               fasta_sequences_folder,
                               skip_chromosomes,
                               config_info,
-                              upload_flag,
-                              tab_flag)
+                              upload_flag)
 
     if config_info.config["DEBUG"]:
         end_time = time.time()
