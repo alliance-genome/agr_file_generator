@@ -17,36 +17,6 @@ class VcfFileGenerator:
 
     empty_value_marker = '.'
 
-    file_header = """##contig=<ID=,length=,assembly={assembly},md5=,species="{species}",taxonomy=x>
-##fileDate={datetime}
-##fileformat=VCFv4.2
-##ALT=<ID=R,Description="IUPAC code R = A/G">
-##ALT=<ID=Y,Description="IUPAC code Y = C/T">
-##ALT=<ID=S,Description="IUPAC code S = C/G">
-##ALT=<ID=W,Description="IUPAC code W = A/T">
-##ALT=<ID=M,Description="IUPAC code M = A/C">
-##ALT=<ID=K,Description="IUPAC code K = T/G">
-##ALT=<ID=B,Description="IUPAC code B = C/G/T">
-##ALT=<ID=D,Description="IUPAC code D = A/G/T">
-##ALT=<ID=H,Description="IUPAC code H = A/C/T">
-##ALT=<ID=V,Description="IUPAC code V = A/C/G">
-##INFO=<ID=hgvs_nomenclature,Number=1,Type=String,Description="the HGVS name of the allele">
-##INFO=<ID=geneLevelConsequence,Number=.,Type=String,Description="VEP consequence of the variant on the Gene">
-##INFO=<ID=transcriptLevelConsequence,Number=.,Type=String,Description="VEP consequence of the variant on the Transcript">
-##INFO=<ID=geneImpact,Number=1,Type=String,Description="Variant impact scale for Gene">
-##INFO=<ID=transcriptImpact,Number=.,Type=String,Description="Variant impact scale for Transcript">
-##INFO=<ID=allele_ids,Number=.,Type=String,Description="The ID of the Allele">
-##INFO=<ID=allele_symbols,Number=.,Type=String,Description="The human readable name of the Allele">
-##INFO=<ID=allele_symbols_text,Number=.,Type=String,Description="Another human readable representation of the allele">
-##INFO=<ID=soTerm,Number=1,Type=String,Description="The Sequence Ontology term for the variant">
-##INFO=<ID=allele_of_gene_ids,Number=1,Type=String,Description="The gene ids that the Allele is located on">
-##INFO=<ID=allele_of_gene_symbols,Number=1,Type=String,Description="The gene names that the Allele is located on">
-##INFO=<ID=allele_of_transcript_ids,Number=.,Type=String,Description="The gene ids that the Allele is located on">
-##INFO=<ID=allele_of_transcript_gff3_ids,Number=.,Type=String,Description="The transcript gff3ID that the Allele is located on">
-##INFO=<ID=allele_of_transcript_gff3_names,Number=.,Type=String,Description="The transcript gff3 Names that the Allele is located on">
-##phasing=partial
-##source=AGR VCF File generator"""
-
     col_headers = ('CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO')
 
     def __init__(self, variants, generated_files_folder, config_info):
@@ -64,22 +34,15 @@ class VcfFileGenerator:
     @classmethod
     def _write_vcf_header(cls, vcf_file, assembly, species, config_info):
         dt = time.strftime("%Y%m%d", time.gmtime())
-        header = cls.file_header.format(datetime=dt,
-                                        database_version=config_info.config['RELEASE_VERSION'],
-                                        species=species,
-                                        assembly=assembly)
+        my_path = os.path.abspath(os.path.dirname(__file__))
+        vcf_header_path = my_path + '/vcf_header_template.txt'
+        header = open(vcf_header_path).read().format(datetime=dt,
+                                                     database_version=config_info.config['RELEASE_VERSION'],
+                                                     species=species,
+                                                     assembly=assembly)
         vcf_file.write(header)
-        vcf_file.write('\n')
         vcf_file.write('#' + '\t'.join(cls.col_headers))
         vcf_file.write('\n')
-
-    @classmethod
-    def _write_tab_delimited_header(cls, tab_delimited_file, assembly, species, config_info):
-        dt = time.strftime("%Y%m%d", time.gmtime())
-        tab_delimited_file.write(dt)
-        tab_delimited_file.write('\n')
-        tab_delimited_file.write('HGVS\tConsequence\tSymbol\tAlleles\tAllele of genes\tSymbol (text)')
-        tab_delimited_file.write('\n')
 
     @classmethod
     def _variant_value_for_file(cls, variant, data_key, transform=None):
@@ -166,14 +129,16 @@ class VcfFileGenerator:
                 variant['allele_ids'].append(allele['id'])
             else:
                 variant['allele_ids'] = [allele['id']]
+            allele_symbol = allele['symbol']
+            allele_symbol_text = allele['symbolText']
             if 'alleleSymbols' in variant:
-                variant['alleleSymbols'].append(allele['symbol'])
+                variant['alleleSymbols'].append(allele_symbol)
             else:
-                variant['alleleSymbols'] = [allele['symbol']]
+                variant['alleleSymbols'] = [allele_symbol]
             if 'alleleSymbolText' in variant:
-                variant['alleleSymbolText'].append(allele['symbolText'])
+                variant['alleleSymbolText'].append(allele_symbol_text)
             else:
-                variant['alleleSymbolText'] = [allele['symbolText']]
+                variant['alleleSymbolText'] = [allele_symbol_text]
 
         info_map['allele_ids'] = cls._variant_value_for_file(variant, 'allele_ids', transform=','.join)
         info_map['allele_symbols'] = cls._variant_value_for_file(variant, 'alleleSymbols', transform=','.join)
@@ -205,31 +170,6 @@ class VcfFileGenerator:
                                   '.',
                                   info]))
         vcf_file.write('\n')
-
-    @classmethod
-    def _add_variant_to_tab_file(cls, tab_delimited_file, variant):
-        info_map = OrderedDict()
-        info_map['hgvs_nomenclature'] = cls._variant_value_for_file(variant, 'hgvsNomenclature')
-        if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
-            info_map['geneLevelConsequence'] = ' '.join(cls._variant_value_for_file(variant, 'geneLevelConsequence').split('_'))
-        else:
-            info_map['geneLevelConsequence'] = cls._variant_value_for_file(variant, 'geneLevelConsequence')
-        if cls._variant_value_for_file(variant, 'geneLevelConsequence') is not None:
-            info_map['impact'] = ' '.join(cls._variant_value_for_file(variant, 'impact'))
-        else:
-            info_map['impact'] = cls._variant_value_for_file(variant, 'impact')
-
-        info_map['alleleSymbol'] = cls._variant_value_for_file(variant, 'alleleSymbol')
-        info_map['globalId'] = variant['globalId']
-        info_map['allele_ids'] = cls._variant_value_for_file(variant, 'allele_ids', transform=', '.join)
-        info_map['allele_of_genes'] = cls._variant_value_for_file(variant, 'alleleOfGenes', transform=', '.join)
-        info_map['symbol_text'] = cls._variant_value_for_file(variant, 'symbolText')
-        if any(info_map.values()):
-            info = '\t'.join(v for (k, v) in info_map.items() if v)
-        else:
-            info = cls.empty_value_marker
-        tab_delimited_file.write(info)
-        tab_delimited_file.write('\n')
 
     def _consume_data_source(self):
         assembly_chr_variants = defaultdict(lambda: defaultdict(list))
@@ -297,43 +237,24 @@ class VcfFileGenerator:
             return None
         return variant
 
-    def generate_files(self, skip_chromosomes=(), upload_flag=False, tab_flag=False):
+    def generate_files(self, skip_chromosomes=(), upload_flag=False):
         (assembly_chr_variants, assembly_species) = self._consume_data_source()
         for (assembly, chromo_variants) in assembly_chr_variants.items():
             filename = assembly + '-' + self.config_info.config['RELEASE_VERSION'] + '.vcf'
-            tab_filename = assembly + '-' + self.config_info.config['RELEASE_VERSION'] + '.txt'
             filepath = os.path.join(self.generated_files_folder, filename)
-            filepath_tab = os.path.join(self.generated_files_folder, tab_filename)
-            if not tab_flag:
-                logger.info('Generating VCF File for assembly %r', assembly)
-                with open(filepath, 'w') as vcf_file:
-                    self._write_vcf_header(vcf_file, assembly,
-                                           assembly_species[assembly],
-                                           self.config_info)
-                    for (chromosome, variants) in sorted(chromo_variants.items(), key=itemgetter(0)):
-                        # print(variants)
-                        if chromosome in skip_chromosomes:
-                            logger.info('Skipping VCF file generation for chromosome %r', chromosome)
-                            continue
-                        adjust_varient = partial(self._adjust_variant)
-                        adjusted_variants = filter(None, map(adjust_varient, variants))
-                        for variant in sorted(adjusted_variants, key=itemgetter('POS')):
-                            self._add_variant_to_vcf_file(vcf_file, variant)
-            else:
-                logger.info('Generating TAB delimited File for assembly %r', assembly)
-                with open(filepath_tab, 'w') as tab_delimited_file:
-                    self._write_tab_delimited_header(tab_delimited_file, assembly,
-                                                     assembly_species[assembly],
-                                                     self.config_info)
-                    for (chromosome, variants) in sorted(chromo_variants.items(), key=itemgetter(0)):
-                        if chromosome in skip_chromosomes:
-                            logger.info('Skipping tab delimited file generation for chromosome %r', chromosome)
-                            continue
-                        adjust_varient = partial(self._adjust_variant)
-                        adjusted_variants = filter(None, map(adjust_varient, variants))
-                        for variant in sorted(adjusted_variants, key=itemgetter('POS')):
-                            self._add_variant_to_tab_file(tab_delimited_file, variant)
-
+            logger.info('Generating VCF File for assembly %r', assembly)
+            with open(filepath, 'w') as vcf_file:
+                self._write_vcf_header(vcf_file, assembly,
+                                       assembly_species[assembly],
+                                       self.config_info)
+                for (chromosome, variants) in sorted(chromo_variants.items(), key=itemgetter(0)):
+                    if chromosome in skip_chromosomes:
+                        logger.info('Skipping VCF file generation for chromosome %r', chromosome)
+                        continue
+                    adjust_varient = partial(self._adjust_variant)
+                    adjusted_variants = filter(None, map(adjust_varient, variants))
+                    for variant in sorted(adjusted_variants, key=itemgetter('POS')):
+                        self._add_variant_to_vcf_file(vcf_file, variant)
             stdout, stderr, return_code = compress('bgzip -c ' + filepath + ' > ' + filepath + '.gz')
             if return_code == 0:
                 logger.info(filepath + ' compressed successfully')

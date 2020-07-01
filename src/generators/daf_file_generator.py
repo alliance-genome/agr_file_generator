@@ -200,7 +200,6 @@ class DafFileGenerator:
 
         combined_filepath_tsv = combined_file_basepath + '.tsv'
         combined_disease_file = open(combined_filepath_tsv, 'w')
-        # combined_disease_file.write(self._generate_header(self.config_info, set(processed_disease_associations_tsv.keys()), species.values()))
         combined_disease_file.write(self._generate_header(self.config_info, species))
         combined_tsv_writer = csv.DictWriter(combined_disease_file, delimiter='\t', fieldnames=fields, lineterminator="\n")
         combined_tsv_writer.writeheader()
