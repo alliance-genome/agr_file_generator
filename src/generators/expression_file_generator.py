@@ -35,7 +35,7 @@ class ExpressionFileGenerator:
         self.generated_files_folder = generated_files_folder
 
     @classmethod
-    def _generate_header(cls, config_info, taxon_ids):
+    def _generate_header(cls, config_info, taxon_ids, data_format):
         """
 
         :param config_info:
@@ -47,7 +47,7 @@ class ExpressionFileGenerator:
                              config_info.config['RELEASE_VERSION'],
                              taxon_ids=taxon_ids,
                              config_info=config_info,
-                             data_format='tsv')
+                             data_format=data_format)
 
     # 'StageID', currently don't have stage IDs in the database
     def generate_file(self, upload_flag=False):
@@ -159,20 +159,23 @@ class ExpressionFileGenerator:
 
         combined_filepath_tsv = combined_file_basepath + '.tsv'
         combined_expression_file = open(combined_filepath_tsv, 'w')
-        combined_expression_file.write(self._generate_header(self.config_info, species.keys()))
+        combined_expression_file.write(self._generate_header(self.config_info, species.keys(), 'tsv'))
         combined_tsv_writer = csv.DictWriter(combined_expression_file, delimiter='\t', fieldnames=fields, lineterminator="\n")
         combined_tsv_writer.writeheader()
 
         combined_filepath_json = combined_file_basepath + '.json'
         with open(combined_filepath_json, 'w') as outfile:
-            json.dump(sum(associations.values(), []), outfile)
+            contents = {'metadata': self._generate_header(self.config_info, species.keys(), 'json'),
+                        'data': sum(associations.values(), [])}
+            json.dump(contents, outfile)
 
         for taxon_id in associations:
-            species_name = species[taxon_id]
             taxon_file_basepath = os.path.join(self.generated_files_folder, file_basename + '.' + taxon_id)
             taxon_filepath_json = taxon_file_basepath + '.json'
             with open(taxon_filepath_json, 'w') as f:
-                json.dump(associations[taxon_id], f)
+                contents = {'metadata': self._generate_header(self.config_info, [taxon_id], 'json'),
+                            'data': associations[taxon_id]}
+                json.dump(contents, f)
 
             logger.info(taxon_id)
             for association in associations[taxon_id]:
@@ -183,7 +186,7 @@ class ExpressionFileGenerator:
             combined_tsv_writer.writerows(associations[taxon_id])
             taxon_filename_tsv = taxon_file_basepath + '.tsv'
             with open(taxon_filename_tsv, 'w') as f:
-                f.write(self._generate_header(self.config_info, {taxon_id: species_name}))
+                f.write(self._generate_header(self.config_info, [taxon_id], 'tsv'))
                 tsv_writer = csv.DictWriter(f, delimiter='\t', fieldnames=fields, lineterminator="\n")
                 tsv_writer.writeheader()
                 tsv_writer.writerows(associations[taxon_id])
