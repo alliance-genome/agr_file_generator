@@ -17,15 +17,13 @@ class OrthologyFileGenerator:
         self.generated_files_folder = generated_files_folder
 
     @classmethod
-    def _generate_header(cls, config_info, taxon_ids):
-
-        stringency_filter = 'Stringent'
+    def _generate_header(cls, config_info, taxon_ids, data_format):
 
         return create_header('Orthology', config_info.config['RELEASE_VERSION'],
-                             stringency_filter=stringency_filter,
+                             stringency_filter='Stringent',
                              config_info=config_info,
                              taxon_ids=taxon_ids,
-                             data_format='tsv')
+                             data_format=data_format)
 
     def generate_file(self, upload_flag=False):
 
@@ -67,7 +65,9 @@ class OrthologyFileGenerator:
         json_filename = file_basename + ".json"
         json_filepath = os.path.join(self.generated_files_folder, json_filename)
         with open(json_filepath, 'w') as outfile:
-            json.dump(processed_orthologs, outfile)
+            contents = {'metadata': self._generate_header(self.config_info, taxon_ids, 'json'),
+                        'data': processed_orthologs}
+            json.dump(contents, outfile)
 
         for processed_ortholog in processed_orthologs:
             processed_ortholog['Algorithms'] = "|".join(set(processed_ortholog['Algorithms']))
@@ -75,7 +75,7 @@ class OrthologyFileGenerator:
         tsv_filename = file_basename + ".tsv"
         tsv_filepath = os.path.join(self.generated_files_folder, tsv_filename)
         tsv_file = open(tsv_filepath, 'w')
-        tsv_file.write(self._generate_header(self.config_info, taxon_ids))
+        tsv_file.write(self._generate_header(self.config_info, taxon_ids, 'tsv'))
 
         tsv_writer = csv.DictWriter(tsv_file, delimiter='\t', fieldnames=fields, lineterminator="\n")
         tsv_writer.writeheader()

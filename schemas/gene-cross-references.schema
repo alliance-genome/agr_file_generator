@@ -57,63 +57,28 @@
       "items": {
         "type": "object",
         "properties": {
-          "Gene1ID": {
+          "GeneID": {
             "type": "string"
           },
-          "Gene1Symbol": {
+          "GlobalCrossReferenceID": {
             "type": "string"
           },
-          "Gene1SpeciesTaxonID": {
+          "CrossReferenceCompleteURL": {
             "type": "string"
           },
-          "Gene1SpeciesName": {
+          "ResourceDescriptorPage": {
             "type": "string"
           },
-          "Gene2ID": {
-            "type": "string"
-          },
-          "Gene2Symbol": {
-            "type": "string"
-          },
-          "Gene2SpeciesTaxonID": {
-            "type": "string"
-          },
-          "Gene2SpeciesName": {
-            "type": "string"
-          },
-          "Algorithms": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "AlgorithmsMatch": {
-            "type": "string"
-          },
-          "OutOfAlgorithms": {
-            "type": "integer"
-          },
-          "IsBestScore": {
-            "type": "string"
-          },
-          "IsBestRevScore": {
+          "TaxonID": {
             "type": "string"
           }
         },
         "required": [
-          "Algorithms",
-          "AlgorithmsMatch",
-          "Gene1ID",
-          "Gene1SpeciesName",
-          "Gene1SpeciesTaxonID",
-          "Gene1Symbol",
-          "Gene2ID",
-          "Gene2SpeciesName",
-          "Gene2SpeciesTaxonID",
-          "Gene2Symbol",
-          "IsBestRevScore",
-          "IsBestScore",
-          "OutOfAlgorithms"
+          "CrossReferenceCompleteURL",
+          "GeneID",
+          "GlobalCrossReferenceID",
+          "ResourceDescriptorPage",
+          "TaxonID"
         ]
       }
     }

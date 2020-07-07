@@ -1,5 +1,5 @@
 """
-.. module:: daf_file_generators
+.. module:: disease_file_generators
     :platform: any
     :synopsis: Module that generates the Disease Association Format files for AGR data
 .. moduleauthor:: AGR consortium
@@ -20,7 +20,7 @@ from .header import create_header
 logger = logging.getLogger(name=__name__)
 
 
-class DafFileGenerator:
+class DiseaseFileGenerator:
     """
     TBA
     """
@@ -39,7 +39,7 @@ class DafFileGenerator:
         self.generated_files_folder = generated_files_folder
 
     @classmethod
-    def _generate_header(cls, config_info, taxon_ids):
+    def _generate_header(cls, config_info, taxon_ids, data_format):
         """
         TBA
 
@@ -48,13 +48,11 @@ class DafFileGenerator:
         :return:
         """
 
-        stringency_filter = 'Stringent'
-
         return create_header('Disease', config_info.config['RELEASE_VERSION'],
                              taxon_ids=taxon_ids,
                              config_info=config_info,
-                             data_format='tsv',
-                             stringency_filter=stringency_filter)
+                             data_format=data_format,
+                             stringency_filter='Stringent')
 
     def generate_file(self, upload_flag=False):
         """
@@ -195,32 +193,33 @@ class DafFileGenerator:
                     processed_disease_associations_tsv[taxon_id] = [processed_association_tsv]
                     processed_disease_associations[taxon_id] = [processed_association]
 
-        file_basename = "agr-daf-" + self.config_info.config['RELEASE_VERSION']
+        file_basename = "agr-disease-" + self.config_info.config['RELEASE_VERSION']
         combined_file_basepath = os.path.join(self.generated_files_folder, file_basename + '.combined')
 
         combined_filepath_tsv = combined_file_basepath + '.tsv'
         combined_disease_file = open(combined_filepath_tsv, 'w')
-        combined_disease_file.write(self._generate_header(self.config_info, species))
+        combined_disease_file.write(self._generate_header(self.config_info, species, 'tsv'))
         combined_tsv_writer = csv.DictWriter(combined_disease_file, delimiter='\t', fieldnames=fields, lineterminator="\n")
         combined_tsv_writer.writeheader()
 
         combined_filepath_json = combined_file_basepath + '.json'
         with open(combined_filepath_json, 'w') as outfile:
-            json.dump(sum(processed_disease_associations.values(), []), outfile)
+            content = {'metadata': self._generate_header(self.config_info, species, 'json'),
+                       'data': sum(processed_disease_associations.values(), [])}
+            json.dump(content, outfile)
 
         for taxon_id in processed_disease_associations:
-            file_species = species[taxon_id]
-
             combined_tsv_writer.writerows(processed_disease_associations_tsv[taxon_id])
-
             taxon_file_basepath = os.path.join(self.generated_files_folder, file_basename + '.' + taxon_id)
             taxon_filepath_json = taxon_file_basepath + '.json'
             with open(taxon_filepath_json, 'w') as f:
-                json.dump(processed_disease_associations[taxon_id], f)
+                contents = {'metadata': self._generate_header(self.config_info, [taxon_id], 'json'),
+                            'data': processed_disease_associations[taxon_id]}
+                json.dump(contents, f)
 
             taxon_filename_tsv = taxon_file_basepath + '.tsv'
             with open(taxon_filename_tsv, 'w') as f:
-                f.write(self._generate_header(self.config_info, {taxon_id: file_species}))
+                f.write(self._generate_header(self.config_info, [taxon_id], 'tsv'))
                 tsv_writer = csv.DictWriter(f, delimiter='\t', fieldnames=fields, lineterminator="\n")
                 tsv_writer.writeheader()
                 tsv_writer.writerows(processed_disease_associations_tsv[taxon_id])
