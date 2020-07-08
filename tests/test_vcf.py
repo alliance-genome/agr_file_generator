@@ -2,8 +2,8 @@
 from click.testing import CliRunner
 import logging
 import os
-import glob
 import sys
+import pytest
 from collections import OrderedDict
 from operator import itemgetter
 from itertools import groupby
@@ -14,9 +14,7 @@ import app
 logger = logging.getLogger(name=__package__)
 
 OUTPUT_DIR = '../output'
-RELEASE_VERSION = '3.0.0'
-VCF_DATA = OrderedDict()
-
+RELEASE_VERSION = '3.1.0'
 EXAMPLE_FILE = 'GRCm38-' + RELEASE_VERSION + '.vcf'
 EXAMPLE_CASES = {
     EXAMPLE_FILE: [{'CHROMO': '13',
@@ -44,62 +42,7 @@ EXAMPLE_CASES = {
                     'INFO': ''}]
 }
 
-
-def parse_vcf_file(path):
-    """
-
-    :param path:
-    :return:
-    """
-
-    data = []
-    headers = []
-    with open(path, 'rt') as fp:
-        for line in fp:
-            if line.startswith('##'):
-                continue
-            if line.startswith('#'):
-                cols = line[1:].split('\t')
-                headers.extend(cols)
-                continue
-            else:
-                cols = line.split('\t')
-            data.append(OrderedDict(zip(headers, cols)))
-    return data
-
-
-def vcf_data_by_filename_and_id():
-    """
-
-    :return:
-    """
-
-    VCF_DATA = get_full_vcf_data()
-    org_data = OrderedDict()
-
-    for (path, records) in VCF_DATA.items():
-        print(path)
-        data = org_data[path] = OrderedDict()
-        for record in records:
-            data.setdefault(record['ID'], []).append(record)
-
-    return org_data
-
-
-def get_full_vcf_data():
-    """
-
-    :return:
-    """
-
-    vcf_data = OrderedDict()
-    for gf in glob.glob(OUTPUT_DIR + '/*.vcf'):
-        path = os.path.join(gf)
-        vcf_data[path] = parse_vcf_file(path)
-
-    return vcf_data
-
-
+@pytest.mark.skip()
 def test_file_generation():
     """
 
@@ -111,35 +54,33 @@ def test_file_generation():
     assert result.exit_code == 0
 
 
-def test_generated_files():
+def test_generated_files(get_full_vcf_data):
     """
 
     :return:
     """
 
-    get_full_vcf_data()
-    for (path, records) in VCF_DATA.items():
+    for (path, records) in get_full_vcf_data.items():
         print(path)
         assert os.path.isfile(path)
         assert path.endswith('.vcf')
 
 
-def test_example_expectations():
+def test_example_expectations(vcf_data_by_filename_and_id):
     """
 
     :return:
     """
 
-    vcf_data = vcf_data_by_filename_and_id()
-    print(len(vcf_data))
-    for path in vcf_data:
+    print(len(vcf_data_by_filename_and_id))
+    for path in vcf_data_by_filename_and_id:
         filename = os.path.basename(path)
         print(filename)
         examples = EXAMPLE_CASES.get(filename)
         if not examples:
             print('No examples for ', filename, ', skipping ...')
             continue
-        parsed_vcf = vcf_data.get(filename)
+        parsed_vcf = vcf_data_by_filename_and_id.get(filename)
         if parsed_vcf is None:
             continue
         for example in examples:
@@ -148,14 +89,13 @@ def test_example_expectations():
             assert vcf_record == example, 'Mismatch between example and parsed VCF record'
 
 
-def test_generated_files_sorted_by_chr_and_pos():
+def test_generated_files_sorted_by_chr_and_pos(get_full_vcf_data):
     """
 
     :return:
     """
 
-    vcf_data = get_full_vcf_data()
-    for (path, records) in vcf_data.items():
+    for (path, records) in get_full_vcf_data.items():
         select_chromosome = itemgetter('CHROM')
         chromosomes = list(map(select_chromosome, records))
         assert chromosomes == sorted(chromosomes), 'Chromosomes not alphabetically sorted'
@@ -165,15 +105,15 @@ def test_generated_files_sorted_by_chr_and_pos():
             assert positions == sorted(positions), 'Positions are not sorted in correct order'
 
 
-def test_duplicate_entries():
+def test_duplicate_entries(vcf_data_by_filename_and_id):
     """
 
     :return:
     """
 
-    vcf_data = vcf_data_by_filename_and_id()
+
     all_entries = []
-    for i in vcf_data:
-        for key, value in vcf_data[i].items():
+    for i in vcf_data_by_filename_and_id:
+        for key, value in vcf_data_by_filename_and_id[i].items():
             all_entries.append(key)
     assert len(all_entries) == len(set(all_entries))

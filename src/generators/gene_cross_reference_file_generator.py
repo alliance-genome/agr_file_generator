@@ -34,7 +34,7 @@ class GeneCrossReferenceFileGenerator:
         self.generated_files_folder = generated_files_folder
 
     @classmethod
-    def _generate_header(cls, config_info, taxon_ids):
+    def _generate_header(cls, config_info, taxon_ids, data_format):
         """
 
         :param config_info:
@@ -43,6 +43,7 @@ class GeneCrossReferenceFileGenerator:
 
         return create_header('Gene Cross Reference',
                              config_info.config['RELEASE_VERSION'],
+                             data_format=data_format,
                              config_info=config_info,
                              taxon_ids=taxon_ids)
 
@@ -78,15 +79,16 @@ class GeneCrossReferenceFileGenerator:
             taxon_ids.add(data['TaxonID'])
             rows.append(row)
 
-        gene_cross_reference_file.write(self._generate_header(self.config_info, taxon_ids))
+        gene_cross_reference_file.write(self._generate_header(self.config_info, taxon_ids, 'tsv'))
         tsv_writer = csv.DictWriter(gene_cross_reference_file, delimiter='\t', fieldnames=columns, lineterminator="\n")
         tsv_writer.writeheader()
         tsv_writer.writerows(rows)
         gene_cross_reference_file.close()
 
         with open(output_filepath_json, 'w') as outfile:
-            json.dump(listofxrefs, outfile)
-        outfile.close()
+            contents = {'metadata': self._generate_header(self.config_info, taxon_ids, 'json'),
+                        'data': listofxrefs}
+            json.dump(contents, outfile)
 
         if upload_flag:
             logger.info("Submitting to FMS")

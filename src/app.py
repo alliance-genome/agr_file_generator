@@ -7,7 +7,7 @@ import coloredlogs
 from common import ContextInfo
 from common import get_neo_uri
 from data_source import DataSource
-from generators import (daf_file_generator, db_summary_file_generator,
+from generators import (disease_file_generator, db_summary_file_generator,
                         expression_file_generator,
                         gene_cross_reference_file_generator,
                         orthology_file_generator, vcf_file_generator,
@@ -88,7 +88,7 @@ def main(vcf,
         generate_orthology_file(generated_files_folder, config_info, upload)
     if disease is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Disease files')
-        generate_daf_file(generated_files_folder, config_info, taxon_id_fms_subtype_map, upload)
+        generate_disease_file(generated_files_folder, config_info, taxon_id_fms_subtype_map, upload)
     if expression is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Expression files')
         generate_expression_file(generated_files_folder, config_info, taxon_id_fms_subtype_map, upload)
@@ -229,8 +229,8 @@ def generate_orthology_file(generated_files_folder, config_info, upload_flag):
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_daf_file(generated_files_folder, config_info, taxon_id_fms_subtype_map, upload_flag):
-    daf_query = '''MATCH (disease:DOTerm)-[:ASSOCIATION]-(dej:Association:DiseaseEntityJoin)-[:ASSOCIATION]-(object)-[:FROM_SPECIES]-(species:Species)
+def generate_disease_file(generated_files_folder, config_info, taxon_id_fms_subtype_map, upload_flag):
+    disease_query = '''MATCH (disease:DOTerm)-[:ASSOCIATION]-(dej:Association:DiseaseEntityJoin)-[:ASSOCIATION]-(object)-[:FROM_SPECIES]-(species:Species)
                    WHERE (object:Gene OR object:Allele OR object:AffectedGenomicModel)
                          AND dej.joinType IN ["IS_MARKER_FOR", // need to remove when removed from database
                                               "IS_IMPLICATED_IN", // need to remove when removed from database
@@ -273,16 +273,16 @@ def generate_daf_file(generated_files_folder, config_info, taxon_id_fms_subtype_
 
     if config_info.config["DEBUG"]:
         logger.info("Disease Association Query: ")
-        logger.info(daf_query)
+        logger.info(disease_query)
         start_time = time.time()
         logger.info("Start time: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
 
-    data_source = DataSource(get_neo_uri(config_info), daf_query)
-    daf = daf_file_generator.DafFileGenerator(data_source,
-                                              generated_files_folder,
-                                              config_info,
-                                              taxon_id_fms_subtype_map)
-    daf.generate_file(upload_flag=upload_flag)
+    data_source = DataSource(get_neo_uri(config_info), disease_query)
+    disease = disease_file_generator.DiseaseFileGenerator(data_source,
+                                                          generated_files_folder,
+                                                          config_info,
+                                                          taxon_id_fms_subtype_map)
+    disease.generate_file(upload_flag=upload_flag)
 
     if config_info.config["DEBUG"]:
         end_time = time.time()

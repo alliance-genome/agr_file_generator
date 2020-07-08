@@ -1,14 +1,14 @@
 ##########################################################################
 #
 # Data type: %filetype
-# Data format: %data_format
+# Data format: %dataFormat
 # README: %readme
 # Source: Alliance of Genome Resources (Alliance)
 # Source URL: http://alliancegenome.org/downloads
-# Help Desk: help@alliancegenome.org%stringency_filter
-# Taxon IDs: %taxon_ids
+# Help Desk: help@alliancegenome.org%stringencyFilter
+# Taxon IDs: %taxonIds
 # Species: %species
-# Alliance Database Version: %database_version
-# Date file generated (UTC): %gen_time
+# Alliance Database Version: %databaseVersion
+# Date file generated (UTC): %genTime
 #
 ##########################################################################

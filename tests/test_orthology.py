@@ -16,7 +16,7 @@ import app
 JSON_FILES = '../json'
 OUTPUT_DIR = '../output'
 SCHEMAS = '../schemas'
-RELEASE_VERSION = '3.0.0'
+RELEASE_VERSION = '3.1.0'
 
 
 def test_generate_json_file():

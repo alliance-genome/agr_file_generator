@@ -1,0 +1,253 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "filetype": {
+          "type": "string"
+        },
+        "databaseVersion": {
+          "type": "string"
+        },
+        "genTime": {
+          "type": "string"
+        },
+        "stringencyFilter": {
+          "type": "string"
+        },
+        "dataFormat": {
+          "type": "string"
+        },
+        "readme": {
+          "type": "string"
+        },
+        "species": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "taxonId": {
+                "type": "string"
+              },
+              "speciesName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "speciesName",
+              "taxonId"
+            ]
+          }
+        }
+      },
+      "required": [
+        "dataFormat",
+        "databaseVersion",
+        "filetype",
+        "genTime",
+        "readme",
+        "species",
+        "stringencyFilter"
+      ]
+    },
+    "data": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "Species": {
+            "type": "string"
+          },
+          "SpeciesID": {
+            "type": "string"
+          },
+          "GeneID": {
+            "type": "string"
+          },
+          "GeneSymbol": {
+            "type": "string"
+          },
+          "Location": {
+            "type": "string"
+          },
+          "StageTerm": {
+            "type": "string"
+          },
+          "AssayID": {
+            "type": "string"
+          },
+          "AssayTermName": {
+            "type": "string"
+          },
+          "CellularComponentID": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "CellularComponentTerm": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "CellularComponentQualifierIDs": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "CellularComponentQualifierTermNames": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "SubStructureID": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "SubStructureName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "SubStructureQualifierIDs": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "SubStructureQualifierTermNames": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "AnatomyTermID": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "AnatomyTermName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "AnatomyTermQualifierIDs": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "AnatomyTermQualifierTermNames": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "SourceURL": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "Source": {
+            "type": "string"
+          },
+          "Reference": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "AnatomyTermID",
+          "AnatomyTermName",
+          "AnatomyTermQualifierIDs",
+          "AnatomyTermQualifierTermNames",
+          "AssayID",
+          "AssayTermName",
+          "CellularComponentID",
+          "CellularComponentQualifierIDs",
+          "CellularComponentQualifierTermNames",
+          "CellularComponentTerm",
+          "GeneID",
+          "GeneSymbol",
+          "Location",
+          "Reference",
+          "Source",
+          "SourceURL",
+          "Species",
+          "SpeciesID",
+          "StageTerm",
+          "SubStructureID",
+          "SubStructureName",
+          "SubStructureQualifierIDs",
+          "SubStructureQualifierTermNames"
+        ]
+      }
+    }
+  },
+  "required": [
+    "data",
+    "metadata"
+  ]
+}
