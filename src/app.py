@@ -4,6 +4,7 @@ import os
 import time
 import click
 import coloredlogs
+import pytest
 from common import ContextInfo
 from common import get_neo_uri
 from data_source import DataSource
@@ -59,6 +60,7 @@ taxon_id_fms_subtype_map = {"NCBITaxon:10116": "RGD",
 @click.option('--all-filetypes', is_flag=True, help='Generates all filetypes')
 @click.option('--uniprot', is_flag=True, help='Generates a file of gene and uniprot cross references')
 @click.option('--upload', is_flag=True, help='Submits generated files to File Management System (FMS)')
+@click.option('--run-tests', is_flag=True, help='Run tests after files generated')
 def main(vcf,
          orthology,
          disease,
@@ -68,6 +70,7 @@ def main(vcf,
          all_filetypes,
          upload,
          uniprot,
+         run_tests,
          generated_files_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output',
          input_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/input',
          fasta_sequences_folder='sequences',
@@ -82,7 +85,7 @@ def main(vcf,
     click.echo('INFO:\tFiles output: ' + generated_files_folder)
     if vcf is True or all_filetypes is True:
         click.echo('INFO:\tGenerating VCF files')
-        generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, config_info, upload)
+        generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, config_info, upload, run_tests)
     if orthology is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Orthology file')
         generate_orthology_file(generated_files_folder, config_info, upload)
@@ -162,7 +165,7 @@ def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, s
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, config_info, upload_flag):
+def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, config_info, upload_flag, run_tests):
     os.makedirs(generated_files_folder, exist_ok=True)
     os.makedirs(fasta_sequences_folder, exist_ok=True)
 
@@ -188,6 +191,10 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
         end_time = time.time()
         logger.info("Created VCF files - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
+
+    if run_tests is True:
+        pytest_args = ['../tests/test_vcf.py']
+        pytest.main(pytest_args)
 
 
 def generate_orthology_file(generated_files_folder, config_info, upload_flag):

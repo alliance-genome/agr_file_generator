@@ -10,12 +10,6 @@ import pytest
 OUTPUT_DIR = '../output'
 
 
-
-def test_connection():
-
-    pass
-
-
 def parse_vcf_file(path):
     """
 
@@ -37,6 +31,7 @@ def parse_vcf_file(path):
                 cols = line.split('\t')
             data.append(OrderedDict(zip(headers, cols)))
     return data
+
 
 @pytest.fixture()
 def get_full_vcf_data():
@@ -64,7 +59,6 @@ def vcf_data_by_filename_and_id(get_full_vcf_data):
     org_data = OrderedDict()
 
     for (path, records) in get_full_vcf_data.items():
-        print(path)
         data = org_data[path] = OrderedDict()
         for record in records:
             data.setdefault(record['ID'], []).append(record)

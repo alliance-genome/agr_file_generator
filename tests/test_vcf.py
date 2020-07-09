@@ -4,7 +4,6 @@ import logging
 import os
 import sys
 import pytest
-from collections import OrderedDict
 from operator import itemgetter
 from itertools import groupby
 
@@ -42,7 +41,7 @@ EXAMPLE_CASES = {
                     'INFO': ''}]
 }
 
-@pytest.mark.skip()
+
 def test_file_generation():
     """
 
@@ -110,7 +109,6 @@ def test_duplicate_entries(vcf_data_by_filename_and_id):
 
     :return:
     """
-
 
     all_entries = []
     for i in vcf_data_by_filename_and_id:
