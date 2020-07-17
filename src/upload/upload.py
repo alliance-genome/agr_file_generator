@@ -26,7 +26,6 @@ def upload_file(worker, filename, save_path, upload_file_prefix, config_info):
             response = requests.post(config_info.config['FMS_API_URL'] + '/api/data/submit', files=file_to_upload, headers=headers)
             logger.info(response.text)
         except requests.exceptions.RequestException as e:
-            logger.error(e)
             raise(e)
 
 
