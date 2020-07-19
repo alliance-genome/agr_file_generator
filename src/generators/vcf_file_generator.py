@@ -265,13 +265,6 @@ class VcfFileGenerator:
             if validate_flag:
                 process_name = "1"
                 filepath = os.path.join(self.generated_files_folder, filename)
-                stdout, stderr, return_code = run_command('vcf-validator ' + filepath)
-                logger.info(stdout)
-                logger.info(stderr.decode("utf-8"))
-                if return_code != 0:
-                    logger.error("vcf_validate caught error in file")
-                    exit(-1)
-
                 validator = vcf_validator.VcfValidator(filepath)
                 validator.validate_vcf()
                 if upload_flag:

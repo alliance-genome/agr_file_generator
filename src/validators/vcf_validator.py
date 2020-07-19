@@ -4,35 +4,34 @@ import collections
 from operator import itemgetter
 from collections import OrderedDict
 from itertools import groupby
-
+from common import run_command
 
 logger = logging.getLogger(name=__name__)
 
 
 EXAMPLE_CASES = {
-  'GRCm38': [{'CHROMO': '13',
+  'GRCz11': [{'CHROM': '13',
               'POS': '50540171',
-              'ID': 'ZFIN:ZDB-ALT-160601-8105',
+              'ID': 'NC_007124.7:g.50540171C>T',
               'REF': 'C',
               'ALT': 'T',
-              'QUAL': '',
-              'FILTER': '',
-              'INFO': ''},
-             {'CHROMO': '5',
+              'QUAL': '.',
+              'FILTER': '.'},
+             {'CHROM': '5',
               'POS': '72118556',
-              'ID': 'ZFIN:ZDB-ALT-170321-11',
-              'REF': 'CGCTTTGA',
+              'ID': 'NC_007116.7:g.72118557_72118563del',
+              'REF': 'CACTTTGA',
               'ALT': 'C',
-              'QUAL': '',
-              'FILTER': ''},
+              'QUAL': '.',
+              'FILTER': '.'},
              {'CHROM': '10',
               'POS': '16027812',
-              'ID': 'ZFIN:ZDB-ALT-180207-16',
+              'ID': 'NC_007121.7:g.16027812_16027813insCCGTT',
               'REF': 'G',
               'ALT': 'GCCGTT',
-              'QUAL': '',
-              'FILTER': '',
-              'INFO': ''}]}
+              'QUAL': '.',
+              'FILTER': '.'}
+             ]}
 
 
 class VcfValidator:
@@ -69,13 +68,22 @@ class VcfValidator:
         if not examples:
             logger.info('No examples for ' + self.filename + ', skipping ...')
         else:
+            logger.info('Checking against examples')
+            found = False
             for example in examples:
-                vcf_record = parsed_vcf.get(examples['ID'])
-                if vcf_record not in examples['ID']:
-                    logger.error('No matching VCF data found for example with id: ' + examples['ID'])
+                for vcf_record in parsed_vcf:
+                    if vcf_record['ID'] == example['ID']:
+                        found = True
+                        for key in example.keys():
+                            if example[key] != vcf_record[key]:
+                                logger.error('Mismatch between example and parsed VCF record')
+                                logger.error("key mismatch: " + key)
+                                logger.error("example value: " + example[key])
+                                logger.error("VCF record value: " + vcf_record[key])
+                                exit(-1)
+                if not found:
+                    logger.error('No matching VCF data found for example with id: ' + example['ID'])
                     exit(-1)
-                if vcf_record != example:
-                    logger.error('Mismatch between example and parsed VCF record')
 
     def check_sorted_by_chromosome_and_position(self, parsed_vcf):
         select_chromosome = itemgetter('CHROM')
@@ -95,13 +103,21 @@ class VcfValidator:
         for variant in parsed_vcf:
             all_entries.append(variant['ID'])
 
-        print(all_entries)
         if len(all_entries) == len(set(all_entries)):
             logger.info("No duplicate enteries")
         else:
             logger.error("At least one Duplicate entery")
             logger.error([item for item, count in collections.Counter(all_entries).items() if count > 1])
             exit(-1)
+
+    def run_vcf_validator_cmd(filepath):
+        stdout, stderr, return_code = run_command('vcf-validator ' + filepath)
+        logger.info(stdout)
+        logger.info(stderr.decode("utf-8"))
+        if return_code != 0:
+            logger.error("vcf_validate caught error in file")
+            exit(-1)
+
 
     def validate_vcf(self):
         logger.info("Validating VCF: %s" % self.filename)
