@@ -22,15 +22,16 @@ class UniProtGenerator:
             for item in relationships:
                 tsvfile.write(item['GlobalCrossReferenceID'] + "\t" + item['GeneID'] + "\n")
 
-    def generate_file(self, upload_flag=False):
+    def generate_file(self, upload_flag=False, validate_flag=False):
         self._write_uniprot_file(self.relationships, 'CROSSREFERENCEUNIPROT_COMBINED.tsv')
         logger.info('File created')
-        if upload_flag:
-            logger.info("Submitting CROSSREFERENCEUNIPROT_COMBINED to FMS")
-            process_name = "1"
-            upload.upload_process(process_name,
-                                  'CROSSREFERENCEUNIPROT_COMBINED.tsv',
-                                  self.generated_files_folder,
-                                  'CROSSREFERENCEUNIPROT',
-                                  'COMBINED',
-                                  self.config_info)
+        if validate_flag:
+            if upload_flag:
+                logger.info("Submitting CROSSREFERENCEUNIPROT_COMBINED to FMS")
+                process_name = "1"
+                upload.upload_process(process_name,
+                                      'CROSSREFERENCEUNIPROT_COMBINED.tsv',
+                                      self.generated_files_folder,
+                                      'CROSSREFERENCEUNIPROT',
+                                      'COMBINED',
+                                      self.config_info)

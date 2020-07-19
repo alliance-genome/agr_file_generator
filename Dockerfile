@@ -5,6 +5,7 @@ WORKDIR /usr/src/app
 ADD requirements.txt .
 
 RUN pip3 install -r requirements.txt
+RUN apt install vcftools
 
 RUN mkdir tmp
 

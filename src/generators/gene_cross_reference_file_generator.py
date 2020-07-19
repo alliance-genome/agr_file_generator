@@ -47,7 +47,7 @@ class GeneCrossReferenceFileGenerator:
                              config_info=config_info,
                              taxon_ids=taxon_ids)
 
-    def generate_file(self, upload_flag=False):
+    def generate_file(self, upload_flag=False, validate_flag=False):
         """
 
         :param upload_flag:
@@ -90,12 +90,13 @@ class GeneCrossReferenceFileGenerator:
                         'data': listofxrefs}
             json.dump(contents, outfile)
 
-        if upload_flag:
-            logger.info("Submitting to FMS")
-            process_name = "1"
-            logger.info("uploading TSV version of the gene cross references file.")
-            upload.upload_process(process_name, TSVfilename, self.generated_files_folder, 'GENECROSSREFERENCE',
-                                  'COMBINED', self.config_info)
-            logger.info("uploading JSON version of the gene cross references file.")
-            upload.upload_process(process_name, JSONfilename, self.generated_files_folder, 'GENECROSSREFERENCEJSON',
-                                  'COMBINED', self.config_info)
+        if validate_flag:
+            if upload_flag:
+                logger.info("Submitting to FMS")
+                process_name = "1"
+                logger.info("uploading TSV version of the gene cross references file.")
+                upload.upload_process(process_name, TSVfilename, self.generated_files_folder, 'GENECROSSREFERENCE',
+                                      'COMBINED', self.config_info)
+                logger.info("uploading JSON version of the gene cross references file.")
+                upload.upload_process(process_name, JSONfilename, self.generated_files_folder, 'GENECROSSREFERENCEJSON',
+                                      'COMBINED', self.config_info)

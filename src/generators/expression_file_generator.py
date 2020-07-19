@@ -50,7 +50,7 @@ class ExpressionFileGenerator:
                              data_format=data_format)
 
     # 'StageID', currently don't have stage IDs in the database
-    def generate_file(self, upload_flag=False):
+    def generate_file(self, upload_flag=False, validate_flag=False):
         """
 
         :param upload_flag:
@@ -193,20 +193,21 @@ class ExpressionFileGenerator:
 
         combined_expression_file.close()
 
-        if upload_flag:
-            logger.info("Submitting expression files to FMS")
-            process_name = "1"
-            upload.upload_process(process_name, combined_filepath_tsv, self.generated_files_folder, 'EXPRESSION-ALLIANCE', 'COMBINED', self.config_info)
-            upload.upload_process(process_name, combined_filepath_json, self.generated_files_folder, 'EXPRESSION-ALLIANCE-JSON', 'COMBINED', self.config_info)
-            for taxon_id in associations:
-                for file_extension in ['json', 'tsv']:
-                    filename = file_basename + "." + taxon_id + '.' + file_extension
-                    datatype = "EXPRESSION-ALLIANCE"
-                    if file_extension == "json":
-                        datatype += "-JSON"
-                    upload.upload_process(process_name,
-                                          filename,
-                                          self.generated_files_folder,
-                                          datatype,
-                                          self.taxon_id_fms_subtype_map[taxon_id],
-                                          self.config_info)
+        if validate_flag:
+            if upload_flag:
+                logger.info("Submitting expression files to FMS")
+                process_name = "1"
+                upload.upload_process(process_name, combined_filepath_tsv, self.generated_files_folder, 'EXPRESSION-ALLIANCE', 'COMBINED', self.config_info)
+                upload.upload_process(process_name, combined_filepath_json, self.generated_files_folder, 'EXPRESSION-ALLIANCE-JSON', 'COMBINED', self.config_info)
+                for taxon_id in associations:
+                    for file_extension in ['json', 'tsv']:
+                        filename = file_basename + "." + taxon_id + '.' + file_extension
+                        datatype = "EXPRESSION-ALLIANCE"
+                        if file_extension == "json":
+                            datatype += "-JSON"
+                        upload.upload_process(process_name,
+                                              filename,
+                                              self.generated_files_folder,
+                                              datatype,
+                                              self.taxon_id_fms_subtype_map[taxon_id],
+                                              self.config_info)

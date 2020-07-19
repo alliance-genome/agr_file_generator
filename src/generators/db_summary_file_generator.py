@@ -88,7 +88,7 @@ class DbSummaryFileGenerator:
 
         return overview
 
-    def generate_file(self, upload_flag=False):
+    def generate_file(self, upload_flag=False, validate_flag=False):
         """
 
         :param upload_flag:
@@ -99,16 +99,17 @@ class DbSummaryFileGenerator:
 
         filename = 'db-summary-' + self.config_info.config['RELEASE_VERSION'] + '.json'
         filepath = os.path.join(self.generated_files_folder, filename)
-        print(filepath)
+        logger.info(filepath)
         with open(filepath, 'w') as json_file:
             json.dump(summary, json_file, sort_keys=True, indent=4)
 
-        if upload_flag:
-            logger.info("Submitting to FMS")
-            process_name = "1"
-            upload.upload_process(process_name,
-                                  filename,
-                                  self.generated_files_folder,
-                                  'DB-SUMMARY',
-                                  self.config_info.config['RELEASE_VERSION'],
-                                  self.config_info)
+        if validate_flag:
+            if upload_flag:
+                logger.info("Submitting to FMS")
+                process_name = "1"
+                upload.upload_process(process_name,
+                                      filename,
+                                      self.generated_files_folder,
+                                      'DB-SUMMARY',
+                                      self.config_info.config['RELEASE_VERSION'],
+                                      self.config_info)

@@ -33,8 +33,7 @@ class ContextInfo(object):
         logger.debug('Initialized with config values: {}'.format(self.config))
 
 
-def compress(cmd):
-
+def run_command(cmd):
     logger.info('Running ' + cmd)
     process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     process.wait()
