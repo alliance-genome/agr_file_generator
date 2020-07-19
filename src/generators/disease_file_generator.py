@@ -16,6 +16,7 @@ import csv
 
 import upload
 from .header import create_header
+from validators import json_validator
 
 logger = logging.getLogger(name=__name__)
 
@@ -227,17 +228,20 @@ class DiseaseFileGenerator:
         combined_disease_file.close()
 
         if validate_flag:
+            json_validator.JsonValidator(combined_filepath_json, 'disease').validateJSON()
             if upload_flag:
                 logger.info("Submitting disease files to FMS")
                 process_name = "1"
                 upload.upload_process(process_name, combined_filepath_tsv, self.generated_files_folder, 'DISEASE-ALLIANCE', 'COMBINED', self.config_info)
                 upload.upload_process(process_name, combined_filepath_json, self.generated_files_folder, 'DISEASE-ALLIANCE-JSON', 'COMBINED', self.config_info)
-                for taxon_id in processed_disease_associations:
-                    for file_extension in ['json', 'tsv']:
-                        filename = file_basename + "." + taxon_id + '.' + file_extension
-                        datatype = "DISEASE-ALLIANCE"
-                        if file_extension == "json":
-                            datatype += "-JSON"
+            for taxon_id in processed_disease_associations:
+                for file_extension in ['json', 'tsv']:
+                    filename = file_basename + "." + taxon_id + '.' + file_extension
+                    datatype = "DISEASE-ALLIANCE"
+                    if file_extension == "json":
+                        datatype += "-JSON"
+                        json_validator.JsonValidator(os.path.join(self.generated_files_folder, filename), 'disease').validateJSON()
+                    if upload_flag:
                         upload.upload_process(process_name,
                                               filename,
                                               self.generated_files_folder,

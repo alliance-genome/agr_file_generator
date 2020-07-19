@@ -13,6 +13,7 @@ import json
 
 from upload import upload
 from .header import create_header
+from validators import json_validator
 
 logger = logging.getLogger(name=__name__)
 
@@ -91,6 +92,7 @@ class GeneCrossReferenceFileGenerator:
             json.dump(contents, outfile)
 
         if validate_flag:
+            json_validator.JsonValidator(output_filepath_json, 'gene-cross-references').validateJSON()
             if upload_flag:
                 logger.info("Submitting to FMS")
                 process_name = "1"

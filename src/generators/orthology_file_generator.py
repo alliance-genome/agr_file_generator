@@ -5,6 +5,7 @@ import csv
 
 import upload
 from .header import create_header
+from validators import json_validator
 
 logger = logging.getLogger(name=__name__)
 
@@ -83,6 +84,7 @@ class OrthologyFileGenerator:
         tsv_file.close()
 
         if validate_flag:
+            json_validator.JsonValidator(json_filepath, 'orthology').validateJSON()
             if upload_flag:
                 logger.info("Submitting orthology filse to FMS")
                 process_name = "1"
