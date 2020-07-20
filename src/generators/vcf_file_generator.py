@@ -4,7 +4,8 @@ import sys
 from collections import defaultdict, OrderedDict
 from functools import partial
 from operator import itemgetter
-from common import compress
+from common import run_command
+from validators import vcf_validator
 import logging
 import upload
 
@@ -237,7 +238,7 @@ class VcfFileGenerator:
             return None
         return variant
 
-    def generate_files(self, skip_chromosomes=(), upload_flag=False):
+    def generate_files(self, skip_chromosomes=(), upload_flag=False, validate_flag=False):
         (assembly_chr_variants, assembly_species) = self._consume_data_source()
         for (assembly, chromo_variants) in assembly_chr_variants.items():
             filename = assembly + '-' + self.config_info.config['RELEASE_VERSION'] + '.vcf'
@@ -255,13 +256,18 @@ class VcfFileGenerator:
                     adjusted_variants = filter(None, map(adjust_varient, variants))
                     for variant in sorted(adjusted_variants, key=itemgetter('POS')):
                         self._add_variant_to_vcf_file(vcf_file, variant)
-            stdout, stderr, return_code = compress('bgzip -c ' + filepath + ' > ' + filepath + '.gz')
+            stdout, stderr, return_code = run_command('bgzip -c ' + filepath + ' > ' + filepath + '.gz')
             if return_code == 0:
                 logger.info(filepath + ' compressed successfully')
             else:
                 logger.error(filepath + ' could not be compressed, please check')
-            if upload_flag:
-                logger.info("Submitting to FMS")
+
+            if validate_flag:
                 process_name = "1"
-                upload.upload_process(process_name, filename, self.generated_files_folder, 'VCF', assembly, self.config_info)
-                upload.upload_process(process_name, filename + ".gz", self.generated_files_folder, 'VCF-GZ', assembly, self.config_info)
+                filepath = os.path.join(self.generated_files_folder, filename)
+                validator = vcf_validator.VcfValidator(filepath)
+                validator.validate_vcf()
+                if upload_flag:
+                    logger.info("Submitting to FMS")
+                    upload.upload_process(process_name, filename, self.generated_files_folder, 'VCF', assembly, self.config_info)
+                    upload.upload_process(process_name, filename + ".gz", self.generated_files_folder, 'VCF-GZ', assembly, self.config_info)

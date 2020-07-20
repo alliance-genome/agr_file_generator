@@ -59,6 +59,7 @@ taxon_id_fms_subtype_map = {"NCBITaxon:10116": "RGD",
 @click.option('--all-filetypes', is_flag=True, help='Generates all filetypes')
 @click.option('--uniprot', is_flag=True, help='Generates a file of gene and uniprot cross references')
 @click.option('--upload', is_flag=True, help='Submits generated files to File Management System (FMS)')
+@click.option('--validate', is_flag=True, help='Validate generated file. If uploading then validates automatically')
 def main(vcf,
          orthology,
          disease,
@@ -67,6 +68,7 @@ def main(vcf,
          gene_cross_reference,
          all_filetypes,
          upload,
+         validate,
          uniprot,
          generated_files_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output',
          input_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/input',
@@ -76,37 +78,40 @@ def main(vcf,
     start_time = time.time()
     click.echo("Start Time: %s" % time.strftime("%H:%M:%S", time.gmtime(start_time)))
 
+    if upload:
+        validate = True
+
     if not os.path.exists(generated_files_folder):
         os.makedirs(generated_files_folder)
 
     click.echo('INFO:\tFiles output: ' + generated_files_folder)
     if vcf is True or all_filetypes is True:
         click.echo('INFO:\tGenerating VCF files')
-        generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, config_info, upload)
+        generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, config_info, upload, validate)
     if orthology is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Orthology file')
-        generate_orthology_file(generated_files_folder, config_info, upload)
+        generate_orthology_file(generated_files_folder, config_info, upload, validate)
     if disease is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Disease files')
-        generate_disease_file(generated_files_folder, config_info, taxon_id_fms_subtype_map, upload)
+        generate_disease_file(generated_files_folder, config_info, taxon_id_fms_subtype_map, upload, validate)
     if expression is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Expression files')
-        generate_expression_file(generated_files_folder, config_info, taxon_id_fms_subtype_map, upload)
+        generate_expression_file(generated_files_folder, config_info, taxon_id_fms_subtype_map, upload, validate)
     if db_summary is True or all_filetypes is True:
         click.echo('INFO:\tGenerating DB summary file')
-        generate_db_summary_file(generated_files_folder, config_info, upload)
+        generate_db_summary_file(generated_files_folder, config_info, upload, validate)
     if gene_cross_reference is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Gene Cross Reference file')
-        generate_gene_cross_reference_file(generated_files_folder, config_info, upload)
+        generate_gene_cross_reference_file(generated_files_folder, config_info, upload, validate)
     if uniprot is True or all_filetypes is True:
-        generate_uniprot_cross_reference(generated_files_folder, input_folder, config_info, upload)
+        generate_uniprot_cross_reference(generated_files_folder, input_folder, config_info, upload, validate)
 
     end_time = time.time()
     elapsed_time = end_time - start_time
     click.echo('File Generator finished. Elapsed time: %s' % time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
 
 
-def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, skip_chromosomes, config_info, upload_flag):
+def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, skip_chromosomes, config_info, upload_flag, validate_flag):
     logger.info("Querying Assembly: " + assembly)
 
     variants_query = '''MATCH (s:Species)-[:FROM_SPECIES]-(a:Allele)-[:VARIATION]-(v:Variant)-[l:LOCATED_ON]->(c:Chromosome),
@@ -154,7 +159,7 @@ def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, s
     gvf = vcf_file_generator.VcfFileGenerator(data_source,
                                               generated_files_folder,
                                               config_info)
-    gvf.generate_files(skip_chromosomes=skip_chromosomes, upload_flag=upload_flag)
+    gvf.generate_files(skip_chromosomes=skip_chromosomes, upload_flag=upload_flag, validate_flag=validate_flag)
 
     if config_info.config["DEBUG"]:
         end_time = time.time()
@@ -162,7 +167,7 @@ def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, s
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, config_info, upload_flag):
+def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, config_info, upload_flag, validate_flag):
     os.makedirs(generated_files_folder, exist_ok=True)
     os.makedirs(fasta_sequences_folder, exist_ok=True)
 
@@ -182,7 +187,8 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
                               fasta_sequences_folder,
                               skip_chromosomes,
                               config_info,
-                              upload_flag)
+                              upload_flag,
+                              validate_flag)
 
     if config_info.config["DEBUG"]:
         end_time = time.time()
@@ -190,7 +196,7 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_orthology_file(generated_files_folder, config_info, upload_flag):
+def generate_orthology_file(generated_files_folder, config_info, upload_flag, validate_flag):
     orthology_query = '''MATCH (species1)<-[sa:FROM_SPECIES]-(gene1:Gene)-[o:ORTHOLOGOUS]->(gene2:Gene)-[sa2:FROM_SPECIES]->(species2:Species)
                        WHERE o.strictFilter
                        OPTIONAL MATCH (algorithm:OrthoAlgorithm)-[m:MATCHED]-(ogj:OrthologyGeneJoin)-[association:ASSOCIATION]-(gene1)
@@ -221,7 +227,7 @@ def generate_orthology_file(generated_files_folder, config_info, upload_flag):
     of = orthology_file_generator.OrthologyFileGenerator(data_source,
                                                          generated_files_folder,
                                                          config_info)
-    of.generate_file(upload_flag=upload_flag)
+    of.generate_file(upload_flag=upload_flag, validate_flag=validate_flag)
 
     if config_info.config["DEBUG"]:
         end_time = time.time()
@@ -229,7 +235,7 @@ def generate_orthology_file(generated_files_folder, config_info, upload_flag):
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_disease_file(generated_files_folder, config_info, taxon_id_fms_subtype_map, upload_flag):
+def generate_disease_file(generated_files_folder, config_info, taxon_id_fms_subtype_map, upload_flag, validate_flag):
     disease_query = '''MATCH (disease:DOTerm)-[:ASSOCIATION]-(dej:Association:DiseaseEntityJoin)-[:ASSOCIATION]-(object)-[:FROM_SPECIES]-(species:Species)
                    WHERE (object:Gene OR object:Allele OR object:AffectedGenomicModel)
                          AND dej.joinType IN ["IS_MARKER_FOR", // need to remove when removed from database
@@ -282,7 +288,7 @@ def generate_disease_file(generated_files_folder, config_info, taxon_id_fms_subt
                                                           generated_files_folder,
                                                           config_info,
                                                           taxon_id_fms_subtype_map)
-    disease.generate_file(upload_flag=upload_flag)
+    disease.generate_file(upload_flag=upload_flag, validate_flag=validate_flag)
 
     if config_info.config["DEBUG"]:
         end_time = time.time()
@@ -290,7 +296,7 @@ def generate_disease_file(generated_files_folder, config_info, taxon_id_fms_subt
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_expression_file(generated_files_folder, config_info, taxon_id_fms_subtype_map, upload_flag):
+def generate_expression_file(generated_files_folder, config_info, taxon_id_fms_subtype_map, upload_flag, validate_flag):
     expression_query = '''MATCH (speciesObj:Species)<-[:FROM_SPECIES]-(geneObj:Gene)-[:ASSOCIATION]->(begej:BioEntityGeneExpressionJoin)--(term)
                           WITH {primaryKey: speciesObj.primaryKey, name: speciesObj.name} AS species,
                                {primaryKey: geneObj.primaryKey, symbol: geneObj.symbol, dataProvider: geneObj.dataProvider} AS gene,
@@ -317,7 +323,7 @@ def generate_expression_file(generated_files_folder, config_info, taxon_id_fms_s
                                                                    generated_files_folder,
                                                                    config_info,
                                                                    taxon_id_fms_subtype_map)
-    expression.generate_file(upload_flag=upload_flag)
+    expression.generate_file(upload_flag=upload_flag, validate_flag=validate_flag)
 
     if config_info.config["DEBUG"]:
         end_time = time.time()
@@ -325,7 +331,7 @@ def generate_expression_file(generated_files_folder, config_info, taxon_id_fms_s
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_db_summary_file(generated_files_folder, config_info, upload_flag):
+def generate_db_summary_file(generated_files_folder, config_info, upload_flag, validate_flag):
     db_summary_query = '''MATCH (entity)
                           WITH labels(entity) AS entityTypes
                           RETURN count(entityTypes) AS frequency,
@@ -341,7 +347,7 @@ def generate_db_summary_file(generated_files_folder, config_info, upload_flag):
     db_summary = db_summary_file_generator.DbSummaryFileGenerator(data_source,
                                                                   generated_files_folder,
                                                                   config_info)
-    db_summary.generate_file(upload_flag=upload_flag)
+    db_summary.generate_file(upload_flag=upload_flag, validate_flag=validate_flag)
 
     if config_info.config["DEBUG"]:
         end_time = time.time()
@@ -349,7 +355,7 @@ def generate_db_summary_file(generated_files_folder, config_info, upload_flag):
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_gene_cross_reference_file(generated_files_folder, config_info, upload_flag):
+def generate_gene_cross_reference_file(generated_files_folder, config_info, upload_flag, validate_flag):
     gene_cross_reference_query = '''MATCH (g:Gene)--(cr:CrossReference)
                           RETURN g.primaryKey as GeneID,
                                  cr.globalCrossRefId as GlobalCrossReferenceID,
@@ -367,7 +373,7 @@ def generate_gene_cross_reference_file(generated_files_folder, config_info, uplo
     gene_cross_reference = gene_cross_reference_file_generator.GeneCrossReferenceFileGenerator(data_source,
                                                                                                generated_files_folder,
                                                                                                config_info)
-    gene_cross_reference.generate_file(upload_flag=upload_flag)
+    gene_cross_reference.generate_file(upload_flag=upload_flag, validate_flag=validate_flag)
 
     if config_info.config["DEBUG"]:
         end_time = time.time()
@@ -375,7 +381,7 @@ def generate_gene_cross_reference_file(generated_files_folder, config_info, uplo
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_uniprot_cross_reference(generated_files_folder, input_folder, config_info, upload_flag):
+def generate_uniprot_cross_reference(generated_files_folder, input_folder, config_info, upload_flag, validate_flag):
     uniprot_cross_reference_query = '''MATCH (g:Gene)--(cr:CrossReference)
                                 WHERE cr.prefix = "UniProtKB"
                                 RETURN g.primaryKey as GeneID,
@@ -389,7 +395,7 @@ def generate_uniprot_cross_reference(generated_files_folder, input_folder, confi
 
     data_source = DataSource(get_neo_uri(config_info), uniprot_cross_reference_query)
     ucf = uniprot_cross_reference_generator.UniProtGenerator(data_source, config_info, generated_files_folder)
-    ucf.generate_file(upload_flag=upload_flag)
+    ucf.generate_file(upload_flag=upload_flag, validate_flag=validate_flag)
 
     if config_info.config["DEBUG"]:
         end_time = time.time()

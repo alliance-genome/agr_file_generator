@@ -5,6 +5,7 @@ import csv
 
 import upload
 from .header import create_header
+from validators import json_validator
 
 logger = logging.getLogger(name=__name__)
 
@@ -25,7 +26,7 @@ class OrthologyFileGenerator:
                              taxon_ids=taxon_ids,
                              data_format=data_format)
 
-    def generate_file(self, upload_flag=False):
+    def generate_file(self, upload_flag=False, validate_flag=False):
 
         file_basename = "agr_orthologs-" + self.config_info.config['RELEASE_VERSION']
         fields = ["Gene1ID",
@@ -82,8 +83,10 @@ class OrthologyFileGenerator:
         tsv_writer.writerows(processed_orthologs)
         tsv_file.close()
 
-        if upload_flag:
-            logger.info("Submitting orthology filse to FMS")
-            process_name = "1"
-            upload.upload_process(process_name, json_filepath, self.generated_files_folder, 'ORTHOLOGY-ALLIANCE-JSON', 'COMBINED', self.config_info)
-            upload.upload_process(process_name, tsv_filepath, self.generated_files_folder, 'ORTHOLOGY-ALLIANCE', 'COMBINED', self.config_info)
+        if validate_flag:
+            json_validator.JsonValidator(json_filepath, 'orthology').validateJSON()
+            if upload_flag:
+                logger.info("Submitting orthology filse to FMS")
+                process_name = "1"
+                upload.upload_process(process_name, json_filepath, self.generated_files_folder, 'ORTHOLOGY-ALLIANCE-JSON', 'COMBINED', self.config_info)
+                upload.upload_process(process_name, tsv_filepath, self.generated_files_folder, 'ORTHOLOGY-ALLIANCE', 'COMBINED', self.config_info)
