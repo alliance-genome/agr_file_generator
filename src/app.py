@@ -86,7 +86,7 @@ def main(vcf,
 
     click.echo('INFO:\tFiles output: ' + generated_files_folder)
     if vcf is True or all_filetypes is True:
-        click.echo('INFO:\tGenerating VCF files')
+        click.echo('INFO:\tGenerating VCF files, VCF gz files and VCF gz Tabix files')
         generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, config_info, upload, validate)
     if orthology is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Orthology file')
