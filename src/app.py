@@ -7,11 +7,14 @@ import coloredlogs
 from common import ContextInfo
 from common import get_neo_uri
 from data_source import DataSource
-from generators import (disease_file_generator, db_summary_file_generator,
+from generators import (disease_file_generator,
+                        db_summary_file_generator,
                         expression_file_generator,
                         gene_cross_reference_file_generator,
-                        orthology_file_generator, vcf_file_generator,
-                        uniprot_cross_reference_generator)
+                        orthology_file_generator,
+                        vcf_file_generator,
+                        uniprot_cross_reference_generator,
+                        human_genes_interacting_with_generator)
 
 from common import ordered_taxon_species_map_from_data_dictionary
 
@@ -58,6 +61,7 @@ taxon_id_fms_subtype_map = {"NCBITaxon:10116": "RGD",
 @click.option('--gene-cross-reference', is_flag=True, help='Generates a file of cross references for gene objects')
 @click.option('--all-filetypes', is_flag=True, help='Generates all filetypes')
 @click.option('--uniprot', is_flag=True, help='Generates a file of gene and uniprot cross references')
+@click.option('--human-genes-interacting-with', is_flag=True, help='Generates a file of Human Genes Interacting With')
 @click.option('--upload', is_flag=True, help='Submits generated files to File Management System (FMS)')
 @click.option('--validate', is_flag=True, help='Validate generated file. If uploading then validates automatically')
 def main(vcf,
@@ -70,6 +74,7 @@ def main(vcf,
          upload,
          validate,
          uniprot,
+         human_genes_interacting_with,
          generated_files_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output',
          input_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/input',
          fasta_sequences_folder='sequences',
@@ -105,6 +110,8 @@ def main(vcf,
         generate_gene_cross_reference_file(generated_files_folder, config_info, upload, validate)
     if uniprot is True or all_filetypes is True:
         generate_uniprot_cross_reference(generated_files_folder, input_folder, config_info, upload, validate)
+    if human_genes_interacting_with is True or all_filetypes is True:
+        generate_human_genes_interacting_with(generated_files_folder, input_folder, config_info, upload, validate)
 
     end_time = time.time()
     elapsed_time = end_time - start_time
@@ -400,6 +407,30 @@ def generate_uniprot_cross_reference(generated_files_folder, input_folder, confi
     if config_info.config["DEBUG"]:
         end_time = time.time()
         logger.info("Created UniProt Cross Reference file - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
+        logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
+
+
+def generate_human_genes_interacting_with(generated_files_folder, input_folder, config_info, upload_flag, validate_flag):
+    query = '''MATCH (s:Species)-[:FROM_SPECIES]-(g:Gene)--(i:InteractionGeneJoin)--(g2:Gene)-[:FROM_SPECIES]-(s2:Species)
+               WHERE s.primaryKey ='NCBITaxon:2697049'
+                   AND s2.primaryKey = 'NCBITaxon:9606'
+               RETURN DISTINCT g2.primaryKey AS GeneID,
+                               g2.symbol AS Symbol,
+                               g2.name AS Name'''
+
+    if config_info.config["DEBUG"]:
+        logger.info("Human Genes Interacts With query")
+        logger.info(query)
+        start_time = time.time()
+        logger.info("Start time: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
+
+    data_source = DataSource(get_neo_uri(config_info), query)
+    hgiw = human_genes_interacting_with_generator.HumanGenesInteractingWithGenerator(data_source, config_info, generated_files_folder)
+    hgiw.generate_file(upload_flag=upload_flag, validate_flag=validate_flag)
+
+    if config_info.config["DEBUG"]:
+        end_time = time.time()
+        logger.info("Created Human Genees Interacting with file - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
