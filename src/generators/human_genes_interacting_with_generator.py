@@ -19,16 +19,16 @@ class HumanGenesInteractingWithGenerator:
 
     @classmethod
     def _generate_header(cls, config_info, data_format):
-
         return create_header('Human genes encoding proteins that interact with SARS-CoV-2 proteins', config_info.config['RELEASE_VERSION'],
                              config_info=config_info,
-                             taxon_ids=["NCBI:txid9606"],
+                             taxon_ids=["NCBITaxon:9606"],
+                             source_url='https://www.alliancegenome.org/coronavirus-resources',
                              data_format=data_format)
 
     def generate_file(self, upload_flag=False, validate_flag=False):
         file_basename = "agr-human_genes_interacting_with-" + self.config_info.config['RELEASE_VERSION']
         fields = ["GeneID",
-                  "GeneSymbol",
+                  "Symbol",
                   "Name"]
 
         processed_interactions = []

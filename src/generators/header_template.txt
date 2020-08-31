@@ -4,7 +4,7 @@
 # Data format: %dataFormat
 # README: %readme
 # Source: Alliance of Genome Resources (Alliance)
-# Source URL: http://alliancegenome.org/downloads
+# Source URL: %sourceURL
 # Help Desk: help@alliancegenome.org%stringencyFilter
 # Taxon IDs: %taxonIds
 # Species: %species

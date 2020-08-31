@@ -16,8 +16,6 @@ from generators import (disease_file_generator,
                         uniprot_cross_reference_generator,
                         human_genes_interacting_with_generator)
 
-from common import ordered_taxon_species_map_from_data_dictionary
-
 config_info = ContextInfo()
 debug_level = logging.DEBUG if config_info.config["DEBUG"] else logging.INFO
 neo_debug_level = logging.DEBUG if config_info.config["NEO_DEBUG"] else logging.INFO
@@ -109,8 +107,10 @@ def main(vcf,
         click.echo('INFO:\tGenerating Gene Cross Reference file')
         generate_gene_cross_reference_file(generated_files_folder, config_info, upload, validate)
     if uniprot is True or all_filetypes is True:
+        click.echo('INFO:\tUniprot Cross Reference file')
         generate_uniprot_cross_reference(generated_files_folder, input_folder, config_info, upload, validate)
     if human_genes_interacting_with is True or all_filetypes is True:
+        click.echo('INFO:\tHuman Genes Interacting With file')
         generate_human_genes_interacting_with(generated_files_folder, input_folder, config_info, upload, validate)
 
     end_time = time.time()
