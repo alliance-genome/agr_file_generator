@@ -27,22 +27,7 @@
           "type": "string"
         },
         "species": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "taxonId": {
-                "type": "string"
-              },
-              "speciesName": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "speciesName",
-              "taxonId"
-            ]
-          }
+          "type": "array"
         }
       },
       "required": [
@@ -64,25 +49,17 @@
           "GeneID": {
             "type": "string"
           },
-          "GlobalCrossReferenceID": {
+          "Symbol": {
             "type": "string"
           },
-          "CrossReferenceCompleteURL": {
-            "type": "string"
-          },
-          "ResourceDescriptorPage": {
-            "type": "string"
-          },
-          "TaxonID": {
+          "Name": {
             "type": "string"
           }
         },
         "required": [
-          "CrossReferenceCompleteURL",
           "GeneID",
-          "GlobalCrossReferenceID",
-          "ResourceDescriptorPage",
-          "TaxonID"
+          "Symbol",
+          "Name"
         ]
       }
     }

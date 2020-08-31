@@ -10,7 +10,7 @@ class HeaderTemplate(Template):
     delimiter = '%'
 
 
-def create_header(file_type, database_version, data_format, config_info='', readme='', stringency_filter='', taxon_ids=''):
+def create_header(file_type, database_version, data_format, config_info='', readme='', stringency_filter='', taxon_ids='', source_url='http://alliancegenome.org/downloads'):
     """
 
     :param file_type:
@@ -24,8 +24,10 @@ def create_header(file_type, database_version, data_format, config_info='', read
     :return:
     """
 
-    ordered_taxon_species_map = get_ordered_species_dict(config_info, taxon_ids) if config_info != '' \
-        else ordered_taxon_species_map_from_data_dictionary(taxon_ids)
+    if config_info != '':
+        ordered_taxon_species_map = get_ordered_species_dict(config_info, taxon_ids)
+    else:
+        ordered_taxon_species_map = ordered_taxon_species_map_from_data_dictionary(taxon_ids)
 
     if stringency_filter != '':
         stringency_filter = '\n# Orthology Filter: ' + stringency_filter
@@ -33,6 +35,7 @@ def create_header(file_type, database_version, data_format, config_info='', read
     gen_time = datetime.utcnow().strftime("%Y-%m-%d %H:%M")
     metadata = {'filetype': file_type,
                 'databaseVersion': database_version,
+                'sourceURL': source_url,
                 'genTime': gen_time,
                 'stringencyFilter': stringency_filter,
                 'dataFormat': data_format,
