@@ -260,7 +260,16 @@ class VcfFileGenerator:
             if return_code == 0:
                 logger.info(filepath + ' compressed successfully')
             else:
-                logger.error(filepath + ' could not be compressed, please check')
+                logger.error(filepath + ' could not be compressed')
+                exit(-1)
+
+            command = 'tabix -p vcf ' + filepath + '.gz'
+            stdout, stderr, return_code = run_command(command)
+            if return_code == 0:
+                logger.info('Index file created: ' + filepath + '.gz.tbi')
+            else:
+                logger.error('Could not create index file: ' + command)
+                exit(-1)
 
             if validate_flag:
                 process_name = "1"
@@ -271,3 +280,4 @@ class VcfFileGenerator:
                     logger.info("Submitting to FMS")
                     upload.upload_process(process_name, filename, self.generated_files_folder, 'VCF', assembly, self.config_info)
                     upload.upload_process(process_name, filename + ".gz", self.generated_files_folder, 'VCF-GZ', assembly, self.config_info)
+                    upload.upload_process(process_name, filename + ".gz.tbi", self.generated_files_folder, 'VCF-GZ-TBI', assembly, self.config_info)
