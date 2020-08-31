@@ -14,6 +14,9 @@
         "genTime": {
           "type": "string"
         },
+        "sourceURL": {
+          "type": "string"
+        },
         "stringencyFilter": {
           "type": "string"
         },
@@ -47,6 +50,7 @@
         "databaseVersion",
         "filetype",
         "genTime",
+        "sourceURL",
         "readme",
         "species",
         "stringencyFilter"
