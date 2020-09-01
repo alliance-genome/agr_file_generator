@@ -14,7 +14,8 @@ from generators import (disease_file_generator,
                         orthology_file_generator,
                         vcf_file_generator,
                         uniprot_cross_reference_generator,
-                        human_genes_interacting_with_generator)
+                        allele_gff_file_generator,
+                        human_genes_interacting_with_file_generator)
 
 config_info = ContextInfo()
 debug_level = logging.DEBUG if config_info.config["DEBUG"] else logging.INFO
@@ -75,7 +76,6 @@ def main(vcf,
          human_genes_interacting_with,
          generated_files_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output',
          input_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/input',
-         fasta_sequences_folder='sequences',
          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):
 
     start_time = time.time()
@@ -90,7 +90,7 @@ def main(vcf,
     click.echo('INFO:\tFiles output: ' + generated_files_folder)
     if vcf is True or all_filetypes is True:
         click.echo('INFO:\tGenerating VCF files, VCF gz files and VCF gz Tabix files')
-        generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, config_info, upload, validate)
+        generate_vcf_files(generated_files_folder, skip_chromosomes, config_info, upload, validate)
     if orthology is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Orthology file')
         generate_orthology_file(generated_files_folder, config_info, upload, validate)
@@ -174,9 +174,8 @@ def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, s
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, config_info, upload_flag, validate_flag):
+def generate_vcf_files(generated_files_folder, skip_chromosomes, config_info, upload_flag, validate_flag):
     os.makedirs(generated_files_folder, exist_ok=True)
-    os.makedirs(fasta_sequences_folder, exist_ok=True)
 
     assembly_query = """MATCH (a:Assembly)
                         RETURN a.primaryKey as assemblyID"""
@@ -191,7 +190,6 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
         if assembly not in ["", "GRCh38", "R64-2-1"]:
             generate_vcf_file(assembly,
                               generated_files_folder,
-                              fasta_sequences_folder,
                               skip_chromosomes,
                               config_info,
                               upload_flag,
@@ -425,13 +423,75 @@ def generate_human_genes_interacting_with(generated_files_folder, input_folder, 
         logger.info("Start time: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
 
     data_source = DataSource(get_neo_uri(config_info), query)
-    hgiw = human_genes_interacting_with_generator.HumanGenesInteractingWithGenerator(data_source, config_info, generated_files_folder)
+    hgiw = human_genes_interacting_with_file_generator.HumanGenesInteractingWithFileGenerator(data_source, config_info, generated_files_folder)
     hgiw.generate_file(upload_flag=upload_flag, validate_flag=validate_flag)
 
     if config_info.config["DEBUG"]:
         end_time = time.time()
         logger.info("Created Human Genees Interacting with file - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
+
+
+def generate_allele_gff_assembly(generated_files_folder, input_folder, config_info, upload_flag, validate_flag):
+    query = '''MATCH (a:Allele)<-[:VARIATION]-(v:Variant)-[:LOCATED_ON]->(c:Chromosome),
+                     (v:Variant)-[:ASSOCIATION]->(gl:GenomicLocation)-[:ASSOCIATION]->(:Assembly {primaryKey: "R6"}),
+                     (v:Variant)-[:VARIATION_TYPE]->(:SOTerm)
+OPTIONAL MATCH (v:Variant)<-[:COMPUTED_GENE]-(g:Gene)-[:ASSOCIATION]->(glc:GeneLevelConsequence)
+WITH c,a,v,gl,
+     COLLECT({geneID: g.primaryKey,
+              geneSymbol: g.symbol,
+              geneLevelConsequence: glc.geneLevelConsequence,
+              impact: glc.impact}) AS glcs
+RETURN c.primaryKey AS chromosome,
+       a.primaryKey AS ID, 
+       a.symbolText AS symbol_text,
+       COLLECT({ID: v.globalId,
+                start: gl.start,
+                end: gl.end,
+                chromosome: gl.chromosome,
+                geneLevelConsequences: glcs
+       }) AS variants'''
+
+    if config_info.config["DEBUG"]:
+        logger.info("Allele GFF query")
+        logger.info(query)
+        start_time = time.time()
+        logger.info("Start time: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
+
+    data_source = DataSource(get_neo_uri(config_info), query)
+    agff = allele_gff_file_generator.AlleleGffFileGenerator(data_source, config_info, generated_files_folder)
+    agff.generate_file(upload_flag=upload_flag, validate_flag=validate_flag)
+
+    if config_info.config["DEBUG"]:
+        end_time = time.time()
+        logger.info("Created Allele GFF file - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
+        logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
+
+
+def generate_allele_gff(generate_files_folder, input_folder, config_info, upload_flag, validate_flag):
+    assembly_query = """MATCH (a:Assembly)
+                        RETURN a.primaryKey as assemblyID"""
+    assembly_data_source = DataSource(get_neo_uri(config_info), assembly_query)
+
+    if config_info.config["DEBUG"]:
+        start_time = time.time()
+        logger.info("Start time for generating VCF files: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
+
+    for assembly_result in assembly_data_source:
+        assembly = assembly_result["assemblyID"]
+        if assembly not in ["", "GRCh38", "R64-2-1"]:
+            generate_vcf_file(assembly,
+                              generated_files_folder,
+                              config_info,
+                              upload_flag,
+                              validate_flag)
+
+    if config_info.config["DEBUG"]:
+        end_time = time.time()
+        logger.info("Created VCF files - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
+        logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
+
+
 
 
 if __name__ == '__main__':

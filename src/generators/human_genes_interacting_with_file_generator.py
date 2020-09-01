@@ -4,13 +4,13 @@ import json
 import csv
 
 import upload
-from .header import create_header
+from headers import create_header
 from validators import json_validator
 
 logger = logging.getLogger(name=__name__)
 
 
-class HumanGenesInteractingWithGenerator:
+class HumanGenesInteractingWithFileGenerator:
 
     def __init__(self, interactions, config_info, generated_files_folder):
         self.interactions = interactions
@@ -19,7 +19,8 @@ class HumanGenesInteractingWithGenerator:
 
     @classmethod
     def _generate_header(cls, config_info, data_format):
-        return create_header('Human genes encoding proteins that interact with SARS-CoV-2 proteins', config_info.config['RELEASE_VERSION'],
+        return create_header('Human genes encoding proteins that interact with SARS-CoV-2 proteins',
+                             config_info.config['RELEASE_VERSION'],
                              config_info=config_info,
                              taxon_ids=["NCBITaxon:9606"],
                              source_url='https://www.alliancegenome.org/coronavirus-resources',

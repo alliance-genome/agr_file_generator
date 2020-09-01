@@ -11,7 +11,7 @@ import logging
 import json
 import csv
 import upload
-from .header import create_header
+from headers import create_header
 from validators import json_validator
 
 

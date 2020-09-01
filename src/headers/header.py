@@ -10,7 +10,8 @@ class HeaderTemplate(Template):
     delimiter = '%'
 
 
-def create_header(file_type, database_version, data_format, config_info='', readme='', stringency_filter='', taxon_ids='', source_url='http://alliancegenome.org/downloads'):
+def create_header(file_type, database_version, data_format, config_info='', readme='',
+                  stringency_filter='', taxon_ids='', source_url='http://alliancegenome.org/downloads'):
     """
 
     :param file_type:
@@ -54,7 +55,7 @@ def create_header(file_type, database_version, data_format, config_info='', read
         metadata['species'] = ', '.join(ordered_taxon_species_map.values())
 
         my_path = os.path.abspath(os.path.dirname(__file__))
-        file_header_template = HeaderTemplate(open(my_path + '/header_template.txt').read())
+        file_header_template = HeaderTemplate(open(my_path + '/tsv_header_template.txt').read())
 
         return file_header_template.substitute(metadata)
     else:
