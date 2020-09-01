@@ -58,11 +58,10 @@ def get_ordered_species_dict(config_info, taxon_ids):
                        RETURN s
                        ORDER BY s.phylogeneticOrder"""
     species_data_source = DataSource(get_neo_uri(config_info), species_query)
-
     species = OrderedDict()
     for record in species_data_source:
         if record["s"]["primaryKey"] in taxon_ids:
-            species[record["s"]["primaryKey"]] = record["s"]["species"]
+            species[record["s"]["primaryKey"]] = record["s"]["name"]
 
     return species
 

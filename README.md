@@ -9,7 +9,7 @@ This tool creates files from Alliance resources. The tool is build and testsed w
 ## Current File Types
 
 - VCF
-- DAF
+- Disease
 - Orthology
 - Expression
 
