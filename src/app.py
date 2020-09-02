@@ -1,4 +1,3 @@
-
 import logging
 import os
 import time
@@ -14,7 +13,8 @@ from generators import (disease_file_generator,
                         orthology_file_generator,
                         vcf_file_generator,
                         uniprot_cross_reference_generator,
-                        human_genes_interacting_with_generator)
+                        allele_gff_file_generator,
+                        human_genes_interacting_with_file_generator)
 
 config_info = ContextInfo()
 debug_level = logging.DEBUG if config_info.config["DEBUG"] else logging.INFO
@@ -41,6 +41,8 @@ logger = logging.getLogger(__name__)
 if config_info.config["DEBUG"]:
     logger.warning('DEBUG mode enabled!')
 
+ignore_assemblies = ["", "GRCh38", "R64-2-1", "ASM985889v3"]
+
 taxon_id_fms_subtype_map = {"NCBITaxon:10116": "RGD",
                             "NCBITaxon:9606": "HUMAN",
                             "NCBITaxon:7227": "FB",
@@ -60,6 +62,7 @@ taxon_id_fms_subtype_map = {"NCBITaxon:10116": "RGD",
 @click.option('--all-filetypes', is_flag=True, help='Generates all filetypes')
 @click.option('--uniprot', is_flag=True, help='Generates a file of gene and uniprot cross references')
 @click.option('--human-genes-interacting-with', is_flag=True, help='Generates a file of Human Genes Interacting With')
+@click.option('--allele-gff', is_flag=True, help='Generates an Allele based GFF file')
 @click.option('--upload', is_flag=True, help='Submits generated files to File Management System (FMS)')
 @click.option('--validate', is_flag=True, help='Validate generated file. If uploading then validates automatically')
 def main(vcf,
@@ -73,9 +76,8 @@ def main(vcf,
          validate,
          uniprot,
          human_genes_interacting_with,
+         allele_gff,
          generated_files_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output',
-         input_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/input',
-         fasta_sequences_folder='sequences',
          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):
 
     start_time = time.time()
@@ -85,12 +87,12 @@ def main(vcf,
         validate = True
 
     if not os.path.exists(generated_files_folder):
-        os.makedirs(generated_files_folder)
+        os.makedirs(generated_files_folder, exist_ok=True)
 
     click.echo('INFO:\tFiles output: ' + generated_files_folder)
     if vcf is True or all_filetypes is True:
         click.echo('INFO:\tGenerating VCF files, VCF gz files and VCF gz Tabix files')
-        generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, config_info, upload, validate)
+        generate_vcf_files(generated_files_folder, skip_chromosomes, config_info, upload, validate)
     if orthology is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Orthology file')
         generate_orthology_file(generated_files_folder, config_info, upload, validate)
@@ -108,17 +110,20 @@ def main(vcf,
         generate_gene_cross_reference_file(generated_files_folder, config_info, upload, validate)
     if uniprot is True or all_filetypes is True:
         click.echo('INFO:\tUniprot Cross Reference file')
-        generate_uniprot_cross_reference(generated_files_folder, input_folder, config_info, upload, validate)
+        generate_uniprot_cross_reference(generated_files_folder, config_info, upload, validate)
     if human_genes_interacting_with is True or all_filetypes is True:
         click.echo('INFO:\tHuman Genes Interacting With file')
-        generate_human_genes_interacting_with(generated_files_folder, input_folder, config_info, upload, validate)
+        generate_human_genes_interacting_with(generated_files_folder, config_info, upload, validate)
+    if allele_gff is True or all_filetypes is True:
+        click.echo('INFO:\tAllele GFF files')
+        generate_allele_gff(generated_files_folder, config_info, upload, validate)
 
     end_time = time.time()
     elapsed_time = end_time - start_time
     click.echo('File Generator finished. Elapsed time: %s' % time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
 
 
-def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, skip_chromosomes, config_info, upload_flag, validate_flag):
+def generate_vcf_file(assembly, generated_files_folder, skip_chromosomes, config_info, upload_flag, validate_flag):
     logger.info("Querying Assembly: " + assembly)
 
     variants_query = '''MATCH (s:Species)-[:FROM_SPECIES]-(a:Allele)-[:VARIATION]-(v:Variant)-[l:LOCATED_ON]->(c:Chromosome),
@@ -174,10 +179,7 @@ def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, s
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, config_info, upload_flag, validate_flag):
-    os.makedirs(generated_files_folder, exist_ok=True)
-    os.makedirs(fasta_sequences_folder, exist_ok=True)
-
+def generate_vcf_files(generated_files_folder, skip_chromosomes, config_info, upload_flag, validate_flag):
     assembly_query = """MATCH (a:Assembly)
                         RETURN a.primaryKey as assemblyID"""
     assembly_data_source = DataSource(get_neo_uri(config_info), assembly_query)
@@ -188,10 +190,9 @@ def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chro
 
     for assembly_result in assembly_data_source:
         assembly = assembly_result["assemblyID"]
-        if assembly not in ["", "GRCh38", "R64-2-1"]:
+        if assembly not in ignore_assemblies:
             generate_vcf_file(assembly,
                               generated_files_folder,
-                              fasta_sequences_folder,
                               skip_chromosomes,
                               config_info,
                               upload_flag,
@@ -388,7 +389,7 @@ def generate_gene_cross_reference_file(generated_files_folder, config_info, uplo
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_uniprot_cross_reference(generated_files_folder, input_folder, config_info, upload_flag, validate_flag):
+def generate_uniprot_cross_reference(generated_files_folder, config_info, upload_flag, validate_flag):
     uniprot_cross_reference_query = '''MATCH (g:Gene)--(cr:CrossReference)
                                 WHERE cr.prefix = "UniProtKB"
                                 RETURN g.primaryKey as GeneID,
@@ -410,7 +411,7 @@ def generate_uniprot_cross_reference(generated_files_folder, input_folder, confi
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_human_genes_interacting_with(generated_files_folder, input_folder, config_info, upload_flag, validate_flag):
+def generate_human_genes_interacting_with(generated_files_folder, config_info, upload_flag, validate_flag):
     query = '''MATCH (s:Species)-[:FROM_SPECIES]-(g:Gene)--(i:InteractionGeneJoin)--(g2:Gene)-[:FROM_SPECIES]-(s2:Species)
                WHERE s.primaryKey ='NCBITaxon:2697049'
                    AND s2.primaryKey = 'NCBITaxon:9606'
@@ -425,12 +426,76 @@ def generate_human_genes_interacting_with(generated_files_folder, input_folder, 
         logger.info("Start time: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
 
     data_source = DataSource(get_neo_uri(config_info), query)
-    hgiw = human_genes_interacting_with_generator.HumanGenesInteractingWithGenerator(data_source, config_info, generated_files_folder)
+    hgiw = human_genes_interacting_with_file_generator.HumanGenesInteractingWithFileGenerator(data_source, config_info, generated_files_folder)
     hgiw.generate_file(upload_flag=upload_flag, validate_flag=validate_flag)
 
     if config_info.config["DEBUG"]:
         end_time = time.time()
         logger.info("Created Human Genees Interacting with file - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
+        logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
+
+
+def generate_allele_gff_assembly(assembly, generated_files_folder, config_info, upload_flag, validate_flag):
+    query = '''MATCH (v:Variant)-[:ASSOCIATION]->(gl:GenomicLocation)-[:ASSOCIATION]->(:Assembly {primaryKey: "''' + assembly + '''"}),
+                     (a:Allele)<-[:VARIATION]-(v:Variant)-[:LOCATED_ON]->(c:Chromosome),
+                     (v:Variant)-[:VARIATION_TYPE]->(so:SOTerm),
+                     (v:Variant)<-[:COMPUTED_GENE]-(g:Gene)-[:ASSOCIATION]->(glc:GeneLevelConsequence)<-[:ASSOCIATION]-(v:Variant)
+WITH c,a,v,gl,so,
+     COLLECT({geneID: g.primaryKey,
+              geneSymbol: g.symbol,
+              geneLevelConsequence: glc.geneLevelConsequence,
+              impact: glc.impact}) AS glcs
+RETURN c.primaryKey AS chromosome,
+       a.primaryKey AS ID,
+       a.symbol AS symbol,
+       a.symbolText AS symbol_text,
+       COLLECT({ID: v.primaryKey,
+                genomicVariantSequence: v.genomicVariantSequence,
+                genomicReferenceSequence: v.genomicReferenceSequence,
+                soTerm: so.name,
+                start: gl.start,
+                end: gl.end,
+                chromosome: gl.chromosome,
+                geneLevelConsequences: glcs}) AS variants
+ORDER BY c.primaryKey'''
+
+    if config_info.config["DEBUG"]:
+        logger.info("Allele GFF query")
+        logger.info(query)
+        start_time = time.time()
+        logger.info("Start time: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
+
+    data_source = DataSource(get_neo_uri(config_info), query)
+    agff = allele_gff_file_generator.AlleleGffFileGenerator(assembly, data_source, generated_files_folder, config_info)
+    agff.generate_assembly_file(upload_flag=upload_flag, validate_flag=validate_flag)
+
+    if config_info.config["DEBUG"]:
+        end_time = time.time()
+        logger.info("Created Allele GFF file - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
+        logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
+
+
+def generate_allele_gff(generated_files_folder, config_info, upload_flag, validate_flag):
+    assembly_query = """MATCH (a:Assembly)
+                        RETURN a.primaryKey AS assemblyID"""
+    assembly_data_source = DataSource(get_neo_uri(config_info), assembly_query)
+
+    if config_info.config["DEBUG"]:
+        start_time = time.time()
+        logger.info("Start time for generating Allele GFF files: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
+
+    for assembly_result in assembly_data_source:
+        assembly = assembly_result["assemblyID"]
+        if assembly not in ignore_assemblies:
+            generate_allele_gff_assembly(assembly,
+                                         generated_files_folder,
+                                         config_info,
+                                         upload_flag,
+                                         validate_flag)
+
+    if config_info.config["DEBUG"]:
+        end_time = time.time()
+        logger.info("Created Allele GFF files - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 

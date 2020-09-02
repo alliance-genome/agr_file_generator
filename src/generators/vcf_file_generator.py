@@ -36,7 +36,7 @@ class VcfFileGenerator:
     def _write_vcf_header(cls, vcf_file, assembly, species, config_info):
         dt = time.strftime("%Y%m%d", time.gmtime())
         my_path = os.path.abspath(os.path.dirname(__file__))
-        vcf_header_path = my_path + '/vcf_header_template.txt'
+        vcf_header_path = os.path.join(my_path, '../headers/vcf_header_template.txt')
         header = open(vcf_header_path).read().format(datetime=dt,
                                                      database_version=config_info.config['RELEASE_VERSION'],
                                                      species=species,
