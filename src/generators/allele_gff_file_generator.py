@@ -14,6 +14,7 @@ class AlleleGffFileGenerator:
     empty_value_marker = '.'
 
     def __init__(self, assembly, alleles, generated_files_folder, config_info):
+        self.assembly = assembly
         self.alleles = alleles
         self.config_info = config_info
         self.generated_files_folder = generated_files_folder
@@ -31,7 +32,54 @@ class AlleleGffFileGenerator:
 
             allele_file.write(header)
             for allele in self.alleles:
-                print(allele)
+                variant_rows = []
+                allele_start = -1
+                allele_end = 0
+
+                for variant in allele["variants"]:
+                    start = variant['start']
+                    end = variant['end']
+                    if start < allele_start or allele_start == -1:
+                        allele_start = start
+                    if end > allele_end:
+                        allele_end = end
+
+                    gene_ids = []
+                    gene_symbols = []
+                    gene_impacts = []
+                    gene_consequences = []
+                    for glc in variant['geneLevelConsequences']:
+                        gene_ids.append(glc['geneID'])
+                        gene_symbols.append(glc['geneSymbol'])
+                        gene_impacts.append(glc['impact'])
+                        gene_consequences.append(glc['geneLevelConsequence'])
+
+                    column_nine = ';'.join(['Parent=' + allele['ID'],
+                                            'geneID=' + ','.join(gene_ids),
+                                            'geneSymbol=' + ','.join(gene_symbols),
+                                            'geneImpacts=' + ','.join(gene_impacts),
+                                            'geneConsequences=' + ','.join(gene_consequences)])
+
+                    variant_rows.append([variant['chromosome'],
+                                         '.',
+                                         variant['soTerm'],
+                                         str(start),
+                                         str(end),
+                                         '.', '.', '.',
+                                         column_nine])
+
+                column_nine = ';'.join(['ID=' + allele['ID'],
+                                        'symbol=' + allele['symbol'],
+                                        'symbol_text=' + allele['symbol_text']])
+                allele_file.write("\t".join([allele['chromosome'],
+                                             '.',
+                                             'biological_region',
+                                             str(allele_start),
+                                             str(allele_end),
+                                             '.', '.', '.',
+                                             column_nine]) + "\n")
+                for row in variant_rows:
+                    allele_file.write('\t'.join(row) + '\n')
 
         if validate_flag:
             process_name = "1"

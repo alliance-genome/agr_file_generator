@@ -10,8 +10,13 @@ class HeaderTemplate(Template):
     delimiter = '%'
 
 
-def create_header(file_type, database_version, data_format, config_info='', readme='',
-                  stringency_filter='', taxon_ids='', source_url='http://alliancegenome.org/downloads'):
+def create_header(file_type, database_version, data_format,
+                  config_info='',
+                  readme='',
+                  stringency_filter='',
+                  taxon_ids='',
+                  assembly='',
+                  source_url='http://alliancegenome.org/downloads'):
     """
 
     :param file_type:
@@ -50,12 +55,18 @@ def create_header(file_type, database_version, data_format, config_info='', read
         metadata['species'] = species
 
         return metadata
-    elif data_format == 'tsv':
+    elif data_format in ['tsv', 'GFF']:
         metadata['taxonIds'] = ', '.join(ordered_taxon_species_map.keys())
         metadata['species'] = ', '.join(ordered_taxon_species_map.values())
 
         my_path = os.path.abspath(os.path.dirname(__file__))
-        file_header_template = HeaderTemplate(open(my_path + '/tsv_header_template.txt').read())
+
+        if file_type == 'Allele GFF':
+            template_file = 'allele_gff_file_header.txt'
+        else:
+            template_file = 'tsv_header_template.txt'
+
+        file_header_template = HeaderTemplate(open(os.path.join(my_path, template_file)).read())
 
         return file_header_template.substitute(metadata)
     else:
