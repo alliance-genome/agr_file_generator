@@ -70,7 +70,7 @@ class AlleleGffFileGenerator:
                         gene_ids.append(glc['geneID'])
                         gene_symbols.append(glc['geneSymbol'])
                         gene_impacts.append(glc['impact'])
-                        gene_consequences.append(glc['geneLevelConsequence'])
+                        gene_consequences.append(glc['geneLevelConsequence'].replace(",", "|"))
 
                     column_nine = ';'.join(['Parent=' + allele['ID'],
                                             'geneID=' + ','.join(gene_ids),
