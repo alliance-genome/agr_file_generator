@@ -1,1 +1,2 @@
 include src/generators/*.txt
+include src/headers/*.txt
