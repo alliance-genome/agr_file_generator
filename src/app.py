@@ -122,8 +122,7 @@ def main(vcf,
     elapsed_time = end_time - start_time
     click.echo('File Generator finished. Elapsed time: %s' % time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
 
-
-def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, skip_chromosomes, config_info, upload_flag, validate_flag):
+def generate_vcf_file(assembly, generated_files_folder, skip_chromosomes, config_info, upload_flag, validate_flag):
     logger.info("Querying Assembly: " + assembly)
 
     variants_query = '''MATCH (s:Species)-[:FROM_SPECIES]-(a:Allele)-[:VARIATION]-(v:Variant)-[l:LOCATED_ON]->(c:Chromosome),
