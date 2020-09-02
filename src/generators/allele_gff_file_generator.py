@@ -103,4 +103,9 @@ class AlleleGffFileGenerator:
             process_name = "1"
             if upload_flag:
                 logger.info("Submitting Allele GFF (" + self.assembly + ") to FMS")
-                upload.upload_process(process_name, filename, self.generated_files_folder, 'ALLELE-GFF', self.assembly, self.config_info)
+                upload.upload_process(process_name,
+                                      filename,
+                                      self.generated_files_folder,
+                                      'ALLELE-GFF',
+                                      self.assembly.replace('_', '').replace('.', ''),
+                                      self.config_info)
