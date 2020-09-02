@@ -1,8 +1,12 @@
 import os
+import logging
 from datetime import datetime
 from string import Template
 from common import get_ordered_species_dict
 from common import ordered_taxon_species_map_from_data_dictionary
+from common import get_taxon_id_from_assembly
+
+logger = logging.getLogger(name=__name__)
 
 
 class HeaderTemplate(Template):
@@ -29,6 +33,9 @@ def create_header(file_type, database_version, data_format,
     :param file_type:
     :return:
     """
+
+    if assembly != '':
+        taxon_ids = get_taxon_id_from_assembly(assembly.replace('_', '').replace('.', ''))
 
     if config_info != '':
         ordered_taxon_species_map = get_ordered_species_dict(config_info, taxon_ids)

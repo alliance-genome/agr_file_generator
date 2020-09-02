@@ -1,4 +1,3 @@
-
 import logging
 import os
 import time
@@ -442,7 +441,7 @@ def generate_allele_gff_assembly(assembly, generated_files_folder, config_info, 
     query = '''MATCH (v:Variant)-[:ASSOCIATION]->(gl:GenomicLocation)-[:ASSOCIATION]->(:Assembly {primaryKey: "''' + assembly + '''"}),
                      (a:Allele)<-[:VARIATION]-(v:Variant)-[:LOCATED_ON]->(c:Chromosome),
                      (v:Variant)-[:VARIATION_TYPE]->(so:SOTerm),
-                     (v:Variant)<-[:COMPUTED_GENE]-(g:Gene)-[:ASSOCIATION]->(glc:GeneLevelConsequence)
+                     (v:Variant)<-[:COMPUTED_GENE]-(g:Gene)-[:ASSOCIATION]->(glc:GeneLevelConsequence)<-[:ASSOCIATION]-(v:Variant)
 WITH c,a,v,gl,so,
      COLLECT({geneID: g.primaryKey,
               geneSymbol: g.symbol,
@@ -453,6 +452,8 @@ RETURN c.primaryKey AS chromosome,
        a.symbol AS symbol,
        a.symbolText AS symbol_text,
        COLLECT({ID: v.primaryKey,
+                genomicVariantSequence: v.genomicVariantSequence,
+                genomicReferenceSequence: v.genomicReferenceSequence,
                 soTerm: so.name,
                 start: gl.start,
                 end: gl.end,
@@ -478,12 +479,12 @@ ORDER BY c.primaryKey'''
 
 def generate_allele_gff(generate_files_folder, config_info, upload_flag, validate_flag):
     assembly_query = """MATCH (a:Assembly)
-                        RETURN a.primaryKey as assemblyID"""
+                        RETURN a.primaryKey AS assemblyID"""
     assembly_data_source = DataSource(get_neo_uri(config_info), assembly_query)
 
     if config_info.config["DEBUG"]:
         start_time = time.time()
-        logger.info("Start time for generating VCF files: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
+        logger.info("Start time for generating Allele GFF files: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
 
     for assembly_result in assembly_data_source:
         assembly = assembly_result["assemblyID"]
@@ -496,7 +497,7 @@ def generate_allele_gff(generate_files_folder, config_info, upload_flag, validat
 
     if config_info.config["DEBUG"]:
         end_time = time.time()
-        logger.info("Created VCF files - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
+        logger.info("Created Allele GFF files - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 

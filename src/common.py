@@ -66,6 +66,18 @@ def get_ordered_species_dict(config_info, taxon_ids):
     return species
 
 
+def get_taxon_id_from_assembly(assembly):
+    assemblies_url = 'https://raw.githubusercontent.com/alliance-genome/agr_schemas/master/ingest/assembly.yaml'
+    response = requests.get(assemblies_url)
+
+    if response.status_code == 200:
+        assemblies_yaml = yaml.load(response.content, Loader=yaml.FullLoader)
+        for record in assemblies_yaml:
+            for assemblies_record in record['assemblies']:
+                if 'name' in assemblies_record and assemblies_record['name'] == assembly:
+                    return record['taxonId']
+
+
 def ordered_taxon_species_map_from_data_dictionary(taxon_ids):
     species_url = 'https://raw.githubusercontent.com/alliance-genome/agr_schemas/master/ingest/species/species.yaml'
     logger.info('Reading in ' + species_url)

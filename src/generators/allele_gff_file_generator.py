@@ -19,6 +19,24 @@ class AlleleGffFileGenerator:
         self.config_info = config_info
         self.generated_files_folder = generated_files_folder
 
+    def _get_vcf_start_position(variant):
+        so_term = variant['soTerm']
+
+        if so_term == 'deletion':
+            return variant['start'] - 1
+        elif so_term in ['insertion', 'point_mutation', 'MNV']:
+            return variant['start']
+        elif so_term == 'delins':
+            if variant['genomicVariantSequence'] == '':
+                return variant['start'] - 1
+            elif len(variant['genomicVariantSequence']) == len(variant['genomicReferenceSequence']):
+                return variant['start']
+            else:
+                return variant['start'] - 1
+        else:
+            logger.fatal('New SoTerm that We need to add logic for: %r', so_term)
+            return None
+
     def generate_assembly_file(self, upload_flag=False, validate_flag=False):
         filename = self.assembly + '-' + self.config_info.config['RELEASE_VERSION'] + '.allele.gff'
         filepath = os.path.join(self.generated_files_folder, filename)
@@ -37,7 +55,7 @@ class AlleleGffFileGenerator:
                 allele_end = 0
 
                 for variant in allele["variants"]:
-                    start = variant['start']
+                    start = AlleleGffFileGenerator._get_vcf_start_position(variant)
                     end = variant['end']
                     if start < allele_start or allele_start == -1:
                         allele_start = start
