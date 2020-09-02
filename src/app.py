@@ -87,7 +87,7 @@ def main(vcf,
         validate = True
 
     if not os.path.exists(generated_files_folder):
-        os.makedirs(generated_files_folder)
+        os.makedirs(generated_files_folder, exist_ok=True)
 
     click.echo('INFO:\tFiles output: ' + generated_files_folder)
     if vcf is True or all_filetypes is True:
@@ -121,6 +121,7 @@ def main(vcf,
     end_time = time.time()
     elapsed_time = end_time - start_time
     click.echo('File Generator finished. Elapsed time: %s' % time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
+
 
 def generate_vcf_file(assembly, generated_files_folder, skip_chromosomes, config_info, upload_flag, validate_flag):
     logger.info("Querying Assembly: " + assembly)
@@ -179,8 +180,6 @@ def generate_vcf_file(assembly, generated_files_folder, skip_chromosomes, config
 
 
 def generate_vcf_files(generated_files_folder, skip_chromosomes, config_info, upload_flag, validate_flag):
-    os.makedirs(generated_files_folder, exist_ok=True)
-
     assembly_query = """MATCH (a:Assembly)
                         RETURN a.primaryKey as assemblyID"""
     assembly_data_source = DataSource(get_neo_uri(config_info), assembly_query)
@@ -476,7 +475,7 @@ ORDER BY c.primaryKey'''
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_allele_gff(generate_files_folder, config_info, upload_flag, validate_flag):
+def generate_allele_gff(generated_files_folder, config_info, upload_flag, validate_flag):
     assembly_query = """MATCH (a:Assembly)
                         RETURN a.primaryKey AS assemblyID"""
     assembly_data_source = DataSource(get_neo_uri(config_info), assembly_query)

@@ -38,7 +38,7 @@ class AlleleGffFileGenerator:
             return None
 
     def generate_assembly_file(self, upload_flag=False, validate_flag=False):
-        filename = self.assembly + '-' + self.config_info.config['RELEASE_VERSION'] + '.allele.gff'
+        filename = self.assembly .replace('_', '').replace('.', '') + '-' + self.config_info.config['RELEASE_VERSION'] + '.allele.gff'
         filepath = os.path.join(self.generated_files_folder, filename)
         logger.info('Generating Allele GFF File for assembly %r', self.assembly)
         with open(filepath, 'w') as allele_file:
