@@ -445,7 +445,7 @@ WITH c,a,v,gl,so,
               geneSymbol: g.symbol,
               geneLevelConsequence: glc.geneLevelConsequence,
               impact: glc.impact}) AS glcs
-RETURN c.primaryKey AS chromosome,
+WITH c.primaryKey AS chromosome,
        a.primaryKey AS ID,
        a.symbol AS symbol,
        a.symbolText AS symbol_text,
@@ -456,8 +456,11 @@ RETURN c.primaryKey AS chromosome,
                 start: gl.start,
                 end: gl.end,
                 chromosome: gl.chromosome,
-                geneLevelConsequences: glcs}) AS variants
-ORDER BY c.primaryKey'''
+                geneLevelConsequences: glcs}) AS variants,
+        COUNT(v.primaryKey) AS num
+WHERE num > 1
+RETURN chromosome, ID, symbol, symbol_text, variants
+ORDER BY chromosome'''
 
     if config_info.config["DEBUG"]:
         logger.info("Allele GFF query")
