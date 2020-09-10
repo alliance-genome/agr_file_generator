@@ -40,6 +40,14 @@ class AlleleGffFileGenerator:
     def generate_assembly_file(self, upload_flag=False, validate_flag=False):
         filename = self.assembly .replace('_', '').replace('.', '') + '-' + self.config_info.config['RELEASE_VERSION'] + '.allele.gff'
         filepath = os.path.join(self.generated_files_folder, filename)
+        records_found = False
+        for allele in self.alleles:
+            records_found = True
+
+        if not records_found:
+            logger.info('Not Generatring Allele GFF File for assembly %r - no alleles with multiple variants found', self.assembly)
+            return
+
         logger.info('Generating Allele GFF File for assembly %r', self.assembly)
         with open(filepath, 'w') as allele_file:
             header = create_header('Allele GFF',
