@@ -33,14 +33,15 @@ class VcfFileGenerator:
             variant['genomicVariantSequence'] = padded_base + variant['genomicVariantSequence']
 
     @classmethod
-    def _write_vcf_header(cls, vcf_file, assembly, species, config_info):
+    def _write_vcf_header(cls, vcf_file, assembly, contigs, species, config_info):
         dt = time.strftime("%Y%m%d", time.gmtime())
         my_path = os.path.abspath(os.path.dirname(__file__))
         vcf_header_path = os.path.join(my_path, '../headers/vcf_header_template.txt')
         header = open(vcf_header_path).read().format(datetime=dt,
-                                                     database_version=config_info.config['RELEASE_VERSION'],
-                                                     species=species,
-                                                     assembly=assembly)
+                                                     database_version=config_info.config['RELEASE_VERSION'])
+        for contig in contigs:
+            header = header + "##contig=<ID=" + contig + ",assembly=" + assembly + ",species=\"" + species + "\">\n"
+
         vcf_file.write(header)
         vcf_file.write('#' + '\t'.join(cls.col_headers))
         vcf_file.write('\n')
@@ -245,7 +246,11 @@ class VcfFileGenerator:
             filepath = os.path.join(self.generated_files_folder, filename)
             logger.info('Generating VCF File for assembly %r', assembly)
             with open(filepath, 'w') as vcf_file:
-                self._write_vcf_header(vcf_file, assembly,
+                contigs = set()
+                for (chromosome, variants) in sorted(chromo_variants.items(), key=itemgetter(0)):
+                    if chromosome not in skip_chromosomes:
+                        contigs.add(chromosome)
+                self._write_vcf_header(vcf_file, assembly, contigs,
                                        assembly_species[assembly],
                                        self.config_info)
                 for (chromosome, variants) in sorted(chromo_variants.items(), key=itemgetter(0)):
