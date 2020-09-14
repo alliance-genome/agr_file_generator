@@ -65,7 +65,7 @@ class AlleleGffFileGenerator:
                     start = AlleleGffFileGenerator._get_vcf_start_position(variant)
                     end = variant['end']
                     if variant['soTerm'] == 'insertion':
-                        end = end - 1
+                        end = start
                     if start < allele_start or allele_start == -1:
                         allele_start = start
                     if end > allele_end:
