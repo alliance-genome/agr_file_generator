@@ -445,19 +445,22 @@ WITH c,a,v,gl,so,
               geneSymbol: g.symbol,
               geneLevelConsequence: glc.geneLevelConsequence,
               impact: glc.impact}) AS glcs
-RETURN c.primaryKey AS chromosome,
-       a.primaryKey AS ID,
-       a.symbol AS symbol,
-       a.symbolText AS symbol_text,
-       COLLECT({ID: v.primaryKey,
-                genomicVariantSequence: v.genomicVariantSequence,
-                genomicReferenceSequence: v.genomicReferenceSequence,
-                soTerm: so.name,
-                start: gl.start,
-                end: gl.end,
-                chromosome: gl.chromosome,
-                geneLevelConsequences: glcs}) AS variants
-ORDER BY c.primaryKey'''
+WITH c.primaryKey AS chromosome,
+     a.primaryKey AS ID,
+     a.symbol AS symbol,
+     a.symbolText AS symbol_text,
+     COLLECT(DISTINCT {ID: v.primaryKey,
+              genomicVariantSequence: v.genomicVariantSequence,
+              genomicReferenceSequence: v.genomicReferenceSequence,
+              soTerm: so.name,
+              start: gl.start,
+              end: gl.end,
+              chromosome: gl.chromosome,
+              geneLevelConsequences: glcs}) AS variants,
+     COUNT(DISTINCT v.primaryKey) AS num
+WHERE num > 1
+RETURN chromosome, ID, symbol, symbol_text, variants
+ORDER BY chromosome'''
 
     if config_info.config["DEBUG"]:
         logger.info("Allele GFF query")
