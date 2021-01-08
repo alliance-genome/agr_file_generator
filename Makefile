@@ -11,7 +11,7 @@ endif
 endif
 
 build: pull
-	docker build -t agrdocker/agr_file_generator:latest --build-arg REG=${REG} .
+	docker build -t agrlocal/agr_file_generator:latest --build-arg REG=${REG} .
 
 pull: registry-docker-login
 	docker pull ${REG}/agr_base_linux_env:latest

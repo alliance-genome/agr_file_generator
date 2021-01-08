@@ -3,7 +3,7 @@ version: "3.2"
 
 services:
   agr_file_generator:
-    image: agrdocker/agr_file_generator:latest
+    image: agrlocal/agr_file_generator:latest
     volumes:
       - type: volume
         source: agr_generated_files
@@ -23,7 +23,7 @@ services:
       - src/app.py
       - --gene-cross-reference
   agr_file_generator_test:
-    image: agrdocker/agr_file_generator:latest
+    image: agrlocal/agr_file_generator:latest
     volumes:
       - type: volume
         source: agr_generated_files
