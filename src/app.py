@@ -248,9 +248,11 @@ def generate_disease_file(generated_files_folder, config_info, taxon_id_fms_subt
                    WHERE (object:Gene OR object:Allele OR object:AffectedGenomicModel)
                          AND dej.joinType IN ["IS_MARKER_FOR", // need to remove when removed from database
                                               "IS_IMPLICATED_IN", // need to remove when removed from database
+                                              "IS_NOT_IMPLICATED_IN", // need to remove when removed from database
                                               "IS_MODEL_OF",
                                               "is_model_of",
                                               "is_implicated_in",
+                                              "is_not_implicated_in",
                                               "is_biomarker_for",
                                               "implicated_via_orthology",
                                               "biomarker_via_orthology"]
