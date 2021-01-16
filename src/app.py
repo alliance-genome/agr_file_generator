@@ -132,7 +132,7 @@ def main(variant_allele,
 def generate_variant_allele_file(genereated_files_folder, skip_chromosomes, config_info, upload_flag, validate_flag):
     logger.info("Querying Variant Allele")
 
-    variant_allele_query = '''MATCH (s:Species)<-[:FROM_SPECIES]-(a:Allele {primaryKey: "MGI:3838372"})
+    variant_allele_query = '''MATCH (s:Species)<-[:FROM_SPECIES]-(a:Allele)
                               OPTIONAL MATCH (a:Allele)<-[:VARIATION]-(v:Variant)-[:LOCATED_ON]->(c:Chromosome),
                                              (v:Variant)-[:VARIATION_TYPE]->(st:SOTerm),
                                              (v:Variant)-[:ASSOCIATION]->(p:GenomicLocation)-[:ASSOCIATION]->(assembly:Assembly)
@@ -248,6 +248,11 @@ def generate_vcf_file(assembly, generated_files_folder, skip_chromosomes, config
                                             id: a.primaryKey}) AS alleles,
                           s, v, l, c, st, p, assembly
                      OPTIONAL MATCH (v:Variant)-[:ASSOCIATION]-(glc:GeneLevelConsequence)-[:ASSOCIATION]-(g:Gene)
+                     WITH alleles, s, v, l, c, st, p, assembly,
+                          COLLECT(DISTINCT {gene: g.primaryKey,
+                                            geneSymbol: g.symbol,
+                                            consequence: glc.geneLevelConsequence,
+                                            impact: glc.impact}) AS geneConsequences
                      OPTIONAL MATCH (v:Variant)-[:ASSOCIATION]-(tlc:TranscriptLevelConsequence)-[:ASSOCIATION]-(t:Transcript)
                      RETURN c.primaryKey AS chromosome,
                             v.globalId AS globalId,
@@ -258,10 +263,7 @@ def generate_vcf_file(assembly, generated_files_folder, skip_chromosomes, config
                             v.dataProvider AS dataProvider,
                             assembly.primaryKey AS assembly,
                             alleles,
-                            COLLECT(DISTINCT {gene: g.primaryKey,
-                                              geneSymbol: g.symbol,
-                                              consequence: glc.geneLevelConsequence,
-                                              impact: glc.impact}) AS geneConsequences,
+                            geneConsequences,
                             collect(DISTINCT {transcript: t.primaryKey,
                                               transcriptGFF3ID: t.gff3ID,
                                               transcriptGFF3Name: t.name,
