@@ -84,7 +84,7 @@ def main(variant_allele,
          uniprot,
          human_genes_interacting_with,
          allele_gff,
-         generated_files_folder=generated_files_folder,
+         generated_files_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output',
          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):
 
     start_time = time.time()
