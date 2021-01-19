@@ -24,7 +24,7 @@ neo_debug_level = logging.DEBUG if config_info.config["NEO_DEBUG"] else logging.
 if config_info.config["GENERATED_FILES_FOLDER"]:
     generated_files_folder = config_info.config["GENERATED_FILES_FOLDER"]
 else:
-    generated_files_folder = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output'
+    generated_files_folder = os.path.join("/tmp", "agr_generated_files")
 
 coloredlogs.install(level=debug_level,
                     fmt='%(asctime)s %(levelname)s: %(name)s:%(lineno)d: %(message)s',
