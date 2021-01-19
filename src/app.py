@@ -12,6 +12,7 @@ from generators import (disease_file_generator,
                         gene_cross_reference_file_generator,
                         orthology_file_generator,
                         vcf_file_generator,
+                        variant_allele_file_generator,
                         uniprot_cross_reference_generator,
                         allele_gff_file_generator,
                         human_genes_interacting_with_file_generator)
@@ -41,6 +42,10 @@ logger = logging.getLogger(__name__)
 if config_info.config["DEBUG"]:
     logger.warning('DEBUG mode enabled!')
 
+#if not os.path.isdir(generated_files_folder):
+#    logger.error("Generated_files_folder: " + generated_files_folder + " does not exist")
+#    exit(-1)
+
 ignore_assemblies = ["", "GRCh38", "R64-2-1", "ASM985889v3"]
 
 taxon_id_fms_subtype_map = {"NCBITaxon:10116": "RGD",
@@ -53,6 +58,7 @@ taxon_id_fms_subtype_map = {"NCBITaxon:10116": "RGD",
 
 
 @click.command()
+@click.option('--variant-allele', is_flag=True, help='Generates Variant Allele files')
 @click.option('--vcf', is_flag=True, help='Generates VCF files')
 @click.option('--orthology', is_flag=True, help='Generates orthology files')
 @click.option('--disease', is_flag=True, help='Generates DAF files')
@@ -65,7 +71,8 @@ taxon_id_fms_subtype_map = {"NCBITaxon:10116": "RGD",
 @click.option('--allele-gff', is_flag=True, help='Generates an Allele based GFF file')
 @click.option('--upload', is_flag=True, help='Submits generated files to File Management System (FMS)')
 @click.option('--validate', is_flag=True, help='Validate generated file. If uploading then validates automatically')
-def main(vcf,
+def main(variant_allele,
+         vcf,
          orthology,
          disease,
          expression,
@@ -90,6 +97,9 @@ def main(vcf,
         os.makedirs(generated_files_folder, exist_ok=True)
 
     click.echo('INFO:\tFiles output: ' + generated_files_folder)
+    if variant_allele is True or all_filetypes is True:
+        click.echo('INFO:\tGenerating Variant Allele JSON and TSV files')
+        generate_variant_allele_file(generated_files_folder, skip_chromosomes, config_info, upload, validate)
     if vcf is True or all_filetypes is True:
         click.echo('INFO:\tGenerating VCF files, VCF gz files and VCF gz Tabix files')
         generate_vcf_files(generated_files_folder, skip_chromosomes, config_info, upload, validate)
@@ -123,6 +133,111 @@ def main(vcf,
     click.echo('File Generator finished. Elapsed time: %s' % time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
 
 
+def generate_variant_allele_file(generated_files_folder, skip_chromosomes, config_info, upload_flag, validate_flag):
+    logger.info("Querying Variant Allele")
+
+    variant_allele_query = '''MATCH (s:Species)<-[:FROM_SPECIES]-(a:Allele)
+                              OPTIONAL MATCH (a:Allele)<-[:VARIATION]-(v:Variant)-[:LOCATED_ON]->(c:Chromosome),
+                                             (v:Variant)-[:VARIATION_TYPE]->(st:SOTerm),
+                                             (v:Variant)-[:ASSOCIATION]->(p:GenomicLocation)-[:ASSOCIATION]->(assembly:Assembly)
+                              WHERE NOT v.genomicReferenceSequence = v.genomicVariantSequence
+                                    OR v.genomicVariantSequence = ""
+                              WITH v, a, s, c, p, st, assembly
+                              OPTIONAL MATCH (v:Variant)<-[:COMPUTED_GENE]-(gene:Gene)
+                              WITH v, a, s, c, p, st, assembly, gene
+                              OPTIONAL MATCH (v:Variant)-[:ASSOCIATION]->(glc:GeneLevelConsequence)<-[:ASSOCIATION]->(gene:Gene)-[:COMPUTED_GENE]->(v:Variant)
+                              WITH v, a, s, c, p, st, assembly,
+                                   COLLECT(glc.geneLevelConsequence) AS geneConsequences,
+                                   COLLECT({id: gene.primaryKey,
+                                            symbol: gene.symbol}) AS variantAffectedGenes
+                              OPTIONAL MATCH (a:Allele)-[:IS_ALLELE_OF]->(gene:Gene)
+                              WITH v, a, s, c, p, st, assembly, geneConsequences, variantAffectedGenes,
+                                   COLLECT({id: gene.primaryKey,
+                                            symbol: gene.symbol}) AS alleleAssociatedGenes
+                              OPTIONAL MATCH (a:Allele)-[:ALSO_KNOWN_AS]-(syn:Synonym)
+                              WITH v, a, s, c, p, st, assembly, geneConsequences, variantAffectedGenes, alleleAssociatedGenes,
+                                   COLLECT(syn.primaryKey) AS alleleSyns
+                              OPTIONAL MATCH (v:Variant)-[:ALSO_KNOWN_AS]-(syn:Synonym)
+                              WITH v, a, s, c, p, st, assembly, geneConsequences, variantAffectedGenes, alleleAssociatedGenes, alleleSyns,
+                                   COLLECT(syn.primaryKey) AS variantSyns
+                              WITH v, a, s, c, p, st, assembly, geneConsequences, variantAffectedGenes, alleleAssociatedGenes, alleleSyns, variantSyns
+                              OPTIONAL MATCH (v:Variant)-[:ASSOCIATION]->(pub:Publication)
+                              WITH v, a, s, c, p, st, assembly, geneConsequences, alleleAssociatedGenes, alleleSyns, variantSyns, variantAffectedGenes,
+                                   COLLECT(pub.primaryKey) AS pubIds
+                              OPTIONAL MATCH (v:Variant)-[:CROSS_REFERENCE]->(vcr:CrossReference)
+                              WITH v, a, s, c, p, st, assembly, geneConsequences, alleleAssociatedGenes, alleleSyns, variantSyns, variantAffectedGenes, pubIds,
+                                   COLLECT(vcr.name) AS variantCrossReferences
+                              OPTIONAL MATCH (v:Variant)-[:HAS_PHENOTYPE]-(phenotype:Phenotype)
+                              WITH v, a, s, c, p, st, assembly, geneConsequences, alleleAssociatedGenes, alleleSyns, variantSyns, variantAffectedGenes, pubIds,
+                                   variantCrossReferences,
+                                   COUNT(phenotype) AS variantPhenotypeCount
+                              OPTIONAL MATCH (a:Allele)-[:HAS_PHENOTYPE]-(phenotype:Phenotype)
+                              WITH v, a, s, c, p, st, assembly, geneConsequences, alleleAssociatedGenes, alleleSyns, variantSyns, variantAffectedGenes, pubIds,
+                                   variantCrossReferences,
+                                   variantPhenotypeCount,
+                                   COUNT(phenotype) AS allelePhenotypeCount
+                              OPTIONAL MATCH (v:Variant)-[:ASSOCIATION]->(disease:DiseaseEntityJoin)
+                              WITH v, a, s, c, p, st, assembly, geneConsequences, alleleAssociatedGenes, alleleSyns, variantSyns, variantAffectedGenes, pubIds,
+                                   variantCrossReferences,
+                                   variantPhenotypeCount,
+                                   allelePhenotypeCount,
+                                   COUNT(disease) AS variantDiseaseCount
+                              OPTIONAL MATCH (a:Allele)-[:ASSOCIATION]->(disease:DiseaseEntityJoin)
+                              WITH v, a, s, c, p, st, assembly, geneConsequences, alleleAssociatedGenes, alleleSyns, variantSyns, variantAffectedGenes, pubIds,
+                                   variantCrossReferences,
+                                   variantPhenotypeCount,
+                                   allelePhenotypeCount,
+                                   variantDiseaseCount,
+                                   count(disease) AS alleleDiseaseCount
+                              OPTIONAL MATCH (a:Allele)<-[:VARIATION]-(variant:Variant)
+                              RETURN c.primaryKey AS chromosome,
+                                     variantCrossReferences,
+                                     variantPhenotypeCount,
+                                     allelePhenotypeCount,
+                                     variantDiseaseCount,
+                                     alleleDiseaseCount,
+                                     COUNT(variant) AS alleleVariantCount,
+                                     v.globalId AS globalId,
+                                     right(v.paddingLeft,1) AS paddingLeft,
+                                     v.genomicReferenceSequence AS genomicReferenceSequence,
+                                     v.genomicVariantSequence AS genomicVariantSequence,
+                                     v.hgvsNomenclature AS hgvsNomenclature,
+                                     v.dataProvider AS dataProvider,
+                                     assembly.primaryKey AS assembly,
+                                     alleleSyns,
+                                     variantSyns,
+                                     v.primaryKey as variantId,
+                                     {id: st.primaryKey,
+                                      name: st.name} AS variationType,
+                                     {symbol: a.symbol,
+                                      symbolText: a.symbolText,
+                                      id: a.primaryKey} AS allele,
+                                     pubIds,
+                                     variantAffectedGenes,
+                                     geneConsequences,
+                                     alleleAssociatedGenes,
+                                     p.start AS start,
+                                     p.end AS end,
+                                     s.name AS species,
+                                     s.primaryKey AS taxonId,
+                                     st.nameKey AS soTerm'''
+    if config_info.config["DEBUG"]:
+        logger.info(variant_allele_query)
+        start_time = time.time()
+        logger.info("Start time: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
+
+    variant_allele_data_source = DataSource(get_neo_uri(config_info), variant_allele_query)
+    gvaf = variant_allele_file_generator.VariantAlleleFileGenerator(variant_allele_data_source,
+                                                                    generated_files_folder,
+                                                                    config_info)
+    gvaf.generate_files(skip_chromosomes=skip_chromosomes, upload_flag=upload_flag, validate_flag=validate_flag)
+
+    if config_info.config["DEBUG"]:
+        end_time = time.time()
+        logger.info("Created Variant Allele file - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
+        logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
+
+
 def generate_vcf_file(assembly, generated_files_folder, skip_chromosomes, config_info, upload_flag, validate_flag):
     logger.info("Querying Assembly: " + assembly)
 
@@ -137,6 +252,11 @@ def generate_vcf_file(assembly, generated_files_folder, skip_chromosomes, config
                                             id: a.primaryKey}) AS alleles,
                           s, v, l, c, st, p, assembly
                      OPTIONAL MATCH (v:Variant)-[:ASSOCIATION]-(glc:GeneLevelConsequence)-[:ASSOCIATION]-(g:Gene)
+                     WITH alleles, s, v, l, c, st, p, assembly,
+                          COLLECT(DISTINCT {gene: g.primaryKey,
+                                            geneSymbol: g.symbol,
+                                            consequence: glc.geneLevelConsequence,
+                                            impact: glc.impact}) AS geneConsequences
                      OPTIONAL MATCH (v:Variant)-[:ASSOCIATION]-(tlc:TranscriptLevelConsequence)-[:ASSOCIATION]-(t:Transcript)
                      RETURN c.primaryKey AS chromosome,
                             v.globalId AS globalId,
@@ -147,10 +267,7 @@ def generate_vcf_file(assembly, generated_files_folder, skip_chromosomes, config
                             v.dataProvider AS dataProvider,
                             assembly.primaryKey AS assembly,
                             alleles,
-                            COLLECT(DISTINCT {gene: g.primaryKey,
-                                              geneSymbol: g.symbol,
-                                              consequence: glc.geneLevelConsequence,
-                                              impact: glc.impact}) AS geneConsequences,
+                            geneConsequences,
                             collect(DISTINCT {transcript: t.primaryKey,
                                               transcriptGFF3ID: t.gff3ID,
                                               transcriptGFF3Name: t.name,
