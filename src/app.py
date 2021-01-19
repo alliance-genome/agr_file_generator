@@ -24,7 +24,7 @@ neo_debug_level = logging.DEBUG if config_info.config["NEO_DEBUG"] else logging.
 if config_info.config["GENERATED_FILES_FOLDER"]:
     generated_files_folder = config_info.config["GENERATED_FILES_FOLDER"]
 else:
-    generated_files_folder = os.path.join("/tmp", "agr_generated_files")
+    generated_files_folder = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output'
 
 coloredlogs.install(level=debug_level,
                     fmt='%(asctime)s %(levelname)s: %(name)s:%(lineno)d: %(message)s',
@@ -41,6 +41,10 @@ logger = logging.getLogger(__name__)
 
 if config_info.config["DEBUG"]:
     logger.warning('DEBUG mode enabled!')
+
+if not os.path.isdir(generated_files_folder):
+    logger.error("Generated_files_folder: " + generated_files_folder + " does not exist")
+    exit(-1)
 
 ignore_assemblies = ["", "GRCh38", "R64-2-1", "ASM985889v3"]
 
@@ -80,7 +84,7 @@ def main(variant_allele,
          uniprot,
          human_genes_interacting_with,
          allele_gff,
-         generated_files_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output',
+         generated_files_folder=generated_files_folder,
          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):
 
     start_time = time.time()
@@ -129,7 +133,7 @@ def main(variant_allele,
     click.echo('File Generator finished. Elapsed time: %s' % time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
 
 
-def generate_variant_allele_file(genereated_files_folder, skip_chromosomes, config_info, upload_flag, validate_flag):
+def generate_variant_allele_file(generated_files_folder, skip_chromosomes, config_info, upload_flag, validate_flag):
     logger.info("Querying Variant Allele")
 
     variant_allele_query = '''MATCH (s:Species)<-[:FROM_SPECIES]-(a:Allele)

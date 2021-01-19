@@ -168,5 +168,5 @@ class VariantAlleleFileGenerator:
             json_validator.JsonValidator(filepath_json, 'variant-allele').validateJSON()
             if upload_flag:
                 logger.info("Submitting to FMS")
-                upload.upload_process(process_name, filepath_tsv, self.generated_files_folder, 'VARIANT-ALLELE', 'COMBINED', self.config_info)
-                upload.upload_process(process_name, filepath_json, self.generated_files_folder, 'VARIANT-ALLLELE-JSON', 'COMBINED', self.config_info)
+                upload.upload_process(process_name, filename + ".tsv", self.generated_files_folder, 'VARIANT-ALLELE', 'COMBINED', self.config_info)
+                upload.upload_process(process_name, filename + ".json", self.generated_files_folder, 'VARIANT-ALLLELE-JSON', 'COMBINED', self.config_info)
