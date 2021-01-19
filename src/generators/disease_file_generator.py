@@ -183,7 +183,7 @@ class DiseaseFileGenerator:
                                                           # genetic_sex,
                                                           pub_id,
                                                           datetime.strptime(date_str, "%Y-%m-%d").strftime("%Y%m%d"),
-                                                          disease_association["dataProvider"]]))
+                                                          disease_association["sourceDisplayName"]]))
                 processed_association_tsv = processed_association.copy()
                 processed_association_tsv["WithOrthologs"] = "|".join(set(disease_association["withOrthologs"])) if len(disease_association["withOrthologs"]) > 0 else ""
 
