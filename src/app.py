@@ -42,9 +42,9 @@ logger = logging.getLogger(__name__)
 if config_info.config["DEBUG"]:
     logger.warning('DEBUG mode enabled!')
 
-if not os.path.isdir(generated_files_folder):
-    logger.error("Generated_files_folder: " + generated_files_folder + " does not exist")
-    exit(-1)
+#if not os.path.isdir(generated_files_folder):
+#    logger.error("Generated_files_folder: " + generated_files_folder + " does not exist")
+#    exit(-1)
 
 ignore_assemblies = ["", "GRCh38", "R64-2-1", "ASM985889v3"]
 
