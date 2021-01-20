@@ -369,8 +369,8 @@ def generate_disease_file(generated_files_folder, config_info, taxon_id_fms_subt
                                               "implicated_via_orthology",
                                               "biomarker_via_orthology"]
                    MATCH (dej:Association:DiseaseEntityJoin)-[:EVIDENCE]->(pj:PublicationJoin),
-                         (dej:DiseaseEntityJoin)-[:ANNOTATION_SOURCE_CROSS_REFERENCE]->(ascr:CrossReference),
                          (p:Publication)-[:ASSOCIATION]->(pj:PublicationJoin)-[:ASSOCIATION]->(ec:Ontology:ECOTerm)
+                   OPTIONAL MATCH (dej:DiseaseEntityJoin)-[:ANNOTATION_SOURCE_CROSS_REFERENCE]->(ascr:CrossReference)
                    WITH disease, dej, object, species, pj, p, ec,
                         COLLECT(DISTINCT {curatedDB: ascr.curatedDB, displayName: ascr.displayName}) AS source
                    OPTIONAL MATCH (object:Gene)-[:ASSOCIATION]->(dej:Association:DiseaseEntityJoin)<-[:ASSOCIATION]-(otherAssociatedEntity)
@@ -400,7 +400,8 @@ def generate_disease_file(generated_files_folder, config_info, taxon_id_fms_subt
                                             otherAssociatedEntityID: otherAssociatedEntity.primaryKey}) as evidence,
                           REDUCE(t = "1900-01-01", c IN collect(left(pj.dateAssigned, 10)) | CASE WHEN c > t THEN c ELSE t END) AS dateAssigned,
                           ///takes most recent date
-                          source'''
+                          source,
+                          dej.dataProvider AS dataProvider'''
 
     if config_info.config["DEBUG"]:
         logger.info("Disease Association Query: ")

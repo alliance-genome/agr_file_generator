@@ -171,8 +171,10 @@ class DiseaseFileGenerator:
                         source = curatorDB
                     else:
                         source = curatorDB + " Via " + sourceDB
-                else:
+                elif disease_association['source'][0]['displayName']:
                     source = disease_association["source"][0]["displayName"]
+                else:
+                    source = disease_association["dataProvider"]
 
                 processed_association = dict(zip(fields, [taxon_id,
                                                           disease_association["speciesName"],
