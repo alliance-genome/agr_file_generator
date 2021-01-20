@@ -21,10 +21,9 @@ config_info = ContextInfo()
 debug_level = logging.DEBUG if config_info.config["DEBUG"] else logging.INFO
 neo_debug_level = logging.DEBUG if config_info.config["NEO_DEBUG"] else logging.INFO
 
+generated_files_folder = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output'
 if config_info.config["GENERATED_FILES_FOLDER"]:
     generated_files_folder = config_info.config["GENERATED_FILES_FOLDER"]
-else:
-    generated_files_folder = os.path.join("/tmp", "agr_generated_files")
 
 coloredlogs.install(level=debug_level,
                     fmt='%(asctime)s %(levelname)s: %(name)s:%(lineno)d: %(message)s',
@@ -41,10 +40,6 @@ logger = logging.getLogger(__name__)
 
 if config_info.config["DEBUG"]:
     logger.warning('DEBUG mode enabled!')
-
-#if not os.path.isdir(generated_files_folder):
-#    logger.error("Generated_files_folder: " + generated_files_folder + " does not exist")
-#    exit(-1)
 
 ignore_assemblies = ["", "GRCh38", "R64-2-1", "ASM985889v3"]
 
@@ -84,7 +79,7 @@ def main(variant_allele,
          uniprot,
          human_genes_interacting_with,
          allele_gff,
-         generated_files_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output',
+         generated_files_folder=generated_files_folder,
          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):
 
     start_time = time.time()
@@ -376,6 +371,8 @@ def generate_disease_file(generated_files_folder, config_info, taxon_id_fms_subt
                    MATCH (dej:Association:DiseaseEntityJoin)-[:EVIDENCE]->(pj:PublicationJoin),
                          (dej:DiseaseEntityJoin)-[:ANNOTATION_SOURCE_CROSS_REFERENCE]->(ascr:CrossReference),
                          (p:Publication)-[:ASSOCIATION]->(pj:PublicationJoin)-[:ASSOCIATION]->(ec:Ontology:ECOTerm)
+                   WITH disease, dej, object, species, pj, p, ec,
+                        COLLECT(DISTINCT {curatedDB: ascr.curatedDB, displayName: ascr.displayName}) AS source
                    OPTIONAL MATCH (object:Gene)-[:ASSOCIATION]->(dej:Association:DiseaseEntityJoin)<-[:ASSOCIATION]-(otherAssociatedEntity)
                    OPTIONAL MATCH (pj:PublicationJoin)-[:MODEL_COMPONENT|PRIMARY_GENETIC_ENTITY]-(inferredFromEntity)
                    OPTIONAL MATCH (dej:Association:DiseaseEntityJoin)-[:FROM_ORTHOLOGOUS_GENE]->(oGene:Gene),
@@ -403,7 +400,7 @@ def generate_disease_file(generated_files_folder, config_info, taxon_id_fms_subt
                                             otherAssociatedEntityID: otherAssociatedEntity.primaryKey}) as evidence,
                           REDUCE(t = "1900-01-01", c IN collect(left(pj.dateAssigned, 10)) | CASE WHEN c > t THEN c ELSE t END) AS dateAssigned,
                           ///takes most recent date
-                          ascr.displayName AS sourceDisplayName'''
+                          source'''
 
     if config_info.config["DEBUG"]:
         logger.info("Disease Association Query: ")

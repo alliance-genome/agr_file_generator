@@ -158,6 +158,22 @@ class DiseaseFileGenerator:
 
                 taxon_id = disease_association["taxonId"]
                 species[taxon_id] = disease_association["speciesName"]
+
+                if len(disease_association["source"]) > 1:
+                    curatorDB = ""
+                    sourceDB = ""
+                    for source in disease_association["source"]:
+                        if source['curatedDB']:
+                            curatorDB = source["displayName"]
+                        else:
+                            sourceDB = source['displayName']
+                    if curatorDB == sourceDB:
+                        source = curatorDB
+                    else:
+                        source = curatorDB + " Via " + sourceDB
+                else:
+                    source = disease_association["source"][0]["displayName"]
+
                 processed_association = dict(zip(fields, [taxon_id,
                                                           disease_association["speciesName"],
                                                           db_object_type,
@@ -183,7 +199,7 @@ class DiseaseFileGenerator:
                                                           # genetic_sex,
                                                           pub_id,
                                                           datetime.strptime(date_str, "%Y-%m-%d").strftime("%Y%m%d"),
-                                                          disease_association["sourceDisplayName"]]))
+                                                          source]))
                 processed_association_tsv = processed_association.copy()
                 processed_association_tsv["WithOrthologs"] = "|".join(set(disease_association["withOrthologs"])) if len(disease_association["withOrthologs"]) > 0 else ""
 
