@@ -245,12 +245,12 @@ def generate_variant_allele_files(generated_files_folder, skip_chromosomes, conf
         start_time = time.time()
         logger.info("Start time for generating Variant Alleles files: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
 
-    #generate_variant_allele_species_file('COMBINED',
-    #                                     generated_files_folder,
-    #                                     skip_chromosomes,
-    #                                     config_info,
-    #                                     upload_flag,
-    #                                     validate_flag)
+    generate_variant_allele_species_file('COMBINED',
+                                         generated_files_folder,
+                                         skip_chromosomes,
+                                         config_info,
+                                         upload_flag,
+                                         validate_flag)
 
     for species_result in species_data_source:
         species = species_result["speciesID"]
