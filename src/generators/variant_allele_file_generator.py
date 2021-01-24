@@ -36,7 +36,7 @@ class VariantAlleleFileGenerator:
                              config_info=config_info,
                              data_format=data_format)
 
-    def generate_files(self, skip_chromosomes=(), upload_flag=False, validate_flag=False):
+    def generate_files(self, species, skip_chromosomes=(), upload_flag=False, validate_flag=False):
 
         fields = ['Taxon',
                   'SpeciesName',
@@ -57,8 +57,8 @@ class VariantAlleleFileGenerator:
                   'VariantsHgvsNames',
                   'Assembly',
                   'Chromosome',
-                  'StartPostiion',
-                  'EndPostiion',
+                  'StartPosition',
+                  'EndPosition',
                   'SequenceOfReference',
                   'SequenceOfVariant',
                   'MostSevereConsequenceName',
@@ -66,7 +66,7 @@ class VariantAlleleFileGenerator:
                   'HasDiseaseAnnotations',
                   'HasPhenotypeAnnotations']
 
-        filename = 'variant-allele-' + self.config_info.config['RELEASE_VERSION']
+        filename = 'variant-allele-' + self.config_info.config['RELEASE_VERSION'] + "-" + species.replace(":", "")
         filepath_stub = os.path.join(self.generated_files_folder, filename)
         filepath_json = filepath_stub + ".json"
         filepath_tsv = filepath_stub + ".tsv"
@@ -136,8 +136,8 @@ class VariantAlleleFileGenerator:
                         'VariantsHgvsNames': variant_allele['hgvsNomenclature'],
                         'Assembly': variant_allele['assembly'],
                         'Chromosome': variant_allele['chromosome'],
-                        'StartPostiion': variant_allele['start'],
-                        'EndPostiion': variant_allele['end'],
+                        'StartPosition': variant_allele['start'],
+                        'EndPosition': variant_allele['end'],
                         'SequenceOfReference': variant_allele['genomicReferenceSequence'],
                         'SequenceOfVariant': variant_allele['genomicVariantSequence'],
                         'MostSevereConsequenceName': variant_allele['geneConsequences'],
@@ -168,5 +168,5 @@ class VariantAlleleFileGenerator:
             json_validator.JsonValidator(filepath_json, 'variant-allele').validateJSON()
             if upload_flag:
                 logger.info("Submitting to FMS")
-                upload.upload_process(process_name, filename + ".tsv", self.generated_files_folder, 'VARIANT-ALLELE', 'COMBINED', self.config_info)
-                upload.upload_process(process_name, filename + ".json", self.generated_files_folder, 'VARIANT-ALLLELE-JSON', 'COMBINED', self.config_info)
+                upload.upload_process(process_name, filename + ".tsv", self.generated_files_folder, 'VARIANT-ALLELE', species.replace(":", ""), self.config_info)
+                upload.upload_process(process_name, filename + ".json", self.generated_files_folder, 'VARIANT-ALLLELE-JSON', species.replace(":", ""), self.config_info)
