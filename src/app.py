@@ -94,7 +94,7 @@ def main(variant_allele,
     click.echo('INFO:\tFiles output: ' + generated_files_folder)
     if variant_allele is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Variant Allele JSON and TSV files')
-        generate_variant_allele_file(generated_files_folder, skip_chromosomes, config_info, upload, validate)
+        generate_variant_allele_files(generated_files_folder, skip_chromosomes, config_info, upload, validate)
     if vcf is True or all_filetypes is True:
         click.echo('INFO:\tGenerating VCF files, VCF gz files and VCF gz Tabix files')
         generate_vcf_files(generated_files_folder, skip_chromosomes, config_info, upload, validate)
@@ -128,10 +128,13 @@ def main(variant_allele,
     click.echo('File Generator finished. Elapsed time: %s' % time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
 
 
-def generate_variant_allele_file(generated_files_folder, skip_chromosomes, config_info, upload_flag, validate_flag):
-    logger.info("Querying Variant Allele")
+def generate_variant_allele_species_file(species_id, generated_files_folder, skip_chromosomes, config_info, upload_flag, validate_flag):
+    logger.info("Querying Species: " + species_id)
 
-    variant_allele_query = '''MATCH (s:Species)<-[:FROM_SPECIES]-(a:Allele)
+    species_id_restriction = ""
+    if species_id != "COMBINED":
+        species_id_restriction = " {primaryKey: \"" + species_id + "\"}"
+    variant_allele_query = '''MATCH (s:Species''' + species_id_restriction + ''')<-[:FROM_SPECIES]-(a:Allele)
                               OPTIONAL MATCH (a:Allele)<-[:VARIATION]-(v:Variant)-[:LOCATED_ON]->(c:Chromosome),
                                              (v:Variant)-[:VARIATION_TYPE]->(st:SOTerm),
                                              (v:Variant)-[:ASSOCIATION]->(p:GenomicLocation)-[:ASSOCIATION]->(assembly:Assembly)
@@ -225,12 +228,45 @@ def generate_variant_allele_file(generated_files_folder, skip_chromosomes, confi
     gvaf = variant_allele_file_generator.VariantAlleleFileGenerator(variant_allele_data_source,
                                                                     generated_files_folder,
                                                                     config_info)
-    gvaf.generate_files(skip_chromosomes=skip_chromosomes, upload_flag=upload_flag, validate_flag=validate_flag)
+    gvaf.generate_files(species_id, skip_chromosomes=skip_chromosomes, upload_flag=upload_flag, validate_flag=validate_flag)
 
     if config_info.config["DEBUG"]:
         end_time = time.time()
-        logger.info("Created Variant Allele file - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
+        logger.info("Created Variant Allele file %s - End time: %s", species_id, time.strftime("%H:%M:%S", time.gmtime(end_time)))
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
+
+
+def generate_variant_allele_files(generated_files_folder, skip_chromosomes, config_info, upload_flag, validate_flag):
+    species_query = """MATCH (s:Species)
+                        RETURN s.primaryKey as speciesID"""
+    species_data_source = DataSource(get_neo_uri(config_info), species_query)
+
+    if config_info.config["DEBUG"]:
+        start_time = time.time()
+        logger.info("Start time for generating Variant Alleles files: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
+
+    #generate_variant_allele_species_file('COMBINED',
+    #                                     generated_files_folder,
+    #                                     skip_chromosomes,
+    #                                     config_info,
+    #                                     upload_flag,
+    #                                     validate_flag)
+
+    for species_result in species_data_source:
+        species = species_result["speciesID"]
+        generate_variant_allele_species_file(species,
+                                             generated_files_folder,
+                                             skip_chromosomes,
+                                             config_info,
+                                             upload_flag,
+                                             validate_flag)
+
+    if config_info.config["DEBUG"]:
+        end_time = time.time()
+        logger.info("Created Variant Allele files - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
+        logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
+
+
 
 
 def generate_vcf_file(assembly, generated_files_folder, skip_chromosomes, config_info, upload_flag, validate_flag):
