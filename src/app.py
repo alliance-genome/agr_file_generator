@@ -143,18 +143,18 @@ def generate_variant_allele_file(generated_files_folder, skip_chromosomes, confi
                               OPTIONAL MATCH (v:Variant)-[:ASSOCIATION]->(glc:GeneLevelConsequence)<-[:ASSOCIATION]->(gene:Gene)-[:COMPUTED_GENE]->(v:Variant)
                               WITH v, a, s, c, p, st, assembly,
                                    COLLECT(glc.geneLevelConsequence) AS geneConsequences,
-                                   COLLECT({id: gene.primaryKey,
+                                   COLLECT(DISTINCT {id: gene.primaryKey,
                                             symbol: gene.symbol}) AS variantAffectedGenes
                               OPTIONAL MATCH (a:Allele)-[:IS_ALLELE_OF]->(gene:Gene)
                               WITH v, a, s, c, p, st, assembly, geneConsequences, variantAffectedGenes,
-                                   COLLECT({id: gene.primaryKey,
+                                   COLLECT(DISTINCT {id: gene.primaryKey,
                                             symbol: gene.symbol}) AS alleleAssociatedGenes
                               OPTIONAL MATCH (a:Allele)-[:ALSO_KNOWN_AS]-(syn:Synonym)
                               WITH v, a, s, c, p, st, assembly, geneConsequences, variantAffectedGenes, alleleAssociatedGenes,
-                                   COLLECT(syn.primaryKey) AS alleleSyns
+                                   COLLECT(DISTINCT syn.primaryKey) AS alleleSyns
                               OPTIONAL MATCH (v:Variant)-[:ALSO_KNOWN_AS]-(syn:Synonym)
                               WITH v, a, s, c, p, st, assembly, geneConsequences, variantAffectedGenes, alleleAssociatedGenes, alleleSyns,
-                                   COLLECT(syn.primaryKey) AS variantSyns
+                                   COLLECT(DISTINCT syn.primaryKey) AS variantSyns
                               WITH v, a, s, c, p, st, assembly, geneConsequences, variantAffectedGenes, alleleAssociatedGenes, alleleSyns, variantSyns
                               OPTIONAL MATCH (v:Variant)-[:ASSOCIATION]->(pub:Publication)
                               WITH v, a, s, c, p, st, assembly, geneConsequences, alleleAssociatedGenes, alleleSyns, variantSyns, variantAffectedGenes,
