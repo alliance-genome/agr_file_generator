@@ -194,7 +194,7 @@ def generate_variant_allele_species_file(species_id, generated_files_folder, ski
                                      allelePhenotypeCount,
                                      variantDiseaseCount,
                                      alleleDiseaseCount,
-                                     COUNT(variant) AS alleleVariantCount,
+                                     COUNT(DISTINCT variant) AS alleleVariantCount,
                                      v.globalId AS globalId,
                                      right(v.paddingLeft,1) AS paddingLeft,
                                      v.genomicReferenceSequence AS genomicReferenceSequence,
