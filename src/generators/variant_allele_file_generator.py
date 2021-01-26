@@ -169,4 +169,4 @@ class VariantAlleleFileGenerator:
             if upload_flag:
                 logger.info("Submitting to FMS")
                 upload.upload_process(process_name, filename + ".tsv", self.generated_files_folder, 'VARIANT-ALLELE', species.replace(":", ""), self.config_info)
-                upload.upload_process(process_name, filename + ".json", self.generated_files_folder, 'VARIANT-ALLLELE-JSON', species.replace(":", ""), self.config_info)
+                upload.upload_process(process_name, filename + ".json", self.generated_files_folder, 'VARIANT-ALLELE-JSON', species.replace(":", ""), self.config_info)
