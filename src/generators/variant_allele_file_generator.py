@@ -113,7 +113,9 @@ class VariantAlleleFileGenerator:
 
             category = "allele"
             if variant_allele['alleleVariantCount'] > 0:
-                category = category + " with " + str(variant_allele['alleleVariantCount']) + " known variants"
+                category = category + " with " + str(variant_allele['alleleVariantCount']) + " known variant"
+                if variant_allele['alleleVariantCount'] > 1:
+                    category = category + "s"
 
             taxon_ids.add(variant_allele['taxonId'])
 
