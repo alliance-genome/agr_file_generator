@@ -1,4 +1,5 @@
 REG := 100225593120.dkr.ecr.us-east-1.amazonaws.com
+DOCKER_IMAGE_TAG := latest
 
 registry-docker-login:
 ifneq ($(shell echo ${REG} | egrep "ecr\..+\.amazonaws\.com"),)
@@ -11,13 +12,13 @@ endif
 endif
 
 build: pull
-	docker build -t agrlocal/agr_file_generator:latest --build-arg REG=${REG} .
+	docker build -t agrlocal/agr_file_generator:${DOCKER_IMAGE_TAG} --build-arg REG=${REG} --build-arg DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG} .
 
 pull: registry-docker-login
-	docker pull ${REG}/agr_base_linux_env:latest
+	docker pull ${REG}/agr_base_linux_env:${DOCKER_IMAGE_TAG}
 
 run: build
-	docker-compose up agr_file_generator
+	docker-compose up agr_file_generator:${DOCKER_IMAGE_TAG}
 
 test: run
-	docker-compose up agr_file_generator_test
+	docker-compose up agr_file_generator_test:${DOCKER_IMAGE_TAG}
