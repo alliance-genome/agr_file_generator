@@ -238,19 +238,13 @@ def generate_variant_allele_species_file(species_id, generated_files_folder, ski
 
 def generate_variant_allele_files(generated_files_folder, skip_chromosomes, config_info, upload_flag, validate_flag):
     species_query = """MATCH (s:Species)
+                        WHERE s.primaryKey <> "NCBITaxon:9606"
                         RETURN s.primaryKey as speciesID"""
     species_data_source = DataSource(get_neo_uri(config_info), species_query)
 
     if config_info.config["DEBUG"]:
         start_time = time.time()
         logger.info("Start time for generating Variant Alleles files: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
-
-    generate_variant_allele_species_file('COMBINED',
-                                         generated_files_folder,
-                                         skip_chromosomes,
-                                         config_info,
-                                         upload_flag,
-                                         validate_flag)
 
     for species_result in species_data_source:
         species = species_result["speciesID"]
@@ -265,8 +259,6 @@ def generate_variant_allele_files(generated_files_folder, skip_chromosomes, conf
         end_time = time.time()
         logger.info("Created Variant Allele files - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
-
-
 
 
 def generate_vcf_file(assembly, generated_files_folder, skip_chromosomes, config_info, upload_flag, validate_flag):
