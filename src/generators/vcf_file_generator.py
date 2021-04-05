@@ -283,6 +283,5 @@ class VcfFileGenerator:
                 validator.validate_vcf()
                 if upload_flag:
                     logger.info("Submitting to FMS")
-                    upload.upload_process(process_name, filename, self.generated_files_folder, 'VCF', assembly, self.config_info)
-                    upload.upload_process(process_name, filename + ".gz", self.generated_files_folder, 'VCF-GZ', assembly, self.config_info)
+                    upload.upload_process(process_name, filename + ".gz", self.generated_files_folder, 'VCF', assembly, self.config_info)
                     upload.upload_process(process_name, filename + ".gz.tbi", self.generated_files_folder, 'VCF-GZ-TBI', assembly, self.config_info)
