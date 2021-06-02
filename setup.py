@@ -31,7 +31,7 @@ setup(
         'requests==2.21.0',
         'requests-toolbelt==0.9.1',
         'retry==0.9.2',
-        'urllib3==1.24.2',
+        'urllib3==1.26.5',
         'coloredlogs==10.0',
         'PyYAML==5.1',
         'json5==0.8.5'
