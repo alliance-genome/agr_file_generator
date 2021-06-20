@@ -86,7 +86,7 @@ class VcfFileGenerator:
 
         for transcriptConsequence in variant['transcriptConsequences']:
             if transcriptConsequence['consequence'] is not None:
-                variant['transcriptLevelConsequence'].append(transcriptConsequence['consequence'].replace(",", "|"))
+                variant['transcriptLevelConsequence'].append('|'.join(transcriptConsequence['consequence']))
             else:
                 variant['transcriptLevelConsequence'].append('')
             if transcriptConsequence['impact'] is not None:
