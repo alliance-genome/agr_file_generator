@@ -294,7 +294,7 @@ def generate_vcf_file(assembly, generated_files_folder, skip_chromosomes, config
                             collect(DISTINCT {transcript: t.primaryKey,
                                               transcriptGFF3ID: t.gff3ID,
                                               transcriptGFF3Name: t.name,
-                                              consequence: tlc.transcriptLevelConsequence,
+                                              consequence: tlc.molecularConsequences,
                                               impact: tlc.impact}) AS transcriptConsequences,
                             p.start AS start,
                             p.end AS end,
