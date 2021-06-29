@@ -1,6 +1,5 @@
 # Paulo Nuin March 2020
 
-import app
 from click.testing import CliRunner
 
 import sys
@@ -11,7 +10,8 @@ import jsonschema
 import simplejson as json
 import pytest
 
-sys.path.append('../src')
+sys.path.append('./src')
+import app
 
 JSON_FILES = '../json'
 OUTPUT_DIR = '../output'

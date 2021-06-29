@@ -16,3 +16,5 @@ urllib3==1.24.2
 coloredlogs==10.0
 PyYAML==5.1
 json5==0.8.5
+jsonschema==3.2.0
+simplejson==3.17.0

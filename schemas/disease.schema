@@ -61,63 +61,75 @@
       "items": {
         "type": "object",
         "properties": {
-          "Gene1ID": {
+          "Taxon": {
             "type": "string"
           },
-          "Gene1Symbol": {
+          "SpeciesName": {
             "type": "string"
           },
-          "Gene1SpeciesTaxonID": {
+          "DBobjectType": {
             "type": "string"
           },
-          "Gene1SpeciesName": {
+          "DBObjectID": {
             "type": "string"
           },
-          "Gene2ID": {
+          "DBObjectSymbol": {
             "type": "string"
           },
-          "Gene2Symbol": {
+          "AssociationType": {
             "type": "string"
           },
-          "Gene2SpeciesTaxonID": {
+          "DOID": {
             "type": "string"
           },
-          "Gene2SpeciesName": {
+          "DOtermName": {
             "type": "string"
           },
-          "Algorithms": {
+          "WithOrthologs": {
             "type": "array",
             "items": {
               "type": "string"
             }
           },
-          "AlgorithmsMatch": {
+          "InferredFromID": {
             "type": "string"
           },
-          "OutOfAlgorithms": {
-            "type": "integer"
-          },
-          "IsBestScore": {
+          "InferredFromSymbol": {
             "type": "string"
           },
-          "IsBestRevScore": {
+          "EvidenceCode": {
+            "type": "string"
+          },
+          "EvidenceCodeName": {
+            "type": "string"
+          },
+          "Reference": {
+            "type": "string"
+          },
+          "Date": {
+            "type": "string"
+          },
+          "Source": {
             "type": "string"
           }
         },
         "required": [
-          "Algorithms",
-          "AlgorithmsMatch",
-          "Gene1ID",
-          "Gene1SpeciesName",
-          "Gene1SpeciesTaxonID",
-          "Gene1Symbol",
-          "Gene2ID",
-          "Gene2SpeciesName",
-          "Gene2SpeciesTaxonID",
-          "Gene2Symbol",
-          "IsBestRevScore",
-          "IsBestScore",
-          "OutOfAlgorithms"
+          "AssociationType",
+          "DBObjectID",
+          "DBObjectSymbol",
+          "DBobjectType",
+          "DOID",
+          "DOtermName",
+          "Date",
+          "EvidenceCode",
+          "EvidenceCodeName",
+          "InferredFromID",
+          "InferredFromSymbol",
+          "Reference",
+          "Source",
+          "SpeciesName",
+          "Taxon",
+          "WithOrthologs"
         ]
       }
     }

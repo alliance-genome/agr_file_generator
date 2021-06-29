@@ -1,0 +1,14 @@
+##gff-version 3
+#
+# sample data for testing View/FeatureGlyph/MultipleVariantAllele.js
+# The goal would be for this data to display a diamond (for the point mutation)
+# and a box (for the deletion) joined by a dashed line
+#
+# README: %readme
+# Source: Alliance of Genome Resources (Alliance)
+# Source URL: %sourceURL
+# Help Desk: help@alliancegenome.org%stringencyFilter
+# Taxon IDs: %taxonIds
+# Species: %species
+# Alliance Database Version: %databaseVersion
+# Date file generated (UTC): %genTime

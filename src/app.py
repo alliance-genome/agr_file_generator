@@ -1,29 +1,29 @@
-
 import logging
 import os
 import time
 import click
 import coloredlogs
 from common import ContextInfo
+from common import get_neo_uri
 from data_source import DataSource
-from generators import (daf_file_generator, db_summary_file_generator,
+from generators import (disease_file_generator,
+                        db_summary_file_generator,
                         expression_file_generator,
                         gene_cross_reference_file_generator,
-                        orthology_file_generator, vcf_file_generator,
-                        uniprot_cross_reference_generator)
+                        orthology_file_generator,
+                        vcf_file_generator,
+                        variant_allele_file_generator,
+                        uniprot_cross_reference_generator,
+                        allele_gff_file_generator,
+                        human_genes_interacting_with_file_generator)
 
+config_info = ContextInfo()
+debug_level = logging.DEBUG if config_info.config["DEBUG"] else logging.INFO
+neo_debug_level = logging.DEBUG if config_info.config["NEO_DEBUG"] else logging.INFO
 
-port = int(os.environ.get('NEO4J_PORT', 7687))
-alliance_db_version = os.environ.get('ALLIANCE_RELEASE')
-
-context_info = ContextInfo()
-debug_level = logging.DEBUG if context_info.config["DEBUG"] else logging.INFO
-neo_debug_level = logging.DEBUG if context_info.config["NEO_DEBUG"] else logging.INFO
-
-if context_info.config["GENERATED_FILES_FOLDER"]:
-    generated_files_folder = context_info.config["GENERATED_FILES_FOLDER"]
-else:
-    generated_files_folder = os.path.join("/tmp", "agr_generated_files")
+generated_files_folder = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output'
+if config_info.config["GENERATED_FILES_FOLDER"]:
+    generated_files_folder = config_info.config["GENERATED_FILES_FOLDER"]
 
 coloredlogs.install(level=debug_level,
                     fmt='%(asctime)s %(levelname)s: %(name)s:%(lineno)d: %(message)s',
@@ -38,8 +38,10 @@ logging.getLogger("urllib3").setLevel(debug_level)
 logging.getLogger("neobolt").setLevel(neo_debug_level)
 logger = logging.getLogger(__name__)
 
-if context_info.config["DEBUG"]:
+if config_info.config["DEBUG"]:
     logger.warning('DEBUG mode enabled!')
+
+ignore_assemblies = ["", "GRCh38", "R64-2-1", "ASM985889v3"]
 
 taxon_id_fms_subtype_map = {"NCBITaxon:10116": "RGD",
                             "NCBITaxon:9606": "HUMAN",
@@ -51,6 +53,7 @@ taxon_id_fms_subtype_map = {"NCBITaxon:10116": "RGD",
 
 
 @click.command()
+@click.option('--variant-allele', is_flag=True, help='Generates Variant Allele files')
 @click.option('--vcf', is_flag=True, help='Generates VCF files')
 @click.option('--orthology', is_flag=True, help='Generates orthology files')
 @click.option('--disease', is_flag=True, help='Generates DAF files')
@@ -58,10 +61,13 @@ taxon_id_fms_subtype_map = {"NCBITaxon:10116": "RGD",
 @click.option('--db-summary', is_flag=True, help='Generates summary of database contents')
 @click.option('--gene-cross-reference', is_flag=True, help='Generates a file of cross references for gene objects')
 @click.option('--all-filetypes', is_flag=True, help='Generates all filetypes')
-@click.option('--tab', is_flag=True, help='Generates tab delimited files with VCF info columns contents')
 @click.option('--uniprot', is_flag=True, help='Generates a file of gene and uniprot cross references')
+@click.option('--human-genes-interacting-with', is_flag=True, help='Generates a file of Human Genes Interacting With')
+@click.option('--allele-gff', is_flag=True, help='Generates an Allele based GFF file')
 @click.option('--upload', is_flag=True, help='Submits generated files to File Management System (FMS)')
-def main(vcf,
+@click.option('--validate', is_flag=True, help='Validate generated file. If uploading then validates automatically')
+def main(variant_allele,
+         vcf,
          orthology,
          disease,
          expression,
@@ -69,60 +75,193 @@ def main(vcf,
          gene_cross_reference,
          all_filetypes,
          upload,
-         tab,
+         validate,
          uniprot,
-         generated_files_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output',
-         input_folder=os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/input',
-         fasta_sequences_folder='sequences',
+         human_genes_interacting_with,
+         allele_gff,
+         generated_files_folder=generated_files_folder,
          skip_chromosomes={'Unmapped_Scaffold_8_D1580_D1567'}):
 
     start_time = time.time()
     click.echo("Start Time: %s" % time.strftime("%H:%M:%S", time.gmtime(start_time)))
 
+    if upload:
+        validate = True
+
     if not os.path.exists(generated_files_folder):
-        os.makedirs(generated_files_folder)
+        os.makedirs(generated_files_folder, exist_ok=True)
 
     click.echo('INFO:\tFiles output: ' + generated_files_folder)
+    if variant_allele is True or all_filetypes is True:
+        click.echo('INFO:\tGenerating Variant Allele JSON and TSV files')
+        generate_variant_allele_files(generated_files_folder, skip_chromosomes, config_info, upload, validate)
     if vcf is True or all_filetypes is True:
-        if not tab:
-            click.echo('INFO:\tGenerating VCF files')
-        else:
-            click.echo('INFO:\tGenerating TAB delimited files')
-        generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, context_info, upload, tab)
+        click.echo('INFO:\tGenerating VCF files, VCF gz files and VCF gz Tabix files')
+        generate_vcf_files(generated_files_folder, skip_chromosomes, config_info, upload, validate)
     if orthology is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Orthology file')
-        generate_orthology_file(generated_files_folder, context_info, upload)
+        generate_orthology_file(generated_files_folder, config_info, upload, validate)
     if disease is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Disease files')
-        generate_daf_file(generated_files_folder, context_info, taxon_id_fms_subtype_map, upload)
+        generate_disease_file(generated_files_folder, config_info, taxon_id_fms_subtype_map, upload, validate)
     if expression is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Expression files')
-        generate_expression_file(generated_files_folder, context_info, taxon_id_fms_subtype_map, upload)
+        generate_expression_file(generated_files_folder, config_info, taxon_id_fms_subtype_map, upload, validate)
     if db_summary is True or all_filetypes is True:
         click.echo('INFO:\tGenerating DB summary file')
-        generate_db_summary_file(generated_files_folder, context_info, upload)
+        generate_db_summary_file(generated_files_folder, config_info, upload, validate)
     if gene_cross_reference is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Gene Cross Reference file')
-        generate_gene_cross_reference_file(generated_files_folder, context_info, upload)
+        generate_gene_cross_reference_file(generated_files_folder, config_info, upload, validate)
     if uniprot is True or all_filetypes is True:
-        generate_uniprot_cross_reference(generated_files_folder, input_folder, context_info, upload)
+        click.echo('INFO:\tUniprot Cross Reference file')
+        generate_uniprot_cross_reference(generated_files_folder, config_info, upload, validate)
+    if human_genes_interacting_with is True or all_filetypes is True:
+        click.echo('INFO:\tHuman Genes Interacting With file')
+        generate_human_genes_interacting_with(generated_files_folder, config_info, upload, validate)
+    if allele_gff is True or all_filetypes is True:
+        click.echo('INFO:\tAllele GFF files')
+        generate_allele_gff(generated_files_folder, config_info, upload, validate)
 
     end_time = time.time()
     elapsed_time = end_time - start_time
     click.echo('File Generator finished. Elapsed time: %s' % time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
 
 
-def get_neo_uri(context_info):
-    if context_info.config['NEO4J_HOST']:
-        uri = "bolt://" + context_info.config['NEO4J_HOST'] + ":" + str(port)
-        logger.info("Using db URI: {}".format(uri))
-        return uri
-    else:
-        logger.error("Need to set NEO4J_HOST env variable")
-        exit()
+def generate_variant_allele_species_file(species_id, generated_files_folder, skip_chromosomes, config_info, upload_flag, validate_flag):
+    logger.info("Querying Species: " + species_id)
+
+    species_id_restriction = ""
+    if species_id != "COMBINED":
+        species_id_restriction = " {primaryKey: \"" + species_id + "\"}"
+    variant_allele_query = '''MATCH (s:Species''' + species_id_restriction + ''')<-[:FROM_SPECIES]-(a:Allele)
+                              OPTIONAL MATCH (a:Allele)<-[:VARIATION]-(v:Variant)-[:LOCATED_ON]->(c:Chromosome),
+                                             (v:Variant)-[:VARIATION_TYPE]->(st:SOTerm),
+                                             (v:Variant)-[:ASSOCIATION]->(p:GenomicLocation)-[:ASSOCIATION]->(assembly:Assembly)
+                              WHERE NOT v.genomicReferenceSequence = v.genomicVariantSequence
+                                    OR v.genomicVariantSequence = ""
+                              WITH v, a, s, c, p, st, assembly
+                              OPTIONAL MATCH (v:Variant)<-[:COMPUTED_GENE]-(gene:Gene)
+                              WITH v, a, s, c, p, st, assembly, gene
+                              OPTIONAL MATCH (v:Variant)-[:ASSOCIATION]->(glc:GeneLevelConsequence)<-[:ASSOCIATION]->(gene:Gene)-[:COMPUTED_GENE]->(v:Variant)
+                              WITH v, a, s, c, p, st, assembly,
+                                   COLLECT(glc.geneLevelConsequence) AS geneConsequences,
+                                   COLLECT(DISTINCT {id: gene.primaryKey,
+                                            symbol: gene.symbol}) AS variantAffectedGenes
+                              OPTIONAL MATCH (a:Allele)-[:IS_ALLELE_OF]->(gene:Gene)
+                              WITH v, a, s, c, p, st, assembly, geneConsequences, variantAffectedGenes,
+                                   COLLECT(DISTINCT {id: gene.primaryKey,
+                                            symbol: gene.symbol}) AS alleleAssociatedGenes
+                              OPTIONAL MATCH (a:Allele)-[:ALSO_KNOWN_AS]-(syn:Synonym)
+                              WITH v, a, s, c, p, st, assembly, geneConsequences, variantAffectedGenes, alleleAssociatedGenes,
+                                   COLLECT(DISTINCT syn.primaryKey) AS alleleSyns
+                              OPTIONAL MATCH (v:Variant)-[:ALSO_KNOWN_AS]-(syn:Synonym)
+                              WITH v, a, s, c, p, st, assembly, geneConsequences, variantAffectedGenes, alleleAssociatedGenes, alleleSyns,
+                                   COLLECT(DISTINCT syn.primaryKey) AS variantSyns
+                              WITH v, a, s, c, p, st, assembly, geneConsequences, variantAffectedGenes, alleleAssociatedGenes, alleleSyns, variantSyns
+                              OPTIONAL MATCH (v:Variant)-[:ASSOCIATION]->(pub:Publication)
+                              WITH v, a, s, c, p, st, assembly, geneConsequences, alleleAssociatedGenes, alleleSyns, variantSyns, variantAffectedGenes,
+                                   COLLECT(pub.primaryKey) AS pubIds
+                              OPTIONAL MATCH (v:Variant)-[:CROSS_REFERENCE]->(vcr:CrossReference)<-[:CROSS_REFERENCE]-(a:Allele)
+                              WITH v, a, s, c, p, st, assembly, geneConsequences, alleleAssociatedGenes, alleleSyns, variantSyns, variantAffectedGenes, pubIds,
+                                   COLLECT(vcr.name) AS variantCrossReferences
+                              OPTIONAL MATCH (v:Variant)-[:HAS_PHENOTYPE]-(phenotype:Phenotype)
+                              WITH v, a, s, c, p, st, assembly, geneConsequences, alleleAssociatedGenes, alleleSyns, variantSyns, variantAffectedGenes, pubIds,
+                                   variantCrossReferences,
+                                   COUNT(phenotype) AS variantPhenotypeCount
+                              OPTIONAL MATCH (a:Allele)-[:HAS_PHENOTYPE]-(phenotype:Phenotype)
+                              WITH v, a, s, c, p, st, assembly, geneConsequences, alleleAssociatedGenes, alleleSyns, variantSyns, variantAffectedGenes, pubIds,
+                                   variantCrossReferences,
+                                   variantPhenotypeCount,
+                                   COUNT(phenotype) AS allelePhenotypeCount
+                              OPTIONAL MATCH (v:Variant)-[:ASSOCIATION]->(disease:DiseaseEntityJoin)
+                              WITH v, a, s, c, p, st, assembly, geneConsequences, alleleAssociatedGenes, alleleSyns, variantSyns, variantAffectedGenes, pubIds,
+                                   variantCrossReferences,
+                                   variantPhenotypeCount,
+                                   allelePhenotypeCount,
+                                   COUNT(disease) AS variantDiseaseCount
+                              OPTIONAL MATCH (a:Allele)-[:ASSOCIATION]->(disease:DiseaseEntityJoin)
+                              WITH v, a, s, c, p, st, assembly, geneConsequences, alleleAssociatedGenes, alleleSyns, variantSyns, variantAffectedGenes, pubIds,
+                                   variantCrossReferences,
+                                   variantPhenotypeCount,
+                                   allelePhenotypeCount,
+                                   variantDiseaseCount,
+                                   count(disease) AS alleleDiseaseCount
+                              OPTIONAL MATCH (a:Allele)<-[:VARIATION]-(variant:Variant)
+                              RETURN c.primaryKey AS chromosome,
+                                     variantCrossReferences,
+                                     variantPhenotypeCount,
+                                     allelePhenotypeCount,
+                                     variantDiseaseCount,
+                                     alleleDiseaseCount,
+                                     COUNT(DISTINCT variant) AS alleleVariantCount,
+                                     v.globalId AS globalId,
+                                     right(v.paddingLeft,1) AS paddingLeft,
+                                     v.genomicReferenceSequence AS genomicReferenceSequence,
+                                     v.genomicVariantSequence AS genomicVariantSequence,
+                                     v.hgvsNomenclature AS hgvsNomenclature,
+                                     v.dataProvider AS dataProvider,
+                                     assembly.primaryKey AS assembly,
+                                     alleleSyns,
+                                     variantSyns,
+                                     v.primaryKey as variantId,
+                                     {id: st.primaryKey,
+                                      name: st.name} AS variationType,
+                                     {symbol: a.symbol,
+                                      symbolText: a.symbolText,
+                                      id: a.primaryKey} AS allele,
+                                     pubIds,
+                                     variantAffectedGenes,
+                                     geneConsequences,
+                                     alleleAssociatedGenes,
+                                     p.start AS start,
+                                     p.end AS end,
+                                     s.name AS species,
+                                     s.primaryKey AS taxonId,
+                                     st.nameKey AS soTerm'''
+    if config_info.config["DEBUG"]:
+        logger.info(variant_allele_query)
+        start_time = time.time()
+        logger.info("Start time: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
+
+    variant_allele_data_source = DataSource(get_neo_uri(config_info), variant_allele_query)
+    gvaf = variant_allele_file_generator.VariantAlleleFileGenerator(variant_allele_data_source,
+                                                                    generated_files_folder,
+                                                                    config_info)
+    gvaf.generate_files(species_id, skip_chromosomes=skip_chromosomes, upload_flag=upload_flag, validate_flag=validate_flag)
+
+    if config_info.config["DEBUG"]:
+        end_time = time.time()
+        logger.info("Created Variant Allele file %s - End time: %s", species_id, time.strftime("%H:%M:%S", time.gmtime(end_time)))
+        logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, skip_chromosomes, context_info, upload_flag, tab_flag):
+def generate_variant_allele_files(generated_files_folder, skip_chromosomes, config_info, upload_flag, validate_flag):
+    species_query = """MATCH (s:Species)
+                        WHERE s.primaryKey <> "NCBITaxon:9606"
+                        RETURN s.primaryKey as speciesID"""
+    species_data_source = DataSource(get_neo_uri(config_info), species_query)
+
+    if config_info.config["DEBUG"]:
+        start_time = time.time()
+        logger.info("Start time for generating Variant Alleles files: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
+
+    for species_result in species_data_source:
+        species = species_result["speciesID"]
+        generate_variant_allele_species_file(species,
+                                             generated_files_folder,
+                                             skip_chromosomes,
+                                             config_info,
+                                             upload_flag,
+                                             validate_flag)
+
+    if config_info.config["DEBUG"]:
+        end_time = time.time()
+        logger.info("Created Variant Allele files - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
+        logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
+
+
+def generate_vcf_file(assembly, generated_files_folder, skip_chromosomes, config_info, upload_flag, validate_flag):
     logger.info("Querying Assembly: " + assembly)
 
     variants_query = '''MATCH (s:Species)-[:FROM_SPECIES]-(a:Allele)-[:VARIATION]-(v:Variant)-[l:LOCATED_ON]->(c:Chromosome),
@@ -136,6 +275,11 @@ def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, s
                                             id: a.primaryKey}) AS alleles,
                           s, v, l, c, st, p, assembly
                      OPTIONAL MATCH (v:Variant)-[:ASSOCIATION]-(glc:GeneLevelConsequence)-[:ASSOCIATION]-(g:Gene)
+                     WITH alleles, s, v, l, c, st, p, assembly,
+                          COLLECT(DISTINCT {gene: g.primaryKey,
+                                            geneSymbol: g.symbol,
+                                            consequence: glc.geneLevelConsequence,
+                                            impact: glc.impact}) AS geneConsequences
                      OPTIONAL MATCH (v:Variant)-[:ASSOCIATION]-(tlc:TranscriptLevelConsequence)-[:ASSOCIATION]-(t:Transcript)
                      RETURN c.primaryKey AS chromosome,
                             v.globalId AS globalId,
@@ -146,14 +290,11 @@ def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, s
                             v.dataProvider AS dataProvider,
                             assembly.primaryKey AS assembly,
                             alleles,
-                            COLLECT(DISTINCT {gene: g.primaryKey,
-                                              geneSymbol: g.symbol,
-                                              consequence: glc.geneLevelConsequence,
-                                              impact: glc.impact}) AS geneConsequences,
+                            geneConsequences,
                             collect(DISTINCT {transcript: t.primaryKey,
                                               transcriptGFF3ID: t.gff3ID,
                                               transcriptGFF3Name: t.name,
-                                              consequence: tlc.transcriptLevelConsequence,
+                                              consequence: tlc.molecularConsequences,
                                               impact: tlc.impact}) AS transcriptConsequences,
                             p.start AS start,
                             p.end AS end,
@@ -161,53 +302,49 @@ def generate_vcf_file(assembly, generated_files_folder, fasta_sequence_folder, s
                             st.nameKey AS soTerm
                      '''
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         logger.info(variants_query)
         start_time = time.time()
         logger.info("Start time: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
 
-    data_source = DataSource(get_neo_uri(context_info), variants_query)
+    data_source = DataSource(get_neo_uri(config_info), variants_query)
     gvf = vcf_file_generator.VcfFileGenerator(data_source,
                                               generated_files_folder,
-                                              context_info)
-    gvf.generate_files(skip_chromosomes=skip_chromosomes, upload_flag=upload_flag, tab_flag=tab_flag)
+                                              config_info)
+    gvf.generate_files(skip_chromosomes=skip_chromosomes, upload_flag=upload_flag, validate_flag=validate_flag)
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         end_time = time.time()
         logger.info("Created VCF file - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_vcf_files(generated_files_folder, fasta_sequences_folder, skip_chromosomes, context_info, upload_flag, tab_flag):
-    os.makedirs(generated_files_folder, exist_ok=True)
-    os.makedirs(fasta_sequences_folder, exist_ok=True)
-
+def generate_vcf_files(generated_files_folder, skip_chromosomes, config_info, upload_flag, validate_flag):
     assembly_query = """MATCH (a:Assembly)
                         RETURN a.primaryKey as assemblyID"""
-    assembly_data_source = DataSource(get_neo_uri(context_info), assembly_query)
+    assembly_data_source = DataSource(get_neo_uri(config_info), assembly_query)
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         start_time = time.time()
         logger.info("Start time for generating VCF files: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
 
     for assembly_result in assembly_data_source:
         assembly = assembly_result["assemblyID"]
-        if assembly not in ["", "GRCh38", "R64-2-1"]:
+        if assembly not in ignore_assemblies:
             generate_vcf_file(assembly,
                               generated_files_folder,
-                              fasta_sequences_folder,
                               skip_chromosomes,
-                              context_info,
+                              config_info,
                               upload_flag,
-                              tab_flag)
+                              validate_flag)
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         end_time = time.time()
         logger.info("Created VCF files - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_orthology_file(generated_files_folder, context_info, upload_flag):
+def generate_orthology_file(generated_files_folder, config_info, upload_flag, validate_flag):
     orthology_query = '''MATCH (species1)<-[sa:FROM_SPECIES]-(gene1:Gene)-[o:ORTHOLOGOUS]->(gene2:Gene)-[sa2:FROM_SPECIES]->(species2:Species)
                        WHERE o.strictFilter
                        OPTIONAL MATCH (algorithm:OrthoAlgorithm)-[m:MATCHED]-(ogj:OrthologyGeneJoin)-[association:ASSOCIATION]-(gene1)
@@ -228,37 +365,42 @@ def generate_orthology_file(generated_files_folder, context_info, upload_flag):
                               species2.primaryKey AS species2TaxonID,
                               species2.name AS species2Name'''
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         logger.info("Orthology query")
         logger.info(orthology_query)
         start_time = time.time()
         logger.info("Start time: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
 
-    data_source = DataSource(get_neo_uri(context_info), orthology_query)
+    data_source = DataSource(get_neo_uri(config_info), orthology_query)
     of = orthology_file_generator.OrthologyFileGenerator(data_source,
                                                          generated_files_folder,
-                                                         context_info)
-    of.generate_file(upload_flag=upload_flag)
+                                                         config_info)
+    of.generate_file(upload_flag=upload_flag, validate_flag=validate_flag)
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         end_time = time.time()
         logger.info("Created VCF file - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_daf_file(generated_files_folder, context_info, taxon_id_fms_subtype_map, upload_flag):
-    daf_query = '''MATCH (disease:DOTerm)-[:ASSOCIATION]-(dej:Association:DiseaseEntityJoin)-[:ASSOCIATION]-(object)-[:FROM_SPECIES]-(species:Species)
+def generate_disease_file(generated_files_folder, config_info, taxon_id_fms_subtype_map, upload_flag, validate_flag):
+    disease_query = '''MATCH (disease:DOTerm)-[:ASSOCIATION]-(dej:Association:DiseaseEntityJoin)-[:ASSOCIATION]-(object)-[:FROM_SPECIES]-(species:Species)
                    WHERE (object:Gene OR object:Allele OR object:AffectedGenomicModel)
                          AND dej.joinType IN ["IS_MARKER_FOR", // need to remove when removed from database
                                               "IS_IMPLICATED_IN", // need to remove when removed from database
+                                              "IS_NOT_IMPLICATED_IN", // need to remove when removed from database
                                               "IS_MODEL_OF",
                                               "is_model_of",
                                               "is_implicated_in",
+                                              "is_not_implicated_in",
                                               "is_biomarker_for",
                                               "implicated_via_orthology",
                                               "biomarker_via_orthology"]
                    MATCH (dej:Association:DiseaseEntityJoin)-[:EVIDENCE]->(pj:PublicationJoin),
                          (p:Publication)-[:ASSOCIATION]->(pj:PublicationJoin)-[:ASSOCIATION]->(ec:Ontology:ECOTerm)
+                   OPTIONAL MATCH (dej:DiseaseEntityJoin)-[:ANNOTATION_SOURCE_CROSS_REFERENCE]->(ascr:CrossReference)
+                   WITH disease, dej, object, species, pj, p, ec,
+                        COLLECT(DISTINCT {curatedDB: ascr.curatedDB, displayName: ascr.displayName}) AS source
                    OPTIONAL MATCH (object:Gene)-[:ASSOCIATION]->(dej:Association:DiseaseEntityJoin)<-[:ASSOCIATION]-(otherAssociatedEntity)
                    OPTIONAL MATCH (pj:PublicationJoin)-[:MODEL_COMPONENT|PRIMARY_GENETIC_ENTITY]-(inferredFromEntity)
                    OPTIONAL MATCH (dej:Association:DiseaseEntityJoin)-[:FROM_ORTHOLOGOUS_GENE]->(oGene:Gene),
@@ -286,28 +428,29 @@ def generate_daf_file(generated_files_folder, context_info, taxon_id_fms_subtype
                                             otherAssociatedEntityID: otherAssociatedEntity.primaryKey}) as evidence,
                           REDUCE(t = "1900-01-01", c IN collect(left(pj.dateAssigned, 10)) | CASE WHEN c > t THEN c ELSE t END) AS dateAssigned,
                           ///takes most recent date
+                          source,
                           dej.dataProvider AS dataProvider'''
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         logger.info("Disease Association Query: ")
-        logger.info(daf_query)
+        logger.info(disease_query)
         start_time = time.time()
         logger.info("Start time: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
 
-    data_source = DataSource(get_neo_uri(context_info), daf_query)
-    daf = daf_file_generator.DafFileGenerator(data_source,
-                                              generated_files_folder,
-                                              context_info,
-                                              taxon_id_fms_subtype_map)
-    daf.generate_file(upload_flag=upload_flag)
+    data_source = DataSource(get_neo_uri(config_info), disease_query)
+    disease = disease_file_generator.DiseaseFileGenerator(data_source,
+                                                          generated_files_folder,
+                                                          config_info,
+                                                          taxon_id_fms_subtype_map)
+    disease.generate_file(upload_flag=upload_flag, validate_flag=validate_flag)
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         end_time = time.time()
         logger.info("Created Disease Association file - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_expression_file(generated_files_folder, context_info, taxon_id_fms_subtype_map, upload_flag):
+def generate_expression_file(generated_files_folder, config_info, taxon_id_fms_subtype_map, upload_flag, validate_flag):
     expression_query = '''MATCH (speciesObj:Species)<-[:FROM_SPECIES]-(geneObj:Gene)-[:ASSOCIATION]->(begej:BioEntityGeneExpressionJoin)--(term)
                           WITH {primaryKey: speciesObj.primaryKey, name: speciesObj.name} AS species,
                                {primaryKey: geneObj.primaryKey, symbol: geneObj.symbol, dataProvider: geneObj.dataProvider} AS gene,
@@ -323,50 +466,50 @@ def generate_expression_file(generated_files_folder, context_info, taxon_id_fms_
                                           primaryKey: ontology.primaryKey,
                                           name: ontology.name}) AS ontologyPaths'''
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         logger.info("Expression query")
         logger.info(expression_query)
         start_time = time.time()
         logger.info("Start time: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
 
-    data_source = DataSource(get_neo_uri(context_info), expression_query)
+    data_source = DataSource(get_neo_uri(config_info), expression_query)
     expression = expression_file_generator.ExpressionFileGenerator(data_source,
                                                                    generated_files_folder,
-                                                                   context_info,
+                                                                   config_info,
                                                                    taxon_id_fms_subtype_map)
-    expression.generate_file(upload_flag=upload_flag)
+    expression.generate_file(upload_flag=upload_flag, validate_flag=validate_flag)
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         end_time = time.time()
         logger.info("Created Expression file - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_db_summary_file(generated_files_folder, context_info, upload_flag):
+def generate_db_summary_file(generated_files_folder, config_info, upload_flag, validate_flag):
     db_summary_query = '''MATCH (entity)
                           WITH labels(entity) AS entityTypes
                           RETURN count(entityTypes) AS frequency,
                           entityTypes'''
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         logger.info("DB Summary Query")
         logger.info(db_summary_query)
         start_time = time.time()
         logger.info("Start time: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
 
-    data_source = DataSource(get_neo_uri(context_info), db_summary_query)
+    data_source = DataSource(get_neo_uri(config_info), db_summary_query)
     db_summary = db_summary_file_generator.DbSummaryFileGenerator(data_source,
                                                                   generated_files_folder,
-                                                                  context_info)
-    db_summary.generate_file(upload_flag=upload_flag)
+                                                                  config_info)
+    db_summary.generate_file(upload_flag=upload_flag, validate_flag=validate_flag)
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         end_time = time.time()
         logger.info("Created DB Summary file - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_gene_cross_reference_file(generated_files_folder, context_info, upload_flag):
+def generate_gene_cross_reference_file(generated_files_folder, config_info, upload_flag, validate_flag):
     gene_cross_reference_query = '''MATCH (g:Gene)--(cr:CrossReference)
                           RETURN g.primaryKey as GeneID,
                                  cr.globalCrossRefId as GlobalCrossReferenceID,
@@ -374,43 +517,134 @@ def generate_gene_cross_reference_file(generated_files_folder, context_info, upl
                                  cr.page as ResourceDescriptorPage,
                                  g.taxonId as TaxonID'''
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         logger.info("Gene Cross Reference query")
         logger.info(gene_cross_reference_query)
         start_time = time.time()
         logger.info("Start time: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
 
-    data_source = DataSource(get_neo_uri(context_info), gene_cross_reference_query)
+    data_source = DataSource(get_neo_uri(config_info), gene_cross_reference_query)
     gene_cross_reference = gene_cross_reference_file_generator.GeneCrossReferenceFileGenerator(data_source,
                                                                                                generated_files_folder,
-                                                                                               context_info)
-    gene_cross_reference.generate_file(upload_flag=upload_flag)
+                                                                                               config_info)
+    gene_cross_reference.generate_file(upload_flag=upload_flag, validate_flag=validate_flag)
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         end_time = time.time()
         logger.info("Gene Cross Reference file - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 
-def generate_uniprot_cross_reference(generated_files_folder, input_folder, context_info, upload_flag):
+def generate_uniprot_cross_reference(generated_files_folder, config_info, upload_flag, validate_flag):
     uniprot_cross_reference_query = '''MATCH (g:Gene)--(cr:CrossReference)
                                 WHERE cr.prefix = "UniProtKB"
                                 RETURN g.primaryKey as GeneID,
                                     cr.globalCrossRefId as GlobalCrossReferenceID'''
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         logger.info("UniProt Cross Reference query")
         logger.info(uniprot_cross_reference_query)
         start_time = time.time()
         logger.info("Start time: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
 
-    data_source = DataSource(get_neo_uri(context_info), uniprot_cross_reference_query)
-    ucf = uniprot_cross_reference_generator.UniProtGenerator(data_source, context_info, generated_files_folder)
-    ucf.generate_file(upload_flag=upload_flag)
+    data_source = DataSource(get_neo_uri(config_info), uniprot_cross_reference_query)
+    ucf = uniprot_cross_reference_generator.UniProtGenerator(data_source, config_info, generated_files_folder)
+    ucf.generate_file(upload_flag=upload_flag, validate_flag=validate_flag)
 
-    if context_info.config["DEBUG"]:
+    if config_info.config["DEBUG"]:
         end_time = time.time()
         logger.info("Created UniProt Cross Reference file - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
+        logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
+
+
+def generate_human_genes_interacting_with(generated_files_folder, config_info, upload_flag, validate_flag):
+    query = '''MATCH (s:Species)-[:FROM_SPECIES]-(g:Gene)--(i:InteractionGeneJoin)--(g2:Gene)-[:FROM_SPECIES]-(s2:Species)
+               WHERE s.primaryKey ='NCBITaxon:2697049'
+                   AND s2.primaryKey = 'NCBITaxon:9606'
+               RETURN DISTINCT g2.primaryKey AS GeneID,
+                               g2.symbol AS Symbol,
+                               g2.name AS Name'''
+
+    if config_info.config["DEBUG"]:
+        logger.info("Human Genes Interacts With query")
+        logger.info(query)
+        start_time = time.time()
+        logger.info("Start time: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
+
+    data_source = DataSource(get_neo_uri(config_info), query)
+    hgiw = human_genes_interacting_with_file_generator.HumanGenesInteractingWithFileGenerator(data_source, config_info, generated_files_folder)
+    hgiw.generate_file(upload_flag=upload_flag, validate_flag=validate_flag)
+
+    if config_info.config["DEBUG"]:
+        end_time = time.time()
+        logger.info("Created Human Genees Interacting with file - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
+        logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
+
+
+def generate_allele_gff_assembly(assembly, generated_files_folder, config_info, upload_flag, validate_flag):
+    query = '''MATCH (v:Variant)-[:ASSOCIATION]->(gl:GenomicLocation)-[:ASSOCIATION]->(:Assembly {primaryKey: "''' + assembly + '''"}),
+                     (a:Allele)<-[:VARIATION]-(v:Variant)-[:LOCATED_ON]->(c:Chromosome),
+                     (v:Variant)-[:VARIATION_TYPE]->(so:SOTerm),
+                     (v:Variant)<-[:COMPUTED_GENE]-(g:Gene)-[:ASSOCIATION]->(glc:GeneLevelConsequence)<-[:ASSOCIATION]-(v:Variant)
+WITH c,a,v,gl,so,
+     COLLECT({geneID: g.primaryKey,
+              geneSymbol: g.symbol,
+              geneLevelConsequence: glc.geneLevelConsequence,
+              impact: glc.impact}) AS glcs
+WITH c.primaryKey AS chromosome,
+     a.primaryKey AS ID,
+     a.symbol AS symbol,
+     a.symbolText AS symbol_text,
+     COLLECT(DISTINCT {ID: v.primaryKey,
+              genomicVariantSequence: v.genomicVariantSequence,
+              genomicReferenceSequence: v.genomicReferenceSequence,
+              soTerm: so.name,
+              start: gl.start,
+              end: gl.end,
+              chromosome: gl.chromosome,
+              geneLevelConsequences: glcs}) AS variants,
+     COUNT(DISTINCT v.primaryKey) AS num
+WHERE num > 1
+RETURN chromosome, ID, symbol, symbol_text, variants
+ORDER BY chromosome'''
+
+    if config_info.config["DEBUG"]:
+        logger.info("Allele GFF query")
+        logger.info(query)
+        start_time = time.time()
+        logger.info("Start time: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
+
+    data_source = DataSource(get_neo_uri(config_info), query)
+    agff = allele_gff_file_generator.AlleleGffFileGenerator(assembly, data_source, generated_files_folder, config_info)
+    agff.generate_assembly_file(upload_flag=upload_flag, validate_flag=validate_flag)
+
+    if config_info.config["DEBUG"]:
+        end_time = time.time()
+        logger.info("Created Allele GFF file - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
+        logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
+
+
+def generate_allele_gff(generated_files_folder, config_info, upload_flag, validate_flag):
+    assembly_query = """MATCH (a:Assembly)
+                        RETURN a.primaryKey AS assemblyID"""
+    assembly_data_source = DataSource(get_neo_uri(config_info), assembly_query)
+
+    if config_info.config["DEBUG"]:
+        start_time = time.time()
+        logger.info("Start time for generating Allele GFF files: %s", time.strftime("%H:%M:%S", time.gmtime(start_time)))
+
+    for assembly_result in assembly_data_source:
+        assembly = assembly_result["assemblyID"]
+        if assembly not in ignore_assemblies:
+            generate_allele_gff_assembly(assembly,
+                                         generated_files_folder,
+                                         config_info,
+                                         upload_flag,
+                                         validate_flag)
+
+    if config_info.config["DEBUG"]:
+        end_time = time.time()
+        logger.info("Created Allele GFF files - End time: %s", time.strftime("%H:%M:%S", time.gmtime(end_time)))
         logger.info("Time Elapsed: %s", time.strftime("%H:%M:%S", time.gmtime(end_time - start_time)))
 
 

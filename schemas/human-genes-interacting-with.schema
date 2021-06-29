@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "filetype": {
+          "type": "string"
+        },
+        "databaseVersion": {
+          "type": "string"
+        },
+        "genTime": {
+          "type": "string"
+        },
+        "sourceURL": {
+          "type": "string"
+        },
+        "stringencyFilter": {
+          "type": "string"
+        },
+        "dataFormat": {
+          "type": "string"
+        },
+        "readme": {
+          "type": "string"
+        },
+        "species": {
+          "type": "array"
+        }
+      },
+      "required": [
+        "dataFormat",
+        "databaseVersion",
+        "filetype",
+        "genTime",
+        "sourceURL",
+        "readme",
+        "species",
+        "stringencyFilter"
+      ]
+    },
+    "data": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "GeneID": {
+            "type": "string"
+          },
+          "Symbol": {
+            "type": "string"
+          },
+          "Name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "GeneID",
+          "Symbol",
+          "Name"
+        ]
+      }
+    }
+  },
+  "required": [
+    "data",
+    "metadata"
+  ]
+}
