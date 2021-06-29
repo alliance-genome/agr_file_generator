@@ -162,7 +162,7 @@ def generate_variant_allele_species_file(species_id, generated_files_folder, ski
                               OPTIONAL MATCH (v:Variant)-[:ASSOCIATION]->(pub:Publication)
                               WITH v, a, s, c, p, st, assembly, geneConsequences, alleleAssociatedGenes, alleleSyns, variantSyns, variantAffectedGenes,
                                    COLLECT(pub.primaryKey) AS pubIds
-                              OPTIONAL MATCH (v:Variant)-[:CROSS_REFERENCE]->(vcr:CrossReference)
+                              OPTIONAL MATCH (v:Variant)-[:CROSS_REFERENCE]->(vcr:CrossReference)<-[:CROSS_REFERENCE]-(a:Allele)
                               WITH v, a, s, c, p, st, assembly, geneConsequences, alleleAssociatedGenes, alleleSyns, variantSyns, variantAffectedGenes, pubIds,
                                    COLLECT(vcr.name) AS variantCrossReferences
                               OPTIONAL MATCH (v:Variant)-[:HAS_PHENOTYPE]-(phenotype:Phenotype)
@@ -294,7 +294,7 @@ def generate_vcf_file(assembly, generated_files_folder, skip_chromosomes, config
                             collect(DISTINCT {transcript: t.primaryKey,
                                               transcriptGFF3ID: t.gff3ID,
                                               transcriptGFF3Name: t.name,
-                                              consequence: tlc.transcriptLevelConsequence,
+                                              consequence: tlc.molecularConsequences,
                                               impact: tlc.impact}) AS transcriptConsequences,
                             p.start AS start,
                             p.end AS end,
