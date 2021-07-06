@@ -85,7 +85,19 @@
           "DOtermName": {
             "type": "string"
           },
-          "WithOrthologs": {
+          "WithOrtholog": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ExperimentalCondition": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "Modifier": {
             "type": "array",
             "items": {
               "type": "string"
@@ -129,7 +141,7 @@
           "Source",
           "SpeciesName",
           "Taxon",
-          "WithOrthologs"
+          "WithOrtholog"
         ]
       }
     }
