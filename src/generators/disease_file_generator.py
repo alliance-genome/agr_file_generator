@@ -127,14 +127,6 @@ class DiseaseFileGenerator:
                     elif condition['type'] == "EXACERBATES":
                         modifiers.append("Exacerbated By: " + condition_statement)
 
-                experimental_conditions_field = '|'.join(experimental_conditions)
-                modifiers_field = "|".join(modifiers)
-
-                if disease_association["associationType"] in ["implicated_via_orthology", "biomarker_via_orthology"] and len(disease_association["withOrthologs"]) == 0:
-                    print(disease_association)
-                    exit()
-                    continue
-
                 if disease_association["dateAssigned"] is None and disease_association["associationType"] in ["implicated_via_orthology",
                                                                                                               "biomarker_via_orthology"]:
                     date_str = strftime("%Y-%m-%d", gmtime())
@@ -183,15 +175,17 @@ class DiseaseFileGenerator:
                                                           disease_association["withOrthologs"],
                                                           inferred_from_id,
                                                           inferred_from_symbol,
-                                                          experimental_conditions_field,
-                                                          modifiers_field,
+                                                          experimental_conditions,
+                                                          modifiers,
                                                           evidence_code,
                                                           evidence_code_name,
                                                           pub_id,
                                                           datetime.strptime(date_str, "%Y-%m-%d").strftime("%Y%m%d"),
                                                           source]))
                 processed_association_tsv = processed_association.copy()
-                processed_association_tsv["WithOrthologs"] = "|".join(set(disease_association["withOrthologs"])) if len(disease_association["withOrthologs"]) > 0 else ""
+                processed_association_tsv["WithOrtholog"] = "|".join(set(disease_association["withOrthologs"])) if len(disease_association["withOrthologs"]) > 1 else ""
+                processed_association_tsv["Modifier"] = "|".join(modifiers) if len(modifiers) else ""
+                processed_association_tsv["ExperimentalCondition"] = "|".join(experimental_conditions) if len(experimental_conditions) else ""
 
                 if taxon_id in processed_disease_associations:
                     processed_disease_associations_tsv[taxon_id].append(processed_association_tsv)
