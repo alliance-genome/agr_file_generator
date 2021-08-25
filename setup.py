@@ -33,7 +33,7 @@ setup(
         'retry==0.9.2',
         'urllib3==1.24.2',
         'coloredlogs==10.0',
-        'PyYAML==5.1',
+        'PyYAML==5.4',
         'json5==0.8.5'
     ],
     classifiers=[
