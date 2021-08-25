@@ -66,24 +66,16 @@ class DiseaseFileGenerator:
                   "DBobjectType",
                   "DBObjectID",
                   "DBObjectSymbol",
-                  # "InferredGeneAssociation",
-                  # "GeneProductFormID",
-                  # "AdditionalGeneticComponent",
-                  # "ExperimentalConditions",
                   "AssociationType",
-                  # "Qualifier",
                   "DOID",
                   "DOtermName",
-                  "WithOrthologs",
+                  "WithOrtholog",
                   "InferredFromID",
                   "InferredFromSymbol",
-                  # "Modifier-AssociationType",
-                  # "Modifier-Qualifier",
-                  # "Modifier-Genetic",
-                  # "Modifier-ExperimentalConditions",
+                  "ExperimentalCondition",
+                  "Modifier",
                   "EvidenceCode",
                   "EvidenceCodeName",
-                  # "genetic-sex",
                   "Reference",
                   "Date",
                   "Source"]
@@ -108,11 +100,6 @@ class DiseaseFileGenerator:
                     pub_id = ""
 
                 do_name = disease_association["DOtermName"] if disease_association["DOtermName"] else ""
-                # inferred_gene_association = ""
-                # if db_object_type == "gene":
-                #    inferred_gene_association = disease_association["dbObjectID"]
-                # elif db_object_type == "allele":
-                #    inferred_gene_association = ",".join(disease_association["inferredGeneAssociation"])
 
                 if evidence["evidenceCode"] is not None:
                     evidence_code = evidence["evidenceCode"]
@@ -124,20 +111,21 @@ class DiseaseFileGenerator:
                 else:
                     evidence_code_name = ""
 
-                # gene_product_form_id = ""
-                # additional_genetic_component = ""
-                # experimental_conditions = ""
-                # qualifier = ""
-                # modifier_association_type = ""
-                # modifier_qualifier = ""
-                # modifier_genetic = ""
-                # modifier_experimental_conditions = ""
-                # genetic_sex = ""
+                modifiers = []
+                experimental_conditions = []
+                for condition in disease_association['experimentalConditions']:
+                    condition_statement = ""
+                    if condition["statement"]:
+                        condition_statement = condition['statement']
 
-                if disease_association["associationType"] in ["implicated_via_orthology", "biomarker_via_orthology"] and len(disease_association["withOrthologs"]) == 0:
-                    print(disease_association)
-                    exit()
-                    continue
+                    if condition['type'] == "HAS_CONDITION":
+                        experimental_conditions.append("Has Condition: " + condition_statement)
+                    elif condition['type'] == "INDUCES":
+                        experimental_conditions.append("Induced By: " + condition_statement)
+                    elif condition['type'] == "AMELIORATES":
+                        modifiers.append("Ameliorated By: " + condition_statement)
+                    elif condition['type'] == "EXACERBATES":
+                        modifiers.append("Exacerbated By: " + condition_statement)
 
                 if disease_association["dateAssigned"] is None and disease_association["associationType"] in ["implicated_via_orthology",
                                                                                                               "biomarker_via_orthology"]:
@@ -181,29 +169,23 @@ class DiseaseFileGenerator:
                                                           db_object_type,
                                                           disease_association["dbObjectID"],
                                                           disease_association["dbObjectSymbol"] if disease_association["dbObjectSymbol"] else disease_association["dbObjectName"],
-                                                          # inferred_gene_association,
-                                                          # gene_product_form_id,
-                                                          # additional_genetic_component,
-                                                          # experimental_conditions,
                                                           disease_association["associationType"].lower(),
-                                                          # qualifier,
                                                           disease_association["DOID"],
                                                           do_name,
                                                           disease_association["withOrthologs"],
                                                           inferred_from_id,
                                                           inferred_from_symbol,
-                                                          # modifier_association_type,
-                                                          # modifier_qualifier,
-                                                          # modifier_genetic,
-                                                          # modifier_experimental_conditions,
+                                                          experimental_conditions,
+                                                          modifiers,
                                                           evidence_code,
                                                           evidence_code_name,
-                                                          # genetic_sex,
                                                           pub_id,
                                                           datetime.strptime(date_str, "%Y-%m-%d").strftime("%Y%m%d"),
                                                           source]))
                 processed_association_tsv = processed_association.copy()
-                processed_association_tsv["WithOrthologs"] = "|".join(set(disease_association["withOrthologs"])) if len(disease_association["withOrthologs"]) > 0 else ""
+                processed_association_tsv["WithOrtholog"] = "|".join(set(disease_association["withOrthologs"])) if len(disease_association["withOrthologs"]) > 1 else ""
+                processed_association_tsv["Modifier"] = "|".join(modifiers) if len(modifiers) else ""
+                processed_association_tsv["ExperimentalCondition"] = "|".join(experimental_conditions) if len(experimental_conditions) else ""
 
                 if taxon_id in processed_disease_associations:
                     processed_disease_associations_tsv[taxon_id].append(processed_association_tsv)

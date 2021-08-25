@@ -291,7 +291,7 @@ def generate_vcf_file(assembly, generated_files_folder, skip_chromosomes, config
                             assembly.primaryKey AS assembly,
                             alleles,
                             geneConsequences,
-                            collect(DISTINCT {transcript: t.primaryKey,
+                            COLLECT(DISTINCT {transcript: t.primaryKey,
                                               transcriptGFF3ID: t.gff3ID,
                                               transcriptGFF3Name: t.name,
                                               consequence: tlc.molecularConsequences,
@@ -355,7 +355,7 @@ def generate_orthology_file(generated_files_folder, config_info, upload_flag, va
                               gene1.symbol AS gene1Symbol,
                               gene2.primaryKey AS gene2ID,
                               gene2.symbol AS gene2Symbol,
-                              collect(DISTINCT algorithm.name) as Algorithms,
+                              COLLECT(DISTINCT algorithm.name) as Algorithms,
                               count(DISTINCT algorithm.name) AS numAlgorithmMatch,
                               count(DISTINCT algorithm2.name) AS numAlgorithmNotMatched,
                               toString(o.isBestScore) AS best,
@@ -398,8 +398,12 @@ def generate_disease_file(generated_files_folder, config_info, taxon_id_fms_subt
                                               "biomarker_via_orthology"]
                    MATCH (dej:Association:DiseaseEntityJoin)-[:EVIDENCE]->(pj:PublicationJoin),
                          (p:Publication)-[:ASSOCIATION]->(pj:PublicationJoin)-[:ASSOCIATION]->(ec:Ontology:ECOTerm)
-                   OPTIONAL MATCH (dej:DiseaseEntityJoin)-[:ANNOTATION_SOURCE_CROSS_REFERENCE]->(ascr:CrossReference)
+                   OPTIONAL MATCH (dej:DiseaseEntityJoin)-[ecType]-(experimental_condition:ExperimentalCondition)
                    WITH disease, dej, object, species, pj, p, ec,
+                        COLLECT(DISTINCT {type: type(ecType),
+                                          statement: experimental_condition.conditionStatement}) AS experimentalConditions
+                   OPTIONAL MATCH (dej:DiseaseEntityJoin)-[:ANNOTATION_SOURCE_CROSS_REFERENCE]->(ascr:CrossReference)
+                   WITH disease, dej, object, species, pj, p, ec, experimentalConditions,
                         COLLECT(DISTINCT {curatedDB: ascr.curatedDB, displayName: ascr.displayName}) AS source
                    OPTIONAL MATCH (object:Gene)-[:ASSOCIATION]->(dej:Association:DiseaseEntityJoin)<-[:ASSOCIATION]-(otherAssociatedEntity)
                    OPTIONAL MATCH (pj:PublicationJoin)-[:MODEL_COMPONENT|PRIMARY_GENETIC_ENTITY]-(inferredFromEntity)
@@ -408,25 +412,26 @@ def generate_disease_file(generated_files_folder, config_info, taxon_id_fms_subt
                    WHERE o.strictFilter AND ec.primaryKey IN ["ECO:0000250", "ECO:0000266", "ECO:0000501"] // ISS, ISO, and IEA respectively
                    //OPTIONAL MATCH (object)-[IS_ALLELE_OF]->(gene:Gene)
                    RETURN DISTINCT
-                          dej.primaryKey as dejID,
+                          dej.primaryKey AS dejID,
                           species.primaryKey AS taxonId,
                           species.name AS speciesName,
-                          collect(DISTINCT oGene.primaryKey) AS withOrthologs,
+                          COLLECT(DISTINCT oGene.primaryKey) AS withOrthologs,
                           labels(object) AS objectType,
                           object.primaryKey AS dbObjectID,
                           object.symbol AS dbObjectSymbol,
                           object.name AS dbObjectName,
                           toLower(dej.joinType) AS associationType,
-                          //collect(DISTINCT gene.primaryKey) AS inferredGeneAssociation,
+                          //COLLECT(DISTINCT gene.primaryKey) AS inferredGeneAssociation,
                           disease.doId AS DOID,
-                          disease.name as DOtermName,
-                          collect(DISTINCT {pubModID: p.pubModId,
+                          disease.name AS DOtermName,
+                          COLLECT(DISTINCT {pubModID: p.pubModId,
                                             pubMedID: p.pubMedId,
                                             evidenceCode:ec.primaryKey,
                                             evidenceCodeName: ec.name,
                                             inferredFromEntity: inferredFromEntity,
-                                            otherAssociatedEntityID: otherAssociatedEntity.primaryKey}) as evidence,
-                          REDUCE(t = "1900-01-01", c IN collect(left(pj.dateAssigned, 10)) | CASE WHEN c > t THEN c ELSE t END) AS dateAssigned,
+                                            otherAssociatedEntityID: otherAssociatedEntity.primaryKey}) AS evidence,
+                          experimentalConditions,
+                          REDUCE(t = "1900-01-01", c IN COLLECT(left(pj.dateAssigned, 10)) | CASE WHEN c > t THEN c ELSE t END) AS dateAssigned,
                           ///takes most recent date
                           source,
                           dej.dataProvider AS dataProvider'''
