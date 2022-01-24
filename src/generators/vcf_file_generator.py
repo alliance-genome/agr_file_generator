@@ -177,7 +177,7 @@ class VcfFileGenerator:
         assembly_chr_variants = defaultdict(lambda: defaultdict(list))
         assembly_species = {}
         for variant in self.variants:
-            assembly = variant['assembly'].replace('.', '').replace('_', '')
+            assembly = variant['assembly'].replace('_', '')
             chromosome = variant['chromosome']
             assembly_chr_variants[assembly][chromosome].append(variant)
             assembly_species[assembly] = variant['species']
