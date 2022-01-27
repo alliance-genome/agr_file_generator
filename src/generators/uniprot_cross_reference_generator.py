@@ -27,7 +27,7 @@ class UniProtGenerator:
                              data_format=data_format)
 
    
-    def _get_taxon_ids(relationships):
+    def _get_taxon_ids(cls, relationships):
         taxon_ids = set()
         for item in relationships:
             taxon_ids.add(item['TaxonID'])
@@ -36,7 +36,7 @@ class UniProtGenerator:
     def _write_uniprot_file(cls, relationships, tab_file):
         logger.info('Writing output file')
         with open(cls.generated_files_folder + '/' + tab_file, 'w') as tsvfile:
-            tsvfile.write(cls._generate_header(cls.config_info, _get_taxon_ids(relationships), 'tsv'))
+            tsvfile.write(cls._generate_header(cls.config_info, cls._get_taxon_ids(relationships), 'tsv'))
             for item in relationships:
                 tsvfile.write(item['GlobalCrossReferenceID'] + "\t" + item['GeneID'] + "\n")
 
