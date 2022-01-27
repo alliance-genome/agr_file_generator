@@ -38,7 +38,7 @@ class AlleleGffFileGenerator:
             return None
 
     def generate_assembly_file(self, upload_flag=False, validate_flag=False):
-        filename = self.assembly .replace('_', '').replace('.', '') + '-' + self.config_info.config['RELEASE_VERSION'] + '.allele.gff'
+        filename = self.assembly .replace('_', '') + '-' + self.config_info.config['RELEASE_VERSION'] + '.allele.gff'
         filepath = os.path.join(self.generated_files_folder, filename)
         records_found = False
         for allele in self.alleles:
@@ -116,5 +116,5 @@ class AlleleGffFileGenerator:
                                       filename,
                                       self.generated_files_folder,
                                       'ALLELE-GFF',
-                                      self.assembly.replace('_', '').replace('.', ''),
+                                      self.assembly.replace('_', ''),
                                       self.config_info)

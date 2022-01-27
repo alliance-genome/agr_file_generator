@@ -35,7 +35,7 @@ def create_header(file_type, database_version, data_format,
     """
 
     if assembly != '':
-        taxon_ids = get_taxon_id_from_assembly(assembly.replace('_', '').replace('.', ''))
+        taxon_ids = get_taxon_id_from_assembly(assembly.replace('_', ''))
 
     if config_info != '':
         ordered_taxon_species_map = get_ordered_species_dict(config_info, taxon_ids)
