@@ -29,7 +29,7 @@ class UniProtGenerator:
    
     def _get_taxon_ids(relationships):
         taxon_ids = set()
-        for item in cls.relationships:
+        for item in relationships:
             taxon_ids.add(item['TaxonID'])
         return taxon_ids
     
