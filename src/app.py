@@ -541,10 +541,11 @@ def generate_gene_cross_reference_file(generated_files_folder, config_info, uplo
 
 
 def generate_uniprot_cross_reference(generated_files_folder, config_info, upload_flag, validate_flag):
-    uniprot_cross_reference_query = '''MATCH (g:Gene)--(cr:CrossReference)
+    uniprot_cross_reference_query = '''MATCH (s:Species)-[:FROM_SPECIES]-(g:Gene)--(cr:CrossReference)
                                 WHERE cr.prefix = "UniProtKB"
                                 RETURN g.primaryKey as GeneID,
-                                    cr.globalCrossRefId as GlobalCrossReferenceID'''
+                                    cr.globalCrossRefId as GlobalCrossReferenceID,
+                                    s.primaryKey as TaxonID'''
 
     if config_info.config["DEBUG"]:
         logger.info("UniProt Cross Reference query")
