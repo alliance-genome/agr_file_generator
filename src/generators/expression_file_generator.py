@@ -210,10 +210,10 @@ class ExpressionFileGenerator:
                     if file_extension == "json":
                         datatype += "-JSON"
                         json_validator.JsonValidator(os.path.join(self.generated_files_folder, filename), 'expression').validateJSON()
-                        if upload_flag:
-                            upload.upload_process(process_name,
-                                                  filename,
-                                                  self.generated_files_folder,
-                                                  datatype,
-                                                  self.taxon_id_fms_subtype_map[taxon_id],
-                                                  self.config_info)
+                    if upload_flag:
+                        upload.upload_process(process_name,
+                                              filename,
+                                              self.generated_files_folder,
+                                              datatype,
+                                              self.taxon_id_fms_subtype_map[taxon_id],
+                                              self.config_info)
