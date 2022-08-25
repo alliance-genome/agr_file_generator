@@ -43,13 +43,7 @@ if config_info.config["DEBUG"]:
 
 ignore_assemblies = ["", "GRCh38", "R64-2-1", "ASM985889v3"]
 
-taxon_id_fms_subtype_map = {"NCBITaxon:10116": "RGD",
-                            "NCBITaxon:9606": "HUMAN",
-                            "NCBITaxon:7227": "FB",
-                            "NCBITaxon:6239": "WB",
-                            "NCBITaxon:7955": "ZFIN",
-                            "NCBITaxon:10090": "MGI",
-                            "NCBITaxon:559292": "SGD"}
+taxon_id_fms_subtype_map = DataSource.get_taxonomy_subtype_map()
 
 
 @click.command()
