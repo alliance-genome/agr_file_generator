@@ -25,7 +25,7 @@ setup(
         'wget==3.2',
         'biopython==1.73',
         'pyfaidx==0.5.5.2',
-        'wheel==0.33.4',
+        'wheel==0.38.1',
         'pytest==4.6.2',
         'Click==7.0',
         'requests==2.21.0',
