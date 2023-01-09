@@ -21,7 +21,7 @@ setup(
         'neobolt==1.7.13',
         'neotime==1.7.4',
         'python-dateutil==2.7.3',
-        'requests==2.21.0',
+        'requests==2.27.1',
         'wget==3.2',
         'biopython==1.73',
         'pyfaidx==0.5.5.2',
