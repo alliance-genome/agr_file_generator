@@ -28,7 +28,6 @@ setup(
         'wheel==0.33.4',
         'pytest==4.6.2',
         'Click==7.0',
-        'requests==2.21.0',
         'requests-toolbelt==0.9.1',
         'retry==0.9.2',
         'urllib3==1.26.13',
