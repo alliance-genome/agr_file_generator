@@ -1,4 +1,3 @@
-import app
 from click.testing import CliRunner
 import logging
 import os
@@ -9,6 +8,7 @@ from operator import itemgetter
 from itertools import groupby
 
 sys.path.append('../src')
+import app
 
 logger = logging.getLogger(name=__package__)
 

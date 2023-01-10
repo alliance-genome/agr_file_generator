@@ -11,7 +11,9 @@ import logging
 import json
 import csv
 import upload
-from .header import create_header
+from headers import create_header
+from validators import json_validator
+
 
 logger = logging.getLogger(name=__name__)
 
@@ -35,7 +37,7 @@ class ExpressionFileGenerator:
         self.generated_files_folder = generated_files_folder
 
     @classmethod
-    def _generate_header(cls, config_info, species):
+    def _generate_header(cls, config_info, taxon_ids, data_format):
         """
 
         :param config_info:
@@ -43,20 +45,14 @@ class ExpressionFileGenerator:
         :return:
         """
 
-        if len(species.keys()) == 1:
-            species_names = ''.join(list(species.values()))
-            taxon_ids = '# TaxonIDs:' + ''.join(species.keys())
-        else:
-            taxon_ids = '# TaxonIDs: NCBITaxon:9606, NCBITaxon:10116, NCBITaxon:10090, NCBITaxon:7955, NCBITaxon:7227, NCBITaxon:6239, NCBITaxon:559292'
-            species_names = 'Homo sapiens, Rattus norvegicus, Mus musculus, Danio rerio, Drosophila melanogaster, Caenorhabditis elegans, Saccharomyces cerevisiae'
-
-        return create_header('Expression', config_info.config['RELEASE_VERSION'],
+        return create_header('Expression',
+                             config_info.config['RELEASE_VERSION'],
                              taxon_ids=taxon_ids,
-                             species=species_names,
-                             data_format='tsv')
+                             config_info=config_info,
+                             data_format=data_format)
 
     # 'StageID', currently don't have stage IDs in the database
-    def generate_file(self, upload_flag=False):
+    def generate_file(self, upload_flag=False, validate_flag=False):
         """
 
         :param upload_flag:
@@ -165,20 +161,23 @@ class ExpressionFileGenerator:
 
         combined_filepath_tsv = combined_file_basepath + '.tsv'
         combined_expression_file = open(combined_filepath_tsv, 'w')
-        combined_expression_file.write(self._generate_header(self.config_info, species))
+        combined_expression_file.write(self._generate_header(self.config_info, species.keys(), 'tsv'))
         combined_tsv_writer = csv.DictWriter(combined_expression_file, delimiter='\t', fieldnames=fields, lineterminator="\n")
         combined_tsv_writer.writeheader()
 
         combined_filepath_json = combined_file_basepath + '.json'
         with open(combined_filepath_json, 'w') as outfile:
-            json.dump(sum(associations.values(), []), outfile)
+            contents = {'metadata': self._generate_header(self.config_info, species.keys(), 'json'),
+                        'data': sum(associations.values(), [])}
+            json.dump(contents, outfile)
 
         for taxon_id in associations:
-            species_name = species[taxon_id]
             taxon_file_basepath = os.path.join(self.generated_files_folder, file_basename + '.' + taxon_id)
             taxon_filepath_json = taxon_file_basepath + '.json'
             with open(taxon_filepath_json, 'w') as f:
-                json.dump(associations[taxon_id], f)
+                contents = {'metadata': self._generate_header(self.config_info, [taxon_id], 'json'),
+                            'data': associations[taxon_id]}
+                json.dump(contents, f)
 
             logger.info(taxon_id)
             for association in associations[taxon_id]:
@@ -189,27 +188,32 @@ class ExpressionFileGenerator:
             combined_tsv_writer.writerows(associations[taxon_id])
             taxon_filename_tsv = taxon_file_basepath + '.tsv'
             with open(taxon_filename_tsv, 'w') as f:
-                f.write(self._generate_header(self.config_info, {taxon_id: species_name}))
+                f.write(self._generate_header(self.config_info, [taxon_id], 'tsv'))
                 tsv_writer = csv.DictWriter(f, delimiter='\t', fieldnames=fields, lineterminator="\n")
                 tsv_writer.writeheader()
                 tsv_writer.writerows(associations[taxon_id])
 
         combined_expression_file.close()
 
-        if upload_flag:
-            logger.info("Submitting expression files to FMS")
+        if validate_flag:
+            json_validator.JsonValidator(combined_filepath_json, 'expression').validateJSON()
             process_name = "1"
-            upload.upload_process(process_name, combined_filepath_tsv, self.generated_files_folder, 'EXPRESSION-ALLIANCE', 'COMBINED', self.config_info)
-            upload.upload_process(process_name, combined_filepath_json, self.generated_files_folder, 'EXPRESSION-ALLIANCE-JSON', 'COMBINED', self.config_info)
+            if upload_flag:
+                logger.info("Submitting expression files to FMS")
+
+                upload.upload_process(process_name, combined_filepath_tsv, self.generated_files_folder, 'EXPRESSION-ALLIANCE', 'COMBINED', self.config_info)
+                upload.upload_process(process_name, combined_filepath_json, self.generated_files_folder, 'EXPRESSION-ALLIANCE-JSON', 'COMBINED', self.config_info)
             for taxon_id in associations:
                 for file_extension in ['json', 'tsv']:
                     filename = file_basename + "." + taxon_id + '.' + file_extension
                     datatype = "EXPRESSION-ALLIANCE"
                     if file_extension == "json":
                         datatype += "-JSON"
-                    upload.upload_process(process_name,
-                                          filename,
-                                          self.generated_files_folder,
-                                          datatype,
-                                          self.taxon_id_fms_subtype_map[taxon_id],
-                                          self.config_info)
+                        json_validator.JsonValidator(os.path.join(self.generated_files_folder, filename), 'expression').validateJSON()
+                    if upload_flag:
+                        upload.upload_process(process_name,
+                                              filename,
+                                              self.generated_files_folder,
+                                              datatype,
+                                              self.taxon_id_fms_subtype_map[taxon_id],
+                                              self.config_info)

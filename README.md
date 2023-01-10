@@ -4,12 +4,12 @@
 
 ## Description
 
-This tool creates files from Alliance resources. The tool is build and testsed with python 3
+This tool creates files from Alliance resources. The tool is built and tested with python 3
 
 ## Current File Types
 
 - VCF
-- DAF
+- Disease
 - Orthology
 - Expression
 

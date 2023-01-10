@@ -1,0 +1,181 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "filetype": {
+          "type": "string"
+        },
+        "databaseVersion": {
+          "type": "string"
+        },
+        "genTime": {
+          "type": "string"
+        },
+        "sourceURL": {
+          "type": "string"
+        },
+        "stringencyFilter": {
+          "type": "string"
+        },
+        "dataFormat": {
+          "type": "string"
+        },
+        "readme": {
+          "type": "string"
+        },
+        "species": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "taxonId": {
+                "type": "string"
+              },
+              "speciesName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "speciesName",
+              "taxonId"
+            ]
+          }
+        }
+      },
+      "required": [
+        "dataFormat",
+        "databaseVersion",
+        "filetype",
+        "genTime",
+        "sourceURL",
+        "readme",
+        "species",
+        "stringencyFilter"
+      ]
+    },
+    "data": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "Taxon": {
+            "type": "string"
+          },
+          "SpeciesName": {
+            "type": "string"
+          },
+          "AlleleId": {
+            "type": ["string", "null"]
+          },
+          "AlleleSymbol": {
+            "type": ["string", "null"]
+          },
+          "AlleleSynonyms": {
+            "type": "array",
+            "items": {
+              "type": ["string", "null"]
+            }
+          },
+          "VariantId": {
+            "type": ["string", "null"]
+          },
+          "VariantSymbol": {
+            "type": ["string", "null"]
+          },
+          "VariantSynonyms": {
+            "type": "array",
+            "items": {
+              "type": ["string", "null"]
+            }
+          },
+          "VariantCrossReference": {
+            "type": "array",
+            "items": {
+              "type": ["string", "null"]
+            }
+          },
+          "AlleleAssociatedGeneId": {
+            "type": "array",
+            "items": {
+             "type": ["string", "null"]
+            }
+          },
+          "AlleleAssociatedGeneSymbol": {
+            "type": "array",
+            "items": {
+               "type": ["string", "null"]
+            }
+          },
+          "VariantAffectedGeneId": {
+            "type": "array",
+            "items": {
+               "type": ["string", "null"]
+            }
+          },
+          "VariantAffectedGeneSymbol": {
+            "type": "array",
+            "items": {
+               "type": ["string", "null"]
+            }
+          },
+          "Category": {
+            "type": "string"
+          },
+          "VariantsTypeId": {
+            "type": ["string", "null"]
+          },
+          "VariantsTypeName": {
+            "type": ["string", "null"]
+          },
+          "VariantsHgvsNames": {
+            "type": ["string", "null"]
+          },
+          "Assembly": {
+            "type": ["string", "null"]
+          },
+          "StartPostiion": {
+            "type": ["number", "null"]
+          },
+          "EndPostiion": {
+            "type": ["number", "null"]
+          },
+          "SequenceOfReference": {
+            "type": ["string", "null"]
+          },
+          "SequenceOfVariant": {
+            "type": ["string", "null"]
+          },
+          "MostSevereConsequenceName": {
+            "type": "array",
+            "items": {
+               "type": ["string", "null"]
+            }
+          },
+          "VariantInformationReference": {
+            "type": "array",
+            "items": {
+               "type": ["string", "null"]
+            }
+          },
+          "HasDiseaseAnnotations": {
+            "type": "string"
+          },
+          "HasPhenotypeAnnotations": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "SpeciesName",
+          "Taxon"
+        ]
+      }
+    }
+  },
+  "required": [
+    "data",
+    "metadata"
+  ]
+}

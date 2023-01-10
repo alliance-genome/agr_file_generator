@@ -4,7 +4,8 @@ import json
 import csv
 
 import upload
-from .header import create_header
+from headers import create_header
+from validators import json_validator
 
 logger = logging.getLogger(name=__name__)
 
@@ -17,20 +18,15 @@ class OrthologyFileGenerator:
         self.generated_files_folder = generated_files_folder
 
     @classmethod
-    def _generate_header(cls, config_info):
-
-        stringency_filter = 'Stringent'
-
-        taxon_ids = '# TaxonIDs: NCBITaxon:9606, NCBITaxon:10116, NCBITaxon:10090, NCBITaxon:7955, NCBITaxon:7227, NCBITaxon:6239, NCBITaxon:559292'
-        species_names = 'Homo sapiens, Rattus norvegicus, Mus musculus, Danio rerio, Drosophila melanogaster, Caenorhabditis elegans, Saccharomyces cerevisiae'
+    def _generate_header(cls, config_info, taxon_ids, data_format):
 
         return create_header('Orthology', config_info.config['RELEASE_VERSION'],
-                             stringency_filter=stringency_filter,
+                             stringency_filter='Stringent',
+                             config_info=config_info,
                              taxon_ids=taxon_ids,
-                             species=species_names,
-                             data_format='tsv')
+                             data_format=data_format)
 
-    def generate_file(self, upload_flag=False):
+    def generate_file(self, upload_flag=False, validate_flag=False):
 
         file_basename = "agr_orthologs-" + self.config_info.config['RELEASE_VERSION']
         fields = ["Gene1ID",
@@ -48,8 +44,11 @@ class OrthologyFileGenerator:
                   "IsBestRevScore"]
 
         processed_orthologs = []
+        taxon_ids = set()
         for ortholog in self.orthologs:
             num_algorithms = ortholog["numAlgorithmMatch"] + ortholog["numAlgorithmNotMatched"]
+            taxon_ids.add(ortholog["species1TaxonID"])
+            taxon_ids.add(ortholog["species2TaxonID"])
             processed_orthologs.append(dict(zip(fields, [ortholog["gene1ID"],
                                                          ortholog["gene1Symbol"],
                                                          ortholog["species1TaxonID"],
@@ -67,7 +66,9 @@ class OrthologyFileGenerator:
         json_filename = file_basename + ".json"
         json_filepath = os.path.join(self.generated_files_folder, json_filename)
         with open(json_filepath, 'w') as outfile:
-            json.dump(processed_orthologs, outfile)
+            contents = {'metadata': self._generate_header(self.config_info, taxon_ids, 'json'),
+                        'data': processed_orthologs}
+            json.dump(contents, outfile)
 
         for processed_ortholog in processed_orthologs:
             processed_ortholog['Algorithms'] = "|".join(set(processed_ortholog['Algorithms']))
@@ -75,15 +76,17 @@ class OrthologyFileGenerator:
         tsv_filename = file_basename + ".tsv"
         tsv_filepath = os.path.join(self.generated_files_folder, tsv_filename)
         tsv_file = open(tsv_filepath, 'w')
-        tsv_file.write(self._generate_header(self.config_info))
+        tsv_file.write(self._generate_header(self.config_info, taxon_ids, 'tsv'))
 
         tsv_writer = csv.DictWriter(tsv_file, delimiter='\t', fieldnames=fields, lineterminator="\n")
         tsv_writer.writeheader()
         tsv_writer.writerows(processed_orthologs)
         tsv_file.close()
 
-        if upload_flag:
-            logger.info("Submitting orthology filse to FMS")
-            process_name = "1"
-            upload.upload_process(process_name, json_filepath, self.generated_files_folder, 'ORTHOLOGY-ALLIANCE-JSON', 'COMBINED', self.config_info)
-            upload.upload_process(process_name, tsv_filepath, self.generated_files_folder, 'ORTHOLOGY-ALLIANCE', 'COMBINED', self.config_info)
+        if validate_flag:
+            json_validator.JsonValidator(json_filepath, 'orthology').validateJSON()
+            if upload_flag:
+                logger.info("Submitting orthology filse to FMS")
+                process_name = "1"
+                upload.upload_process(process_name, json_filepath, self.generated_files_folder, 'ORTHOLOGY-ALLIANCE-JSON', 'COMBINED', self.config_info)
+                upload.upload_process(process_name, tsv_filepath, self.generated_files_folder, 'ORTHOLOGY-ALLIANCE', 'COMBINED', self.config_info)

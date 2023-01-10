@@ -25,14 +25,14 @@ setup(
         'wget==3.2',
         'biopython==1.73',
         'pyfaidx==0.5.5.2',
-        'wheel==0.33.4',
+        'wheel==0.38.1',
         'pytest==4.6.2',
         'Click==7.0',
         'requests-toolbelt==0.9.1',
         'retry==0.9.2',
         'urllib3==1.26.13',
         'coloredlogs==10.0',
-        'PyYAML==5.1',
+        'PyYAML==5.4',
         'json5==0.8.5'
     ],
     classifiers=[
