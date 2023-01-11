@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="agr-file-generator",
-    version="3.1.0",
+    version="5.4.0",
     author="Alliance of Genome Resources",
     author_email="valearna@caltech.edu",
     description="This tool creates files from Alliance resources",
