@@ -1,7 +1,7 @@
 REG := 100225593120.dkr.ecr.us-east-1.amazonaws.com
-DOCKER_PULL_TAG := latest
-DOCKER_BUILD_TAG := latest
-ALLIANCE_RELEASE := 5.0.0
+DOCKER_PULL_TAG := stage
+DOCKER_BUILD_TAG := stage
+ALLIANCE_RELEASE := 6.0.0
 
 registry-docker-login:
 ifneq ($(shell echo ${REG} | egrep "ecr\..+\.amazonaws\.com"),)
