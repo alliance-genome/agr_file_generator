@@ -18,11 +18,8 @@ from generators import (disease_file_generator,
                         human_genes_interacting_with_file_generator)
 
 config_info = ContextInfo()
-# debug_level = logging.DEBUG if config_info.config["DEBUG"] else logging.INFO
-# neo_debug_level = logging.DEBUG if config_info.config["NEO_DEBUG"] else logging.INFO
-
-debug_level = logging.INFO
-neo_debug_level = logging.INFO
+debug_level = logging.DEBUG if config_info.config["DEBUG"] else logging.INFO
+neo_debug_level = logging.DEBUG if config_info.config["NEO_DEBUG"] else logging.INFO
 
 generated_files_folder = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/output'
 if config_info.config["GENERATED_FILES_FOLDER"]:
