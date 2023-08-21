@@ -31,7 +31,7 @@ setup(
         'retry==0.9.2',
         'urllib3==1.26.13',
         'coloredlogs==10.0',
-        'PyYAML==5.4',
+        'PyYAML==6.0.1',
         'json5==0.8.5',
         'jsonschema==3.2.0',
         'simplejson==3.17.0',
