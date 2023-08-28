@@ -101,19 +101,16 @@ class ExpressionFileGenerator:
             association['GeneSymbol'] = expression['gene']['symbol']
             association['Location'] = expression['location']
 
-            # # pretty print association
-            # print("Printing association")
-            # pp.pprint(association)
-
-            # # Print type of variable for association.
-            # print("Printing type of variable for association")
-            # print(type(association))
+            # Pretty print expression['terms'].
+            print("Printing expression['terms']")
+            pp.pprint(expression['terms'])
+            quit()
 
             for term in expression['terms']:
 
-                ## Pretty print term keys.
-                print("Printing term keys")
-                pp.pprint(term.keys())
+                # ## Pretty print term keys.
+                # print("Printing term keys")
+                # pp.pprint(term.keys())
 
                 if 'CrossReference' in term.keys():
                     if association['SourceURL']:
