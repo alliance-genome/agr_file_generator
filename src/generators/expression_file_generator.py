@@ -11,7 +11,6 @@ import logging
 import json
 import csv
 import upload
-import pprint
 from headers import create_header
 from validators import json_validator
 
