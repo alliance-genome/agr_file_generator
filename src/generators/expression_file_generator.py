@@ -101,40 +101,47 @@ class ExpressionFileGenerator:
             association['GeneSymbol'] = expression['gene']['symbol']
             association['Location'] = expression['location']
 
-            # pretty print association
-            print("Printing association")
-            pp.pprint(association)
+            # # pretty print association
+            # print("Printing association")
+            # pp.pprint(association)
 
-            # Print type of variable for association.
-            print("Printing type of variable for association")
-            print(type(association))
+            # # Print type of variable for association.
+            # print("Printing type of variable for association")
+            # print(type(association))
 
             for term in expression['terms']:
 
-                # Pretty print term.
-                print("Printing term")
-                pp.pprint(term)
+                ## Pretty print term.
+                # print("Printing term")
+                # pp.pprint(term)
 
-                # Print type of variable for term.
-                print("Printing type of variable for term")
-                print(type(term))
+                if 'CrossReference' in term.keys():
 
-                if 'CrossReference' in term.labels:
+                    # Pretty print term.
+                    print("Printing term")
+                    pp.pprint(term)
+
+                    # Pretty print association.
+                    print("Printing association")
+                    pp.pprint(association)
+
+                    quit()
+
                     if association['SourceURL']:
                         association['SourceURL'].append(term['crossRefCompleteUrl'])  # according to spec should use globalCrossRefId
                     else:
                         association['SourceURL'] = [term['crossRefCompleteUrl']]
-                elif 'Publication' in term.labels:
+                elif 'Publication' in term.keys():
                     publication = term['pubMedId'] or term['pubModId']
                     # reference = association['Reference']
                     if association['Reference']:
                         association['Reference'].append(publication)
                     else:
                         association['Reference'] = [publication]
-                elif 'Stage' in term.labels:
+                elif 'Stage' in term.keys():
                     # association['StageID'] = term['primaryKey']
                     association['StageTerm'] = term['name']
-                elif 'MMOTerm' in term.labels:
+                elif 'MMOTerm' in term.keys():
                     association['AssayID'] = term['primaryKey']
                     association['AssayTermName'] = term['name']
             for ontology_path in expression['ontologyPaths']:
