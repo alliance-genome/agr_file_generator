@@ -11,6 +11,7 @@ import logging
 import json
 import csv
 import upload
+import pprint
 from headers import create_header
 from validators import json_validator
 
@@ -94,22 +95,27 @@ class ExpressionFileGenerator:
             association['GeneSymbol'] = expression['gene']['symbol']
             association['Location'] = expression['location']
             for term in expression['terms']:
-                if 'CrossReference' in term.labels:
+                # Pretty print term.
+                print("term:")
+                pp = pprint.PrettyPrinter(indent=4)
+                pp.pprint(term)
+                quit()
+                if 'CrossReference' in term['labels']:
                     if association['SourceURL']:
                         association['SourceURL'].append(term['crossRefCompleteUrl'])  # according to spec should use globalCrossRefId
                     else:
                         association['SourceURL'] = [term['crossRefCompleteUrl']]
-                elif 'Publication' in term.labels:
+                elif 'Publication' in term['labels']:
                     publication = term['pubMedId'] or term['pubModId']
                     # reference = association['Reference']
                     if association['Reference']:
                         association['Reference'].append(publication)
                     else:
                         association['Reference'] = [publication]
-                elif 'Stage' in term.labels:
+                elif 'Stage' in term['labels']:
                     # association['StageID'] = term['primaryKey']
                     association['StageTerm'] = term['name']
-                elif 'MMOTerm' in term.labels:
+                elif 'MMOTerm' in term.['labels']:
                     association['AssayID'] = term['primaryKey']
                     association['AssayTermName'] = term['name']
             for ontology_path in expression['ontologyPaths']:
