@@ -89,27 +89,29 @@ class ExpressionFileGenerator:
             association['Species'] = expression['species']['name']
             association['Source'] = expression['gene']['dataProvider']
             association['SpeciesID'] = expression['species']['primaryKey']
-            association['SpeciesID'] = association['SpeciesID']
             association['GeneID'] = expression['gene']['primaryKey']
             association['GeneSymbol'] = expression['gene']['symbol']
             association['Location'] = expression['location']
             for term in expression['terms']:
-                if 'CrossReference' in term.labels:
+                # Flatten the dictionary structure.
+                term.update(term.pop('properties', {}))
+                
+                if 'CrossReference' in term['labels']:
                     if association['SourceURL']:
                         association['SourceURL'].append(term['crossRefCompleteUrl'])  # according to spec should use globalCrossRefId
                     else:
                         association['SourceURL'] = [term['crossRefCompleteUrl']]
-                elif 'Publication' in term.labels:
+                elif 'Publication' in term['labels']:
                     publication = term['pubMedId'] or term['pubModId']
                     # reference = association['Reference']
                     if association['Reference']:
                         association['Reference'].append(publication)
                     else:
                         association['Reference'] = [publication]
-                elif 'Stage' in term.labels:
+                elif 'Stage' in term['labels']:
                     # association['StageID'] = term['primaryKey']
                     association['StageTerm'] = term['name']
-                elif 'MMOTerm' in term.labels:
+                elif 'MMOTerm' in term['labels']:
                     association['AssayID'] = term['primaryKey']
                     association['AssayTermName'] = term['name']
             for ontology_path in expression['ontologyPaths']:
