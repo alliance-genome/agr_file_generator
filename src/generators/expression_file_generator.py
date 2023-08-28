@@ -100,6 +100,11 @@ class ExpressionFileGenerator:
             association['GeneID'] = expression['gene']['primaryKey']
             association['GeneSymbol'] = expression['gene']['symbol']
             association['Location'] = expression['location']
+
+            # pretty print association
+            print("Printing association")
+            pp.pprint(association)
+
             for term in expression['terms']:
 
                 # Pretty print term.
