@@ -88,6 +88,9 @@ def main(variant_allele,
     if not os.path.exists(generated_files_folder):
         os.makedirs(generated_files_folder, exist_ok=True)
 
+    # TEMP - remove when all files are generated
+    generate_expression_file(generated_files_folder, config_info, taxon_id_fms_subtype_map, upload, validate)
+
     click.echo('INFO:\tFiles output: ' + generated_files_folder)
     if variant_allele is True or all_filetypes is True:
         click.echo('INFO:\tGenerating Variant Allele JSON and TSV files')
