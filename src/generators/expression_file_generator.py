@@ -116,17 +116,6 @@ class ExpressionFileGenerator:
                 # pp.pprint(term)
 
                 if 'CrossReference' in term.keys():
-
-                    # Pretty print term.
-                    print("Printing term")
-                    pp.pprint(term)
-
-                    # Pretty print association.
-                    print("Printing association")
-                    pp.pprint(association)
-
-                    quit()
-
                     if association['SourceURL']:
                         association['SourceURL'].append(term['crossRefCompleteUrl'])  # according to spec should use globalCrossRefId
                     else:
@@ -138,6 +127,16 @@ class ExpressionFileGenerator:
                         association['Reference'].append(publication)
                     else:
                         association['Reference'] = [publication]
+
+                    # Pretty print term.
+                    print("Printing term")
+                    pp.pprint(term)
+
+                    # Pretty print association.
+                    print("Printing association")
+                    pp.pprint(association)
+
+                    quit()
                 elif 'Stage' in term.keys():
                     # association['StageID'] = term['primaryKey']
                     association['StageTerm'] = term['name']
