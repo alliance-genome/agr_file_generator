@@ -94,14 +94,9 @@ class ExpressionFileGenerator:
             association['GeneSymbol'] = expression['gene']['symbol']
             association['Location'] = expression['location']
             for term in expression['terms']:
-                # Flatten the dictionary structure
+                # Flatten the dictionary structure.
                 term.update(term.pop('properties', {}))
                 
-                # Pretty print term.
-                print("term:")
-                pp = pprint.PrettyPrinter(indent=4)
-                pp.pprint(term)
-                quit()
                 if 'CrossReference' in term['labels']:
                     if association['SourceURL']:
                         association['SourceURL'].append(term['crossRefCompleteUrl'])  # according to spec should use globalCrossRefId

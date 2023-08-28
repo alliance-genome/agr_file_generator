@@ -90,6 +90,8 @@ def main(variant_allele,
 
     # TEMP - remove when all files are generated
     generate_expression_file(generated_files_folder, config_info, taxon_id_fms_subtype_map, upload, validate)
+    print('Success!')
+    quit()
 
     click.echo('INFO:\tFiles output: ' + generated_files_folder)
     if variant_allele is True or all_filetypes is True:
