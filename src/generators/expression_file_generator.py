@@ -13,7 +13,6 @@ import csv
 import upload
 from headers import create_header
 from validators import json_validator
-import pprint
 
 
 logger = logging.getLogger(name=__name__)
@@ -85,18 +84,7 @@ class ExpressionFileGenerator:
 
         associations = {}
         species = {}
-
-        # Pretty print the self.expressions.
-        pp = pprint.PrettyPrinter(indent=4)
-        print("Printing self.expressions")
-        pp.pprint(self.expressions)
-
         for expression in self.expressions:
-
-            print("Printing expression")
-            pp.pprint(expression)
-            quit()
-
             association = dict(zip(fields, [None] * len(fields)))
             association['Species'] = expression['species']['name']
             association['Source'] = expression['gene']['dataProvider']
@@ -105,29 +93,23 @@ class ExpressionFileGenerator:
             association['GeneID'] = expression['gene']['primaryKey']
             association['GeneSymbol'] = expression['gene']['symbol']
             association['Location'] = expression['location']
-
-            # Pretty print expression['terms'].
-            print("Printing expression['terms']")
-            pp.pprint(expression['terms'])
-            quit()
-
             for term in expression['terms']:
-                if 'CrossReference' in term.keys():
+                if 'CrossReference' in term.labels:
                     if association['SourceURL']:
                         association['SourceURL'].append(term['crossRefCompleteUrl'])  # according to spec should use globalCrossRefId
                     else:
                         association['SourceURL'] = [term['crossRefCompleteUrl']]
-                elif 'Publication' in term.keys():
+                elif 'Publication' in term.labels:
                     publication = term['pubMedId'] or term['pubModId']
                     # reference = association['Reference']
                     if association['Reference']:
                         association['Reference'].append(publication)
                     else:
                         association['Reference'] = [publication]
-                elif 'Stage' in term.keys():
+                elif 'Stage' in term.labels:
                     # association['StageID'] = term['primaryKey']
                     association['StageTerm'] = term['name']
-                elif 'MMOTerm' in term.keys():
+                elif 'MMOTerm' in term.labels:
                     association['AssayID'] = term['primaryKey']
                     association['AssayTermName'] = term['name']
             for ontology_path in expression['ontologyPaths']:
