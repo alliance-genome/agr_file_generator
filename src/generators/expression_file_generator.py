@@ -90,11 +90,13 @@ class ExpressionFileGenerator:
             association['Species'] = expression['species']['name']
             association['Source'] = expression['gene']['dataProvider']
             association['SpeciesID'] = expression['species']['primaryKey']
-            association['SpeciesID'] = association['SpeciesID']
             association['GeneID'] = expression['gene']['primaryKey']
             association['GeneSymbol'] = expression['gene']['symbol']
             association['Location'] = expression['location']
             for term in expression['terms']:
+                # Flatten the dictionary structure
+                term.update(term.pop('properties', {}))
+                
                 # Pretty print term.
                 print("term:")
                 pp = pprint.PrettyPrinter(indent=4)
