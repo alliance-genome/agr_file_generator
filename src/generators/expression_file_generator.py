@@ -115,7 +115,7 @@ class ExpressionFileGenerator:
                 elif 'Stage' in term['labels']:
                     # association['StageID'] = term['primaryKey']
                     association['StageTerm'] = term['name']
-                elif 'MMOTerm' in term.['labels']:
+                elif 'MMOTerm' in term['labels']:
                     association['AssayID'] = term['primaryKey']
                     association['AssayTermName'] = term['name']
             for ontology_path in expression['ontologyPaths']:
