@@ -111,9 +111,9 @@ class ExpressionFileGenerator:
 
             for term in expression['terms']:
 
-                ## Pretty print term.
-                # print("Printing term")
-                # pp.pprint(term)
+                ## Pretty print term keys.
+                print("Printing term keys")
+                pp.pprint(term.keys())
 
                 if 'CrossReference' in term.keys():
                     if association['SourceURL']:
