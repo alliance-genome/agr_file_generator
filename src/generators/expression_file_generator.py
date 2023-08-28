@@ -92,6 +92,11 @@ class ExpressionFileGenerator:
         pp.pprint(self.expressions)
 
         for expression in self.expressions:
+
+            print("Printing expression")
+            pp.pprint(expression)
+            quit()
+
             association = dict(zip(fields, [None] * len(fields)))
             association['Species'] = expression['species']['name']
             association['Source'] = expression['gene']['dataProvider']
@@ -107,11 +112,6 @@ class ExpressionFileGenerator:
             quit()
 
             for term in expression['terms']:
-
-                # ## Pretty print term keys.
-                # print("Printing term keys")
-                # pp.pprint(term.keys())
-
                 if 'CrossReference' in term.keys():
                     if association['SourceURL']:
                         association['SourceURL'].append(term['crossRefCompleteUrl'])  # according to spec should use globalCrossRefId
@@ -124,16 +124,6 @@ class ExpressionFileGenerator:
                         association['Reference'].append(publication)
                     else:
                         association['Reference'] = [publication]
-
-                    # Pretty print term.
-                    print("Printing term")
-                    pp.pprint(term)
-
-                    # Pretty print association.
-                    print("Printing association")
-                    pp.pprint(association)
-
-                    quit()
                 elif 'Stage' in term.keys():
                     # association['StageID'] = term['primaryKey']
                     association['StageTerm'] = term['name']
