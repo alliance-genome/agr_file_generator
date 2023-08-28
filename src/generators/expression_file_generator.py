@@ -105,11 +105,19 @@ class ExpressionFileGenerator:
             print("Printing association")
             pp.pprint(association)
 
+            # Print type of variable for association.
+            print("Printing type of variable for association")
+            print(type(association))
+
             for term in expression['terms']:
 
                 # Pretty print term.
                 print("Printing term")
                 pp.pprint(term)
+
+                # Print type of variable for term.
+                print("Printing type of variable for term")
+                print(type(term))
 
                 if 'CrossReference' in term.labels:
                     if association['SourceURL']:
