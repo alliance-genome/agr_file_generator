@@ -13,6 +13,7 @@ import csv
 import upload
 from headers import create_header
 from validators import json_validator
+import pprint
 
 
 logger = logging.getLogger(name=__name__)
@@ -84,6 +85,11 @@ class ExpressionFileGenerator:
 
         associations = {}
         species = {}
+
+        # Pretty print the self.expressions.
+        pp = pprint.PrettyPrinter(indent=4)
+        pp.pprint(self.expressions)
+
         for expression in self.expressions:
             association = dict(zip(fields, [None] * len(fields)))
             association['Species'] = expression['species']['name']
@@ -94,6 +100,10 @@ class ExpressionFileGenerator:
             association['GeneSymbol'] = expression['gene']['symbol']
             association['Location'] = expression['location']
             for term in expression['terms']:
+
+                # Pretty print term.
+                pp.pprint(term)
+
                 if 'CrossReference' in term.labels:
                     if association['SourceURL']:
                         association['SourceURL'].append(term['crossRefCompleteUrl'])  # according to spec should use globalCrossRefId
