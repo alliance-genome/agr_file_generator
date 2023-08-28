@@ -88,6 +88,7 @@ class ExpressionFileGenerator:
 
         # Pretty print the self.expressions.
         pp = pprint.PrettyPrinter(indent=4)
+        print("Printing self.expressions")
         pp.pprint(self.expressions)
 
         for expression in self.expressions:
@@ -102,6 +103,7 @@ class ExpressionFileGenerator:
             for term in expression['terms']:
 
                 # Pretty print term.
+                print("Printing term")
                 pp.pprint(term)
 
                 if 'CrossReference' in term.labels:
