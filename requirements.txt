@@ -1,4 +1,4 @@
-neo4j==5.8.1
+neo4j==5.27.0
 neobolt==1.7.17
 neotime==1.7.4
 python-dateutil==2.7.3
